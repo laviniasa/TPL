@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>TPL - Escolher horário</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+    <header class="topo">
+
+        <div class="menu">
+            ←
+        </div>
+
+        <div class="logo">
+
+            <strong>TPL</strong>
+
+            <span>
+                Testemunho Público Local
+            </span>
+
+        </div>
+
+    </header>
+
+
+    <main class="conteudo">
+
+        <h2>
+            Escolha seu horário
+        </h2>
+
+
+        <div class="campo-reserva">
+
+            <label for="data">
+                📅 Dia
+            </label>
+
+            <input
+                type="date"
+                id="data"
+                name="data"
+                value="2026-09-02"
+            >
+
+        </div>
+
+
+        <div class="campo-reserva">
+
+            <label for="hora_inicio">
+                🕐 Começar às
+            </label>
+
+            <input
+                type="time"
+                id="hora_inicio"
+                name="hora_inicio"
+                value="08:00"
+            >
+
+        </div>
+
+
+        <div class="campo-reserva">
+
+            <label for="hora_fim">
+                🕐 Até
+            </label>
+
+            <input
+                type="time"
+                id="hora_fim"
+                name="hora_fim"
+                value="11:00"
+            >
+
+        </div>
+
+
+        <button
+            type="button"
+            class="botao"
+            onclick="verificarHorario()"
+        >
+            Ver disponibilidade
+        </button>
+
+
+        <div id="resultado"></div>
+
+    </main>
+
+
+    <script>
+
+        function verificarHorario() {
+
+            const data =
+                document.getElementById("data").value;
+
+            const inicio =
+                document.getElementById("hora_inicio").value;
+
+            const fim =
+                document.getElementById("hora_fim").value;
+
+            const resultado =
+                document.getElementById("resultado");
+
+
+            if (!data || !inicio || !fim) {
+
+                resultado.innerHTML =
+                    "<p>Preencha todos os campos.</p>";
+
+                return;
+            }
+
+
+            if (inicio >= fim) {
+
+                resultado.innerHTML =
+                    "<p>O horário final deve ser depois do inicial.</p>";
+
+                return;
+            }
+
+
+            resultado.innerHTML = `
+
+                <h2>
+                    Carrinhos disponíveis
+                </h2>
+
+                <div class="card-carrinho">
+
+                    <strong>
+                        🛒 Carrinho 1
+                    </strong>
+
+                    <div class="informacao">
+                        📅 ${data}
+                    </div>
+
+                    <div class="informacao">
+                        🕐 ${inicio} - ${fim}
+                    </div>
+
+                    <div class="informacao">
+                        🟢 Disponível
+                    </div>
+
+                    <button
+                        type="button"
+                        class="botao"
+                    >
+                        Escolher Carrinho 1
+                    </button>
+
+                </div>
+
+
+                <div class="card-carrinho">
+
+                    <strong>
+                        🛒 Carrinho 2
+                    </strong>
+
+                    <div class="informacao">
+                        📅 ${data}
+                    </div>
+
+                    <div class="informacao">
+                        🕐 ${inicio} - ${fim}
+                    </div>
+
+                    <div class="informacao">
+                        🟢 Disponível
+                    </div>
+
+                    <button
+                        type="button"
+                        class="botao"
+                    >
+                        Escolher Carrinho 2
+                    </button>
+
+                </div>
+
+
+                <div class="card-carrinho">
+
+                    <strong>
+                        🛒 Carrinho 3
+                    </strong>
+
+                    <div class="informacao">
+                        📅 ${data}
+                    </div>
+
+                    <div class="informacao">
+                        🕐 ${inicio} - ${fim}
+                    </div>
+
+                    <div class="informacao">
+                        🟢 Disponível
+                    </div>
+
+                    <button
+                        type="button"
+                        class="botao"
+                    >
+                        Escolher Carrinho 3
+                    </button>
+
+                </div>
+
+            `;
+
+        }
+
+    </script>
+
+
+</body>
+
+</html>

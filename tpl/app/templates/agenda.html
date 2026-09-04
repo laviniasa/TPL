@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>TPL - Agenda</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+
+<body>
+
+<div class="app">
+
+
+    <!-- =====================================================
+         TOPO
+         ===================================================== -->
+
+    <header class="topo-novo">
+
+        <div class="topo-esquerda">
+
+            <button
+                class="menu-botao"
+                type="button"
+            >
+                ☰
+            </button>
+
+
+            <div class="logo-tpl">
+                TPL
+            </div>
+
+
+            <div class="subtitulo-tpl">
+                Testemunho Público Local
+            </div>
+
+        </div>
+
+
+        <a
+        class="minhas-reservas"
+        href="{{ url_for('routes.admin') }}"
+    >
+        ⚙ Admin
+    </a>
+    </header>
+
+
+
+    <!-- =====================================================
+         DIAS + SETAS
+         ===================================================== -->
+
+    <section class="dias-com-setas">
+
+
+        <!-- SEMANA ANTERIOR -->
+
+        <a
+            class="seta-dia"
+            href="{{ url_for(
+                'routes.agenda',
+                data=(segunda - timedelta(days=1)).isoformat()
+            ) }}"
+        >
+            ‹
+        </a>
+
+
+
+        <!-- DIAS -->
+
+        <div class="dias-novo">
+
+            {% for dia in dias_semana %}
+
+                <a
+                    href="{{ url_for(
+                        'routes.agenda',
+                        data=dia.data.isoformat()
+                    ) }}"
+
+                    class="
+                        dia-novo
+                        {% if dia.data == data_selecionada %}
+                            dia-ativo
+                        {% endif %}
+                    "
+                >
+
+                    <span>
+                        {{ dia.nome }}
+                    </span>
+
+
+                    <strong>
+                        {{ dia.data.day }}
+                    </strong>
+
+                </a>
+
+            {% endfor %}
+
+        </div>
+
+
+
+        <!-- PRÓXIMA SEMANA -->
+
+        <a
+            class="seta-dia"
+            href="{{ url_for(
+                'routes.agenda',
+                data=(segunda + timedelta(days=7)).isoformat()
+            ) }}"
+        >
+            ›
+        </a>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         CONTEÚDO
+         ===================================================== -->
+
+    <main class="conteudo-novo">
+
+
+        <!-- TÍTULO DO DIA -->
+
+        <div class="titulo-dia-novo">
+
+            <h2>
+
+                {% set nomes_completos = {
+
+                    0: "Segunda-feira",
+
+                    1: "Terça-feira",
+
+                    2: "Quarta-feira",
+
+                    3: "Quinta-feira",
+
+                    4: "Sexta-feira",
+
+                    5: "Sábado",
+
+                    6: "Domingo"
+
+                } %}
+
+
+                {{ nomes_completos[data_selecionada.weekday()] }},
+
+                {{ data_selecionada.strftime('%d/%m/%Y') }}
+
+            </h2>
+
+        </div>
+
+
+
+        <!-- BOTÃO NOVA RESERVA -->
+
+        <div class="area-botao-reserva">
+
+            <a
+                class="botao-reservar-novo"
+                href="{{ url_for(
+                    'routes.nova_reserva',
+                    data=data_selecionada.isoformat()
+                ) }}"
+            >
+                + Reservar um horário
+            </a>
+
+        </div>
+
+
+
+        <!-- =================================================
+             CARRINHOS
+             ================================================= -->
+
+        {% if carrinhos %}
+
+
+        <div class="grid-carrinhos">
+
+
+            {% for item in carrinhos %}
+
+
+            <section class="card-carrinho-novo">
+
+
+                <!-- CABEÇALHO -->
+
+                <div class="cabecalho-card">
+
+
+                    <div class="titulo-carrinho">
+
+                        <span class="icone-carrinho">
+                            🚚
+                        </span>
+
+
+                        <h3>
+                            {{ item.carrinho.nome }}
+                        </h3>
+
+                    </div>
+
+
+                    <div class="local-carrinho">
+
+                        📍 {{ item.local.nome }}
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- =================================================
+                     LISTA DE HORÁRIOS
+                     ================================================= -->
+
+                <div class="lista-horarios-novo">
+
+
+                    {% for horario in item.horarios %}
+
+
+                    <div class="linha-horario-novo">
+
+
+                        <!-- HORÁRIO -->
+
+                        <div class="hora-nova">
+
+                            {{ horario.programacao.hora_inicio.strftime('%H:%M') }}
+
+                            –
+
+                            {{ horario.programacao.hora_fim.strftime('%H:%M') }}
+
+                        </div>
+
+
+
+                        <!-- SITUAÇÃO -->
+
+                        <div class="situacao-nova">
+
+
+                            {% if horario.reserva %}
+
+
+                                <span class="ocupado-novo">
+
+                                    🔴 Ocupado
+
+                                </span>
+
+
+                            {% else %}
+
+
+                                <span class="livre-novo">
+
+                                    🟢 Livre
+
+                                </span>
+
+
+                            {% endif %}
+
+
+                        </div>
+
+
+
+                        <!-- NOME DE QUEM RESERVOU -->
+
+                        <div class="nome-reserva">
+
+
+                            {% if horario.reserva %}
+
+                                {{ horario.reserva.nome_principal }}
+
+                            {% endif %}
+
+
+                        </div>
+
+
+
+                        <!-- AÇÃO -->
+
+                        <div class="acao-nova">
+
+
+                            {% if horario.reserva %}
+
+
+                                <!-- EXCLUIR -->
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for(
+                                        'routes.excluir_reserva',
+                                        reserva_id=horario.reserva.id
+                                    ) }}"
+
+                                    onsubmit="return confirm(
+                                        'Deseja realmente excluir esta reserva?'
+                                    );"
+                                >
+
+
+                                    <button
+                                        type="submit"
+                                        class="botao-excluir"
+                                    >
+                                        Excluir
+                                    </button>
+
+
+                                </form>
+
+
+                            {% else %}
+
+
+                                <!-- RESERVAR -->
+
+                                <a
+                                    href="{{ url_for(
+                                        'routes.participar',
+                                        programacao_id=horario.programacao.id
+                                    ) }}"
+                                >
+                                    Reservar
+                                </a>
+
+
+                            {% endif %}
+
+
+                        </div>
+
+
+                    </div>
+
+
+                    {% endfor %}
+
+
+                </div>
+
+
+            </section>
+
+
+            {% endfor %}
+
+
+        </div>
+
+
+        {% else %}
+
+
+        <!-- SEM HORÁRIOS -->
+
+        <div class="sem-horarios-novo">
+
+            <strong>
+                Nenhum horário cadastrado
+            </strong>
+
+
+            <p>
+                Não há programação para este dia.
+            </p>
+
+        </div>
+
+
+        {% endif %}
+
+
+    </main>
+
+
+</div>
+
+
+</body>
+
+</html>

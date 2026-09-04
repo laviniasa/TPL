@@ -1,0 +1,2158 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    color: #17202a;
+    padding-bottom: 80px;
+}
+
+/* TOPO */
+
+.topo {
+    height: 90px;
+    background: #0756ad;
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 20px;
+}
+
+.menu,
+.notificacao {
+    font-size: 25px;
+    width: 40px;
+}
+
+.logo {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.logo strong {
+    font-size: 30px;
+}
+
+.logo span {
+    font-size: 14px;
+}
+
+
+/* CONTEÚDO */
+
+.conteudo {
+    max-width: 600px;
+    margin: auto;
+    padding: 20px 16px;
+}
+
+
+/* SEMANA */
+
+.semana-titulo {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.semana-titulo > span {
+    color: #777;
+    font-size: 14px;
+}
+
+.periodo-semana {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-top: 8px;
+    font-size: 20px;
+}
+
+.periodo-semana strong {
+    font-size: 21px;
+}
+
+
+/* DIAS */
+
+.dias {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+
+    background: white;
+    border-radius: 12px;
+
+    overflow: hidden;
+    border: 1px solid #ddd;
+
+    margin-bottom: 25px;
+}
+
+.dias div {
+    padding: 12px 3px;
+
+    text-align: center;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 5px;
+
+    font-size: 11px;
+}
+
+.dias strong {
+    font-size: 12px;
+}
+
+.dia-selecionado {
+    background: #0756ad;
+    color: white;
+}
+
+
+/* TÍTULOS */
+
+h2 {
+    font-size: 18px;
+    margin: 18px 0 12px;
+}
+
+
+/* CARRINHO */
+
+.card-carrinho {
+    background: white;
+
+    border: 1px solid #ddd;
+    border-radius: 12px;
+
+    padding: 16px;
+    margin-bottom: 12px;
+
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.cabecalho-carrinho {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-bottom: 12px;
+}
+
+.cabecalho-carrinho strong {
+    font-size: 17px;
+}
+
+.icone-carrinho {
+    margin-right: 5px;
+}
+
+.participantes {
+    color: #16803c;
+    font-weight: bold;
+}
+
+.informacao {
+    margin: 7px 0;
+    color: #444;
+}
+
+.pessoas {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+
+    margin: 14px 0;
+}
+
+.pessoas span {
+    font-size: 14px;
+}
+
+
+/* RODAPÉ DO CARD */
+
+.rodape-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-top: 12px;
+}
+
+.vagas {
+    color: #16803c;
+    font-size: 14px;
+}
+
+.sem-vagas {
+    color: #c62828;
+    font-weight: bold;
+}
+
+button {
+    border: none;
+
+    background: #0756ad;
+    color: white;
+
+    padding: 10px 18px;
+
+    border-radius: 7px;
+
+    font-size: 14px;
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+button:disabled {
+    background: #999;
+    cursor: not-allowed;
+}
+
+
+/* EVENTO */
+
+.evento {
+    background: #fffaf0;
+
+    border: 1px solid #e8d39a;
+    border-radius: 12px;
+
+    padding: 16px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+}
+
+.evento-icone {
+    font-size: 28px;
+}
+
+.evento-info {
+    display: flex;
+    flex-direction: column;
+
+    gap: 5px;
+
+    flex: 1;
+}
+
+.evento-info strong {
+    font-size: 16px;
+}
+
+.evento-info span {
+    font-size: 12px;
+    color: #555;
+}
+
+.evento-participantes {
+    text-align: center;
+
+    font-size: 11px;
+    color: #666;
+}
+
+.evento-participantes strong {
+    display: block;
+
+    color: #18743a;
+    font-size: 18px;
+}
+
+
+/* MENU INFERIOR */
+
+.menu-inferior {
+    position: fixed;
+
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    height: 70px;
+
+    background: white;
+    border-top: 1px solid #ddd;
+
+    display: flex;
+    justify-content: center;
+
+    z-index: 10;
+}
+
+.menu-inferior div {
+    width: 25%;
+
+    display: flex;
+    flex-direction: column;
+
+    justify-content: center;
+    align-items: center;
+
+    gap: 4px;
+
+    color: #666;
+    font-size: 20px;
+}
+
+.menu-inferior span {
+    font-size: 11px;
+}
+
+.menu-inferior .ativo {
+    color: #0756ad;
+}
+
+
+/* CELULAR */
+
+@media (max-width: 500px) {
+
+    .topo {
+        height: 80px;
+    }
+
+    .conteudo {
+        padding: 15px 12px;
+    }
+
+    .periodo-semana strong {
+        font-size: 17px;
+    }
+
+    .evento {
+        align-items: flex-start;
+    }
+}
+
+.botao {
+    display: inline-block;
+
+    background: #0756ad;
+    color: white;
+
+    padding: 10px 18px;
+
+    border-radius: 7px;
+
+    font-size: 14px;
+    font-weight: bold;
+
+    text-decoration: none;
+}
+
+/* DIAS DA SEMANA */
+
+.dias a {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 12px 5px;
+    cursor: pointer;
+}
+
+.dias a small {
+    font-size: 12px;
+}
+
+.dias a strong {
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.dias a.dia-selecionado {
+    background-color: #0864c0;
+    color: white;
+    border-radius: 0;
+}
+
+/* FORMULÁRIO DE RESERVA */
+
+.campo-reserva {
+    margin-bottom: 18px;
+}
+
+.campo-reserva label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 7px;
+}
+
+.campo-reserva input,
+.campo-reserva select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+    background: white;
+}
+
+.campo-reserva input:focus,
+.campo-reserva select:focus {
+    outline: none;
+    border-color: #0864c0;
+}
+
+/* =========================================
+   CARRINHOS NA AGENDA
+   ========================================= */
+
+   .card-carrinho {
+    background: white;
+    border-radius: 14px;
+    margin-bottom: 18px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.cabecalho-carrinho {
+    padding: 16px;
+    background: #f5f7fa;
+    border-bottom: 1px solid #e2e6ea;
+}
+
+.cabecalho-carrinho h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.cabecalho-carrinho p {
+    margin: 6px 0 0;
+    color: #555;
+    font-size: 14px;
+}
+
+.lista-horarios {
+    display: flex;
+    flex-direction: column;
+}
+
+.linha-horario {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 14px;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.linha-horario:last-child {
+    border-bottom: none;
+}
+
+.hora {
+    flex: 1;
+    min-width: 110px;
+}
+
+.hora strong {
+    font-size: 15px;
+}
+
+.situacao {
+    min-width: 55px;
+}
+
+.livre {
+    color: #16803c;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.ocupado {
+    color: #c62828;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.quantidade {
+    color: #666;
+    font-size: 13px;
+    min-width: 35px;
+    text-align: center;
+}
+
+.linha-horario .botao-participar {
+    padding: 7px 12px;
+    font-size: 13px;
+    text-decoration: none;
+}
+
+
+/* CELULAR */
+
+@media (max-width: 600px) {
+
+    .linha-horario {
+        gap: 7px;
+        padding: 12px 10px;
+    }
+
+    .hora {
+        min-width: 105px;
+    }
+
+    .hora strong {
+        font-size: 14px;
+    }
+
+    .situacao {
+        min-width: 45px;
+    }
+
+    .quantidade {
+        min-width: 28px;
+    }
+
+    .linha-horario .botao-participar {
+        padding: 6px 9px;
+    }
+
+}
+
+/* =====================================================
+   TPL - NOVA AGENDA
+   ===================================================== */
+
+
+/* -----------------------------------------------------
+   TOPO
+   ----------------------------------------------------- */
+
+   .topo-novo {
+    width: 100%;
+    min-height: 86px;
+
+    background: #0864c0;
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 28px;
+
+    box-sizing: border-box;
+}
+
+.topo-esquerda {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.menu-botao {
+    background: transparent;
+    border: none;
+    color: white;
+
+    font-size: 30px;
+
+    cursor: pointer;
+
+    padding: 0;
+}
+
+.logo-tpl {
+    font-size: 38px;
+    font-weight: 700;
+}
+
+.subtitulo-tpl {
+    font-size: 17px;
+}
+
+.minhas-reservas {
+    color: white;
+    text-decoration: none;
+
+    border: 1px solid rgba(255,255,255,0.5);
+
+    border-radius: 10px;
+
+    padding: 11px 17px;
+
+    font-size: 15px;
+}
+
+
+/* -----------------------------------------------------
+   NAVEGAÇÃO DA SEMANA
+   ----------------------------------------------------- */
+
+.navegacao-semana {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 10px 26px;
+
+    box-sizing: border-box;
+
+    background: white;
+}
+
+.seta-semana {
+    width: 44px;
+    height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #d6dce3;
+    border-radius: 9px;
+
+    color: #222;
+    text-decoration: none;
+
+    font-size: 30px;
+}
+
+.semana-titulo {
+    font-size: 19px;
+    font-weight: 700;
+    color: #064fa0;
+}
+
+
+/* -----------------------------------------------------
+   DIAS
+   ----------------------------------------------------- */
+
+.dias-novo {
+    width: calc(100% - 52px);
+
+    margin: 0 auto;
+
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+
+    border: 1px solid #d9dee5;
+
+    border-radius: 12px;
+
+    overflow: hidden;
+
+    background: white;
+}
+
+.dia-novo {
+    min-height: 70px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    text-decoration: none;
+
+    color: #222;
+
+    border-right: 1px solid #e1e5e9;
+
+    gap: 5px;
+}
+
+.dia-novo:last-child {
+    border-right: none;
+}
+
+.dia-novo span {
+    font-size: 14px;
+}
+
+.dia-novo strong {
+    font-size: 17px;
+}
+
+.dia-novo.dia-ativo {
+    background: #0864c0;
+    color: white;
+}
+
+
+/* -----------------------------------------------------
+   CONTEÚDO
+   ----------------------------------------------------- */
+
+.conteudo-novo {
+    width: calc(100% - 52px);
+
+    max-width: 1400px;
+
+    margin: 26px auto 50px;
+
+    box-sizing: border-box;
+}
+
+
+/* -----------------------------------------------------
+   TÍTULO DO DIA
+   ----------------------------------------------------- */
+
+.titulo-dia-novo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 10px;
+
+    margin-bottom: 12px;
+}
+
+.titulo-dia-novo h2 {
+    margin: 0;
+
+    font-size: 26px;
+
+    color: #18212b;
+}
+
+.icone-calendario {
+    font-size: 23px;
+}
+
+
+/* -----------------------------------------------------
+   BOTÃO RESERVA
+   ----------------------------------------------------- */
+
+.area-botao-reserva {
+    display: flex;
+    justify-content: center;
+
+    margin-bottom: 18px;
+}
+
+.botao-reservar-novo {
+    display: inline-block;
+
+    background: #0864c0;
+
+    color: white;
+
+    text-decoration: none;
+
+    padding: 11px 20px;
+
+    border-radius: 9px;
+
+    font-size: 16px;
+
+    font-weight: 500;
+}
+
+.botao-reservar-novo:hover {
+    background: #0755a5;
+}
+
+
+/* -----------------------------------------------------
+   GRID DOS 3 CARRINHOS
+   ----------------------------------------------------- */
+
+.grid-carrinhos {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 20px;
+
+    align-items: start;
+}
+
+
+/* -----------------------------------------------------
+   CARD
+   ----------------------------------------------------- */
+
+.card-carrinho-novo {
+    background: white;
+
+    border: 1px solid #d8dde3;
+
+    border-radius: 14px;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 2px 7px rgba(0, 0, 0, 0.06);
+}
+
+
+/* -----------------------------------------------------
+   CABEÇALHO DO CARD
+   ----------------------------------------------------- */
+
+.cabecalho-card {
+    padding: 18px 18px 15px;
+
+    background: #fafbfc;
+
+    border-bottom: 1px solid #e0e4e8;
+
+    position: relative;
+}
+
+.titulo-carrinho {
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+}
+
+.titulo-carrinho h3 {
+    margin: 0;
+
+    font-size: 21px;
+
+    color: #18212b;
+}
+
+.icone-carrinho {
+    font-size: 25px;
+}
+
+.local-carrinho {
+    margin-top: 7px;
+
+    font-size: 14px;
+
+    color: #444;
+}
+
+.quantidade-horarios {
+    position: absolute;
+
+    top: 18px;
+    right: 15px;
+
+    background: #e9f6ed;
+
+    color: #18743a;
+
+    padding: 5px 9px;
+
+    border-radius: 12px;
+
+    font-size: 12px;
+
+    font-weight: 600;
+}
+
+
+/* -----------------------------------------------------
+   HORÁRIOS
+   ----------------------------------------------------- */
+
+.lista-horarios-novo {
+    display: flex;
+    flex-direction: column;
+}
+
+.linha-horario-novo {
+    display: grid;
+
+    grid-template-columns:
+        minmax(105px, 1fr)
+        45px
+        35px
+        65px;
+
+    align-items: center;
+
+    gap: 7px;
+
+    padding: 11px 15px;
+
+    border-bottom: 1px solid #eceff2;
+
+    min-height: 28px;
+}
+
+.linha-horario-novo:last-child {
+    border-bottom: none;
+}
+
+.hora-nova {
+    font-size: 14px;
+    font-weight: 600;
+
+    color: #161b20;
+
+    white-space: nowrap;
+}
+
+.situacao-nova {
+    font-size: 13px;
+}
+
+.livre-novo {
+    color: #16803c;
+
+    font-weight: 600;
+}
+
+.ocupado-novo {
+    color: #c62828;
+
+    font-weight: 600;
+}
+
+.quantidade-nova {
+    font-size: 13px;
+
+    color: #555;
+
+    text-align: center;
+}
+
+.acao-nova a {
+    color: #064fc4;
+
+    text-decoration: none;
+
+    font-size: 13px;
+}
+
+.acao-nova a:hover {
+    text-decoration: underline;
+}
+
+
+/* -----------------------------------------------------
+   RODAPÉ DO CARD
+   ----------------------------------------------------- */
+
+.rodape-card {
+    padding: 11px;
+
+    text-align: center;
+
+    border-top: 1px solid #e5e8eb;
+
+    color: #555;
+
+    font-size: 12px;
+}
+
+
+/* -----------------------------------------------------
+   SEM HORÁRIOS
+   ----------------------------------------------------- */
+
+.sem-horarios-novo {
+    background: white;
+
+    border: 1px solid #ddd;
+
+    border-radius: 12px;
+
+    padding: 35px;
+
+    text-align: center;
+}
+
+.sem-horarios-novo strong {
+    font-size: 18px;
+}
+
+.sem-horarios-novo p {
+    color: #666;
+}
+
+
+/* -----------------------------------------------------
+   AVISO
+   ----------------------------------------------------- */
+
+.aviso-agenda {
+    margin-top: 22px;
+
+    padding: 16px 18px;
+
+    background: #f0f6ff;
+
+    border: 1px solid #d5e5fa;
+
+    border-radius: 10px;
+
+    color: #164a82;
+
+    font-size: 14px;
+}
+
+
+/* =====================================================
+   CELULAR
+   ===================================================== */
+
+@media (max-width: 900px) {
+
+    .grid-carrinhos {
+        grid-template-columns: 1fr;
+    }
+
+    .card-carrinho-novo {
+        width: 100%;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .topo-novo {
+        min-height: 70px;
+
+        padding: 0 15px;
+
+        gap: 10px;
+    }
+
+    .topo-esquerda {
+        gap: 10px;
+    }
+
+    .menu-botao {
+        font-size: 25px;
+    }
+
+    .logo-tpl {
+        font-size: 29px;
+    }
+
+    .subtitulo-tpl {
+        display: none;
+    }
+
+    .minhas-reservas {
+        font-size: 12px;
+
+        padding: 8px 9px;
+    }
+
+
+    .navegacao-semana {
+        padding: 8px 12px;
+    }
+
+    .seta-semana {
+        width: 38px;
+        height: 38px;
+    }
+
+    .semana-titulo {
+        font-size: 15px;
+    }
+
+
+    .dias-novo {
+        width: 100%;
+
+        border-radius: 0;
+    }
+
+    .dia-novo {
+        min-height: 62px;
+    }
+
+    .dia-novo span {
+        font-size: 11px;
+    }
+
+    .dia-novo strong {
+        font-size: 15px;
+    }
+
+
+    .conteudo-novo {
+        width: calc(100% - 24px);
+
+        margin-top: 20px;
+    }
+
+
+    .titulo-dia-novo h2 {
+        font-size: 20px;
+
+        text-align: center;
+    }
+
+
+    .grid-carrinhos {
+        gap: 14px;
+    }
+
+
+    .linha-horario-novo {
+        grid-template-columns:
+            minmax(100px, 1fr)
+            40px
+            32px
+            58px;
+
+        padding: 10px 11px;
+
+        gap: 5px;
+    }
+
+    .hora-nova {
+        font-size: 13px;
+    }
+
+    .situacao-nova {
+        font-size: 12px;
+    }
+
+    .quantidade-nova {
+        font-size: 12px;
+    }
+
+    .acao-nova a {
+        font-size: 12px;
+    }
+
+}
+
+/* =====================================================
+   SETAS ALINHADAS COM A SEMANA
+   ===================================================== */
+
+   .navegacao-semana {
+    width: calc(100% - 52px);
+    margin: 0 auto;
+    padding: 8px 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background: white;
+    box-sizing: border-box;
+}
+
+.seta-semana {
+    width: 44px;
+    height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #d6dce3;
+    border-radius: 9px;
+
+    color: #222;
+    text-decoration: none;
+
+    font-size: 30px;
+
+    flex-shrink: 0;
+}
+
+.semana-titulo {
+    font-size: 19px;
+    font-weight: 700;
+    color: #064fa0;
+}
+
+
+/* Mantém a largura da semana exatamente igual */
+
+.dias-novo {
+    width: calc(100% - 52px);
+    margin: 0 auto;
+}
+
+
+/* No celular */
+
+@media (max-width: 600px) {
+
+    .navegacao-semana {
+        width: 100%;
+        padding: 7px 12px;
+    }
+
+    .seta-semana {
+        width: 38px;
+        height: 38px;
+        font-size: 26px;
+    }
+
+    .dias-novo {
+        width: 100%;
+    }
+
+}
+
+.dias-com-setas {
+    width: calc(100% - 52px);
+    margin: 0 auto;
+
+    display: flex;
+    align-items: stretch;
+
+    background: white;
+}
+
+.dias-com-setas .dias-novo {
+    width: 100%;
+    margin: 0;
+    flex: 1;
+
+    border-radius: 0;
+}
+
+.seta-dia {
+    width: 44px;
+    min-width: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: white;
+
+    border: 1px solid #d9dee5;
+
+    color: #222;
+    text-decoration: none;
+
+    font-size: 30px;
+}
+
+.seta-dia:first-child {
+    border-radius: 10px 0 0 10px;
+}
+
+.seta-dia:last-child {
+    border-radius: 0 10px 10px 0;
+}
+
+
+/* CELULAR */
+
+@media (max-width: 600px) {
+
+    .dias-com-setas {
+        width: 100%;
+    }
+
+    .seta-dia {
+        width: 34px;
+        min-width: 34px;
+        font-size: 25px;
+    }
+
+}
+
+/* =====================================================
+   PESSOAS NO HORÁRIO
+   ===================================================== */
+
+   .nomes-horario {
+    grid-column: 1 / -1;
+
+    margin-top: 3px;
+
+    padding-top: 6px;
+
+    border-top: 1px dashed #e1e5e9;
+
+    color: #555;
+
+    font-size: 12px;
+
+    line-height: 1.4;
+}
+
+
+/* Quando há pessoas */
+
+.linha-horario-novo:has(.nomes-horario) {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.nome-reserva {
+    font-size: 13px;
+    color: #555;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.linha-horario-novo {
+    display: grid;
+
+    grid-template-columns:
+        1fr
+        auto
+        minmax(70px, 1fr)
+        auto;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 10px 14px;
+
+    border-bottom: 1px solid #eceff2;
+}
+
+.linha-horario-novo:last-child {
+    border-bottom: none;
+}
+
+@media (max-width: 600px) {
+
+    .linha-horario-novo {
+        grid-template-columns:
+            1fr
+            auto
+            minmax(55px, 1fr)
+            auto;
+
+        gap: 6px;
+
+        padding: 10px;
+    }
+
+    .hora-nova {
+        font-size: 13px;
+    }
+
+    .nome-reserva {
+        font-size: 12px;
+    }
+
+    .acao-nova a {
+        font-size: 12px;
+    }
+
+}
+
+/* =====================================================
+   AGENDA - LINHAS SIMPLES
+   ===================================================== */
+
+   .grid-carrinhos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    align-items: start;
+}
+
+.card-carrinho-novo {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.lista-horarios-novo {
+    display: flex;
+    flex-direction: column;
+}
+
+.linha-horario-novo {
+    display: grid !important;
+
+    grid-template-columns:
+        105px
+        auto
+        1fr
+        auto !important;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 12px 14px;
+
+    min-height: 42px;
+
+    box-sizing: border-box;
+
+    border-bottom: 1px solid #e5e8eb;
+}
+
+.linha-horario-novo:last-child {
+    border-bottom: none;
+}
+
+.hora-nova {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.situacao-nova {
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.livre-novo {
+    color: #16803c;
+}
+
+.ocupado-novo {
+    color: #c62828;
+}
+
+.nome-reserva {
+    font-size: 13px;
+    color: #555;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.acao-nova {
+    text-align: right;
+}
+
+.acao-nova a {
+    color: #075bc5;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+
+/* =====================================================
+   CELULAR
+   ===================================================== */
+
+@media (max-width: 900px) {
+
+    .grid-carrinhos {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .linha-horario-novo {
+        grid-template-columns:
+            100px
+            auto
+            1fr
+            auto !important;
+
+        gap: 6px;
+
+        padding: 11px 10px;
+    }
+
+    .hora-nova {
+        font-size: 13px;
+    }
+
+    .situacao-nova {
+        font-size: 12px;
+    }
+
+    .nome-reserva {
+        font-size: 12px;
+    }
+
+    .acao-nova a {
+        font-size: 12px;
+    }
+
+}
+
+.botao-excluir {
+    border: none;
+    background: transparent;
+
+    color: #c62828;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    padding: 0;
+}
+
+.botao-excluir:hover {
+    text-decoration: underline;
+}
+
+/* =====================================================
+   PÁGINA DE RESERVA
+   ===================================================== */
+
+   .pagina-reserva {
+    max-width: 650px;
+    margin: 0 auto;
+}
+
+
+/* Cabeçalho */
+
+.topo-reserva {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 18px;
+}
+
+.topo-reserva h2 {
+    margin: 0;
+    font-size: 24px;
+    color: #1f2937;
+}
+
+.voltar-reserva {
+    color: #075bc5;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+
+/* Card */
+
+.card-reserva {
+    background: #ffffff;
+    border: 1px solid #dfe3e8;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+
+/* Resumo do horário */
+
+.resumo-reserva {
+    padding: 18px 20px;
+    border-bottom: 1px solid #e5e8eb;
+    background: #f8fafc;
+}
+
+.resumo-reserva h3 {
+    margin: 0 0 7px 0;
+    font-size: 20px;
+    color: #111827;
+}
+
+.resumo-local {
+    font-size: 15px;
+    color: #374151;
+    margin-bottom: 5px;
+}
+
+.resumo-horario {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+}
+
+
+/* Formulário */
+
+.form-reserva {
+    padding: 20px;
+}
+
+.campo-reserva {
+    margin-bottom: 24px;
+}
+
+.campo-reserva > label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+}
+
+
+/* Campo nome */
+
+.campo-reserva input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 13px 14px;
+    border: 1px solid #cfd5dc;
+    border-radius: 9px;
+    font-size: 16px;
+    outline: none;
+}
+
+.campo-reserva input[type="text"]:focus {
+    border-color: #075bc5;
+    box-shadow: 0 0 0 2px rgba(7, 91, 197, 0.10);
+}
+
+
+/* Texto auxiliar */
+
+.descricao-companheiros {
+    margin: -2px 0 12px 0;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+
+/* Lista de pessoas */
+
+.lista-pessoas {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e1e5e9;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+
+/* Cada pessoa */
+
+.pessoa-checkbox {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 0 14px;
+    margin: 0 !important;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    color: #1f2937;
+    box-sizing: border-box;
+}
+
+.pessoa-checkbox:last-child {
+    border-bottom: none;
+}
+
+
+/* Checkbox */
+
+.pessoa-checkbox input[type="checkbox"] {
+    width: 19px;
+    height: 19px;
+    margin: 0;
+    flex: 0 0 auto;
+    cursor: pointer;
+}
+
+
+/* Nome */
+
+.pessoa-checkbox span {
+    flex: 1;
+}
+
+
+/* Botão */
+
+.botao-confirmar-reserva {
+    width: 100%;
+    border: none;
+    border-radius: 9px;
+    padding: 14px 18px;
+    background: #075bc5;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.botao-confirmar-reserva:hover {
+    background: #064da7;
+}
+
+
+/* Celular */
+
+@media (max-width: 600px) {
+
+    .pagina-reserva {
+        width: 100%;
+    }
+
+    .topo-reserva {
+        align-items: center;
+        margin-bottom: 14px;
+    }
+
+    .topo-reserva h2 {
+        font-size: 21px;
+    }
+
+    .card-reserva {
+        border-radius: 12px;
+    }
+
+    .resumo-reserva {
+        padding: 16px;
+    }
+
+    .form-reserva {
+        padding: 16px;
+    }
+
+    .pessoa-checkbox {
+        min-height: 50px;
+        padding: 0 12px;
+    }
+
+}
+
+/* =====================================================
+   BUSCA DE PESSOAS
+   ===================================================== */
+
+   .busca-pessoa {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.icone-busca {
+    position: absolute;
+    left: 14px;
+    font-size: 15px;
+    pointer-events: none;
+}
+
+.busca-pessoa input {
+    padding-left: 42px !important;
+}
+
+
+/* =====================================================
+   RESULTADOS DO SEU NOME
+   ===================================================== */
+
+.resultado-nome {
+    display: none;
+    margin-top: 6px;
+    border: 1px solid #dfe3e8;
+    border-radius: 9px;
+    overflow: hidden;
+    background: white;
+    max-height: 230px;
+    overflow-y: auto;
+}
+
+.opcao-nome {
+    display: block;
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #edf0f2;
+    background: white;
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.opcao-nome:last-child {
+    border-bottom: none;
+}
+
+.opcao-nome:hover {
+    background: #f3f6fa;
+}
+
+
+/* =====================================================
+   NOME ESCOLHIDO
+   ===================================================== */
+
+.nome-selecionado {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 12px 14px;
+    border: 1px solid #cfe3d5;
+    border-radius: 9px;
+    background: #f1f8f3;
+    color: #176b35;
+}
+
+.nome-selecionado span {
+    font-size: 17px;
+}
+
+.nome-selecionado strong {
+    flex: 1;
+}
+
+.nome-selecionado button {
+    border: none;
+    background: transparent;
+    color: #075bc5;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+
+/* =====================================================
+   COMPANHEIROS SELECIONADOS
+   ===================================================== */
+
+.companheiros-selecionados {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 10px;
+}
+
+.companheiro-selecionado {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border-radius: 20px;
+    background: #e8f1ff;
+    color: #075bc5;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.companheiro-selecionado button {
+    border: none;
+    background: transparent;
+    color: #075bc5;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+}
+
+
+/* =====================================================
+   LISTA DE PESSOAS
+   ===================================================== */
+
+.lista-pessoas {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e1e5e9;
+    border-radius: 10px;
+    overflow: hidden;
+    max-height: 330px;
+    overflow-y: auto;
+}
+
+.pessoa-checkbox {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 0 14px;
+    margin: 0 !important;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    color: #1f2937;
+    box-sizing: border-box;
+    background: white;
+}
+
+.pessoa-checkbox:last-child {
+    border-bottom: none;
+}
+
+.pessoa-checkbox:hover {
+    background: #f8fafc;
+}
+
+.pessoa-checkbox input[type="checkbox"] {
+    width: 19px;
+    height: 19px;
+    margin: 0;
+    flex: 0 0 auto;
+    cursor: pointer;
+}
+
+.pessoa-checkbox span {
+    flex: 1;
+}
+
+.pessoa-desabilitada {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+
+/* =====================================================
+   CELULAR
+   ===================================================== */
+
+@media (max-width: 600px) {
+
+    .resultado-nome {
+        max-height: 210px;
+    }
+
+    .lista-pessoas {
+        max-height: 300px;
+    }
+
+    .pessoa-checkbox {
+        min-height: 50px;
+    }
+
+}
+
+/* =====================================================
+   CORREÇÃO - BUSCA E SELEÇÃO DE PESSOAS
+   ===================================================== */
+
+/* Resultados do seu nome */
+
+.resultado-nome .opcao-nome {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+
+    border: none;
+    border-bottom: 1px solid #e5e7eb;
+
+    background: white;
+    color: #1f2937;
+
+    padding: 13px 14px;
+
+    text-align: left;
+
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.resultado-nome .opcao-nome:last-child {
+    border-bottom: none;
+}
+
+.resultado-nome .opcao-nome:hover {
+    background: #f3f6fa;
+    color: #075bc5;
+}
+
+
+/* Lista de companheiros */
+
+.lista-pessoas .pessoa-checkbox {
+    display: flex !important;
+
+    align-items: center;
+    gap: 12px;
+
+    min-height: 48px;
+
+    padding: 0 14px;
+    margin: 0 !important;
+
+    border-bottom: 1px solid #e5e7eb;
+
+    background: white;
+
+    color: #1f2937;
+
+    cursor: pointer;
+}
+
+
+/* Quando o JavaScript esconder uma pessoa,
+   esta regra permite que ela realmente desapareça */
+
+.lista-pessoas .pessoa-checkbox[style*="display: none"] {
+    display: none !important;
+}
+
+
+/* Checkbox */
+
+.lista-pessoas .pessoa-checkbox input[type="checkbox"] {
+    width: 19px;
+    height: 19px;
+    margin: 0;
+}
+
+
+/* Nome */
+
+.lista-pessoas .pessoa-checkbox span {
+    color: #1f2937;
+    flex: 1;
+}
+
+/* =====================================================
+   ÁREA ADMINISTRATIVA
+   ===================================================== */
+
+   .conteudo-admin {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 35px 20px;
+}
+
+.cabecalho-admin {
+    margin-bottom: 28px;
+}
+
+.cabecalho-admin h1 {
+    margin: 0 0 6px 0;
+    font-size: 28px;
+    color: #172033;
+}
+
+.cabecalho-admin p {
+    margin: 0;
+    color: #687385;
+    font-size: 15px;
+}
+
+
+/* GRID */
+
+.grid-admin {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+
+/* CARD */
+
+.card-admin {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+
+    padding: 22px;
+
+    background: #ffffff;
+
+    border: 1px solid #dfe4ea;
+
+    border-radius: 14px;
+
+    text-decoration: none;
+
+    color: inherit;
+
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease,
+        border-color 0.15s ease;
+}
+
+.card-admin:hover {
+    transform: translateY(-2px);
+
+    border-color: #075bc5;
+
+    box-shadow:
+        0 5px 16px rgba(0, 0, 0, 0.08);
+}
+
+
+/* ÍCONE */
+
+.icone-admin {
+    width: 52px;
+    height: 52px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border-radius: 12px;
+
+    background: #eef5ff;
+
+    font-size: 25px;
+}
+
+
+/* TÍTULO */
+
+.card-admin h2 {
+    margin: 0 0 5px 0;
+
+    font-size: 18px;
+
+    color: #172033;
+}
+
+
+/* DESCRIÇÃO */
+
+.card-admin p {
+    margin: 0;
+
+    font-size: 14px;
+
+    line-height: 1.4;
+
+    color: #687385;
+}
+
+
+/* CELULAR */
+
+@media (max-width: 700px) {
+
+    .conteudo-admin {
+        padding: 25px 14px;
+    }
+
+    .cabecalho-admin h1 {
+        font-size: 24px;
+    }
+
+    .grid-admin {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .card-admin {
+        padding: 18px;
+    }
+
+}

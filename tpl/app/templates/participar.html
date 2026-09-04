@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Reservar horário - TPL</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+<div class="app">
+
+    <main class="conteudo-novo">
+
+        <div class="pagina-reserva">
+
+
+            <!-- CABEÇALHO -->
+
+            <div class="topo-reserva">
+
+                <h2>Reservar horário</h2>
+
+                <a
+                    class="voltar-reserva"
+                    href="{{ url_for(
+                        'routes.agenda',
+                        data=programacao.data.isoformat()
+                    ) }}"
+                >
+                    ← Voltar
+                </a>
+
+            </div>
+
+
+            <!-- CARD -->
+
+            <div class="card-reserva">
+
+
+                <!-- RESUMO DO HORÁRIO -->
+
+                <div class="resumo-reserva">
+
+                    <h3>
+                        {{ programacao.carrinho.nome }}
+                    </h3>
+
+                    <div class="resumo-local">
+                        📍 {{ programacao.local.nome }}
+                    </div>
+
+                    <div class="resumo-horario">
+                        {{ programacao.hora_inicio.strftime('%H:%M') }}
+                        –
+                        {{ programacao.hora_fim.strftime('%H:%M') }}
+                    </div>
+
+                </div>
+
+
+
+                <form
+                    method="POST"
+                    class="form-reserva"
+                >
+
+
+                    <!-- =====================================
+                         SEU NOME
+                         ===================================== -->
+
+                    <div class="campo-reserva">
+
+                        <label for="busca-nome">
+                            Seu nome
+                        </label>
+
+
+                        <div class="busca-pessoa">
+
+                            <span class="icone-busca">
+                                🔎
+                            </span>
+
+                            <input
+                                type="text"
+                                id="busca-nome"
+                                placeholder="Digite seu nome..."
+                                autocomplete="off"
+                            >
+
+                        </div>
+
+
+                        <!-- RESULTADOS -->
+
+                        <div
+                            id="resultado-nome"
+                            class="resultado-nome"
+                        >
+
+                            {% for pessoa in pessoas %}
+
+                                <button
+                                    type="button"
+                                    class="opcao-nome"
+                                    data-nome="{{ pessoa.nome }}"
+                                >
+                                    {{ pessoa.nome }}
+                                </button>
+
+                            {% endfor %}
+
+                        </div>
+
+
+                        <!-- NOME ESCOLHIDO -->
+
+                        <div
+                            id="nome-escolhido"
+                            class="nome-escolhido"
+                        >
+                        </div>
+
+
+                        <input
+                            type="hidden"
+                            name="nome_principal"
+                            id="nome-principal"
+                        >
+
+                    </div>
+
+
+
+                    <!-- =====================================
+                         COMPANHEIROS
+                         ===================================== -->
+
+                    <div class="campo-reserva">
+
+                        <label>
+                            Companheiros
+                        </label>
+
+                        <p class="descricao-companheiros">
+                            Escolha até 2 irmãos.
+                        </p>
+
+
+                        <!-- SELECIONADOS -->
+
+                        <div
+                            id="companheiros-selecionados"
+                            class="companheiros-selecionados"
+                        >
+                        </div>
+
+
+                        <!-- BUSCA -->
+
+                        <div class="busca-pessoa">
+
+                            <span class="icone-busca">
+                                🔎
+                            </span>
+
+                            <input
+                                type="text"
+                                id="busca-companheiro"
+                                placeholder="Procurar irmão..."
+                                autocomplete="off"
+                            >
+
+                        </div>
+
+
+                        <!-- LISTA -->
+
+                        <div
+                            id="lista-pessoas"
+                            class="lista-pessoas"
+                        >
+
+                            {% for pessoa in pessoas %}
+
+                                <label
+                                    class="pessoa-checkbox"
+                                    data-nome="{{ pessoa.nome }}"
+                                >
+
+                                    <input
+                                        type="checkbox"
+                                        name="pessoas"
+                                        value="{{ pessoa.nome }}"
+                                    >
+
+                                    <span>
+                                        {{ pessoa.nome }}
+                                    </span>
+
+                                </label>
+
+                            {% endfor %}
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- BOTÃO -->
+
+                    <button
+                        type="submit"
+                        class="botao-confirmar-reserva"
+                    >
+                        Confirmar reserva
+                    </button>
+
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+
+        /* =========================================
+           ELEMENTOS
+           ========================================= */
+
+        const buscaNome =
+            document.getElementById("busca-nome");
+
+        const resultadoNome =
+            document.getElementById("resultado-nome");
+
+        const nomeEscolhido =
+            document.getElementById("nome-escolhido");
+
+        const nomePrincipal =
+            document.getElementById("nome-principal");
+
+        const buscaCompanheiro =
+            document.getElementById(
+                "busca-companheiro"
+            );
+
+        const listaPessoas =
+            document.getElementById(
+                "lista-pessoas"
+            );
+
+        const areaSelecionados =
+            document.getElementById(
+                "companheiros-selecionados"
+            );
+
+        const checkboxes =
+            document.querySelectorAll(
+                'input[name="pessoas"]'
+            );
+
+
+
+        /* =========================================
+           SEU NOME
+           ========================================= */
+
+        function filtrarNomes() {
+
+            const texto =
+                buscaNome.value
+                    .toLowerCase()
+                    .trim();
+
+
+            const opcoes =
+                resultadoNome.querySelectorAll(
+                    ".opcao-nome"
+                );
+
+
+            opcoes.forEach(
+                function (opcao) {
+
+                    const nome =
+                        opcao.dataset.nome
+                            .toLowerCase();
+
+
+                    if (
+                        texto === "" ||
+                        nome.includes(texto)
+                    ) {
+
+                        opcao.style.display =
+                            "block";
+
+                    } else {
+
+                        opcao.style.display =
+                            "none";
+
+                    }
+
+                }
+            );
+
+
+            resultadoNome.style.display =
+                "block";
+        }
+
+
+        buscaNome.addEventListener(
+            "input",
+            filtrarNomes
+        );
+
+
+
+        /* =========================================
+           ESCOLHER SEU NOME
+           ========================================= */
+
+        resultadoNome
+            .querySelectorAll(".opcao-nome")
+            .forEach(
+                function (opcao) {
+
+                    opcao.addEventListener(
+                        "click",
+                        function () {
+
+                            const nome =
+                                opcao.dataset.nome;
+
+
+                            nomePrincipal.value =
+                                nome;
+
+
+                            buscaNome.value =
+                                "";
+
+
+                            resultadoNome.style.display =
+                                "none";
+
+
+                            nomeEscolhido.innerHTML = `
+                                <div class="nome-selecionado">
+                                    <span>✓</span>
+
+                                    <strong>
+                                        ${nome}
+                                    </strong>
+
+                                    <button
+                                        type="button"
+                                        id="trocar-nome"
+                                    >
+                                        Trocar
+                                    </button>
+                                </div>
+                            `;
+
+
+                            atualizarListaCompanheiros();
+
+                        }
+                    );
+
+                }
+            );
+
+
+
+        /* =========================================
+           TROCAR SEU NOME
+           ========================================= */
+
+        nomeEscolhido.addEventListener(
+            "click",
+            function (evento) {
+
+                if (
+                    evento.target.id ===
+                    "trocar-nome"
+                ) {
+
+                    nomePrincipal.value =
+                        "";
+
+                    nomeEscolhido.innerHTML =
+                        "";
+
+                    buscaNome.value =
+                        "";
+
+                    buscaNome.focus();
+
+
+                    resultadoNome.style.display =
+                        "block";
+
+
+                    filtrarNomes();
+
+
+                    atualizarListaCompanheiros();
+
+                }
+
+            }
+        );
+
+
+
+        /* =========================================
+           FILTRAR COMPANHEIROS
+           ========================================= */
+
+        function atualizarListaCompanheiros() {
+
+            const nomePrincipalAtual =
+                nomePrincipal.value
+                    .toLowerCase()
+                    .trim();
+
+
+            const busca =
+                buscaCompanheiro.value
+                    .toLowerCase()
+                    .trim();
+
+
+            let quantidadeSelecionada = 0;
+
+
+            checkboxes.forEach(
+                function (checkbox) {
+
+                    if (checkbox.checked) {
+
+                        quantidadeSelecionada++;
+
+                    }
+
+                }
+            );
+
+
+            checkboxes.forEach(
+                function (checkbox) {
+
+                    const linha =
+                        checkbox.closest(
+                            ".pessoa-checkbox"
+                        );
+
+
+                    const nome =
+                        checkbox.value
+                            .toLowerCase()
+                            .trim();
+
+
+                    /* Não mostrar o próprio nome */
+
+                    if (
+                        nome ===
+                        nomePrincipalAtual
+                    ) {
+
+                        checkbox.checked =
+                            false;
+
+                        linha.style.display =
+                            "none";
+
+                        return;
+
+                    }
+
+
+                    /* Já selecionado */
+
+                    if (checkbox.checked) {
+
+                        linha.style.display =
+                            "none";
+
+                        return;
+
+                    }
+
+
+                    /* Limite de 2 */
+
+                    if (
+                        quantidadeSelecionada >= 2
+                    ) {
+
+                        linha.style.display =
+                            "none";
+
+                        return;
+
+                    }
+
+
+                    /* Filtro */
+
+                    if (
+                        busca === "" ||
+                        nome.includes(busca)
+                    ) {
+
+                        linha.style.display =
+                            "flex";
+
+                    } else {
+
+                        linha.style.display =
+                            "none";
+
+                    }
+
+                }
+            );
+
+
+            atualizarSelecionados();
+
+        }
+
+
+
+        /* =========================================
+           SELECIONADOS
+           ========================================= */
+
+        function atualizarSelecionados() {
+
+            areaSelecionados.innerHTML =
+                "";
+
+
+            checkboxes.forEach(
+                function (checkbox) {
+
+                    if (!checkbox.checked) {
+                        return;
+                    }
+
+
+                    const nome =
+                        checkbox.value;
+
+
+                    const item =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    item.className =
+                        "companheiro-selecionado";
+
+
+                    item.innerHTML = `
+                        <span>
+                            ${nome}
+                        </span>
+
+                        <button
+                            type="button"
+                            aria-label="Remover ${nome}"
+                        >
+                            ×
+                        </button>
+                    `;
+
+
+                    item.querySelector(
+                        "button"
+                    ).addEventListener(
+                        "click",
+                        function () {
+
+                            checkbox.checked =
+                                false;
+
+                            atualizarListaCompanheiros();
+
+                        }
+                    );
+
+
+                    areaSelecionados.appendChild(
+                        item
+                    );
+
+                }
+            );
+
+        }
+
+
+
+        /* =========================================
+           CHECKBOX
+           ========================================= */
+
+        checkboxes.forEach(
+            function (checkbox) {
+
+                checkbox.addEventListener(
+                    "change",
+                    function () {
+
+                        let quantidade =
+                            document.querySelectorAll(
+                                'input[name="pessoas"]:checked'
+                            ).length;
+
+
+                        if (
+                            quantidade > 2
+                        ) {
+
+                            checkbox.checked =
+                                false;
+
+                            return;
+
+                        }
+
+
+                        atualizarListaCompanheiros();
+
+                    }
+                );
+
+            }
+        );
+
+
+
+        /* =========================================
+           BUSCA COMPANHEIROS
+           ========================================= */
+
+        buscaCompanheiro.addEventListener(
+            "input",
+            atualizarListaCompanheiros
+        );
+
+
+
+        /* =========================================
+           INICIALIZAÇÃO
+           ========================================= */
+
+        resultadoNome.style.display =
+            "none";
+
+
+        atualizarListaCompanheiros();
+
+    }
+
+);
+
+</script>
+
+
+</body>
+
+</html>
