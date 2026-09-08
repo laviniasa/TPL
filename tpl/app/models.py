@@ -161,7 +161,40 @@ class Programacao(db.Model):
         "Local"
     )
 
+class ProgramacaoSemanal(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
 
+    # 0 = segunda
+    # 1 = terça
+    # 2 = quarta
+    # 3 = quinta
+    # 4 = sexta
+    # 5 = sábado
+    # 6 = domingo
+    dia_semana = db.Column(db.Integer, nullable=False)
+
+    hora_inicio = db.Column(db.Time, nullable=False)
+    hora_fim = db.Column(db.Time, nullable=False)
+
+    carrinho_id = db.Column(
+        db.Integer,
+        db.ForeignKey("carrinho.id"),
+        nullable=False
+    )
+
+    local_id = db.Column(
+        db.Integer,
+        db.ForeignKey("local.id"),
+        nullable=False
+    )
+
+    quantidade_maxima = db.Column(
+        db.Integer,
+        default=3
+    )
+
+    carrinho = db.relationship("Carrinho")
+    local = db.relationship("Local")
 # =========================================================
 # INSCRIÇÃO — SISTEMA ANTIGO
 # =========================================================
@@ -320,4 +353,25 @@ class ReservaParticipante(db.Model):
     reserva = db.relationship(
         "Reserva",
         backref="participantes"
+    )
+
+class UsoCarrinho(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    reserva_id = db.Column(
+        db.Integer,
+        db.ForeignKey("reserva.id"),
+        nullable=False
+    )
+    checkin_em = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=db.func.now()
+    )
+    checkout_em = db.Column(
+        db.DateTime,
+        nullable=True
+    )
+    reserva = db.relationship(
+        "Reserva",
+        backref="uso_carrinho"
     )
