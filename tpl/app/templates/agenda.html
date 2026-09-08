@@ -2,7 +2,6 @@
 <html lang="pt-BR">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta name="viewport"
@@ -12,14 +11,11 @@
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='css/style.css') }}">
-
 </head>
-
 
 <body>
 
 <div class="app">
-
 
     <!-- =====================================================
          TOPO
@@ -36,11 +32,9 @@
                 ☰
             </button>
 
-
             <div class="logo-tpl">
                 TPL
             </div>
-
 
             <div class="subtitulo-tpl">
                 Testemunho Público Local
@@ -48,15 +42,14 @@
 
         </div>
 
-
         <a
-        class="minhas-reservas"
-        href="{{ url_for('routes.admin') }}"
-    >
-        ⚙ Admin
-    </a>
-    </header>
+            class="minhas-reservas"
+            href="{{ url_for('routes.admin') }}"
+        >
+            ⚙ Admin
+        </a>
 
+    </header>
 
 
     <!-- =====================================================
@@ -64,9 +57,6 @@
          ===================================================== -->
 
     <section class="dias-com-setas">
-
-
-        <!-- SEMANA ANTERIOR -->
 
         <a
             class="seta-dia"
@@ -78,10 +68,6 @@
             ‹
         </a>
 
-
-
-        <!-- DIAS -->
-
         <div class="dias-novo">
 
             {% for dia in dias_semana %}
@@ -91,7 +77,6 @@
                         'routes.agenda',
                         data=dia.data.isoformat()
                     ) }}"
-
                     class="
                         dia-novo
                         {% if dia.data == data_selecionada %}
@@ -104,7 +89,6 @@
                         {{ dia.nome }}
                     </span>
 
-
                     <strong>
                         {{ dia.data.day }}
                     </strong>
@@ -114,10 +98,6 @@
             {% endfor %}
 
         </div>
-
-
-
-        <!-- PRÓXIMA SEMANA -->
 
         <a
             class="seta-dia"
@@ -132,65 +112,32 @@
     </section>
 
 
-
     <!-- =====================================================
          CONTEÚDO
          ===================================================== -->
 
     <main class="conteudo-novo">
 
-
-        <!-- TÍTULO DO DIA -->
-
         <div class="titulo-dia-novo">
 
             <h2>
 
                 {% set nomes_completos = {
-
                     0: "Segunda-feira",
-
                     1: "Terça-feira",
-
                     2: "Quarta-feira",
-
                     3: "Quinta-feira",
-
                     4: "Sexta-feira",
-
                     5: "Sábado",
-
                     6: "Domingo"
-
                 } %}
 
-
                 {{ nomes_completos[data_selecionada.weekday()] }},
-
                 {{ data_selecionada.strftime('%d/%m/%Y') }}
 
             </h2>
 
         </div>
-
-
-
-        <!-- BOTÃO NOVA RESERVA -->
-
-        <div class="area-botao-reserva">
-
-            <a
-                class="botao-reservar-novo"
-                href="{{ url_for(
-                    'routes.nova_reserva',
-                    data=data_selecionada.isoformat()
-                ) }}"
-            >
-                + Reservar um horário
-            </a>
-
-        </div>
-
 
 
         <!-- =================================================
@@ -199,43 +146,205 @@
 
         {% if carrinhos %}
 
-
         <div class="grid-carrinhos">
 
-
             {% for item in carrinhos %}
-
 
             <section class="card-carrinho-novo">
 
 
-                <!-- CABEÇALHO -->
+                <!-- =================================================
+                     CABEÇALHO DO CARRINHO
+                     ================================================= -->
 
                 <div class="cabecalho-card">
 
+                    <!-- =================================================
+                         DESCOBRIR RESERVA ATUAL
+                         ================================================= -->
 
-                    <div class="titulo-carrinho">
+                    {% set reserva_atual = namespace(reserva=None) %}
 
-                        <span class="icone-carrinho">
-                            🚚
-                        </span>
+                    {% for horario_cabecalho in item.horarios %}
+
+                        {% if horario_cabecalho.reserva
+                              and reserva_atual.reserva is none %}
+
+                            {% set reserva_atual.reserva =
+                                horario_cabecalho.reserva %}
+
+                        {% endif %}
+
+                    {% endfor %}
 
 
-                        <h3>
-                            {{ item.carrinho.nome }}
-                        </h3>
+                    <!-- =================================================
+                         DESCOBRIR SE ESTÁ EM USO
+                         ================================================= -->
 
-                    </div>
+                    {% set uso_atual = namespace(uso=None) %}
+
+                    {% for horario_cabecalho in item.horarios %}
+
+                        {% if horario_cabecalho.reserva %}
+
+                            {% for uso in horario_cabecalho.reserva.uso_carrinho %}
+
+                                {% if uso.checkout_em is none %}
+
+                                    {% set uso_atual.uso = uso %}
+
+                                {% endif %}
+
+                            {% endfor %}
+
+                        {% endif %}
+
+                    {% endfor %}
 
 
-                    <div class="local-carrinho">
+                    <!-- =================================================
+     STATUS DO CARRINHO
+     ================================================= -->
 
-                        📍 {{ item.local.nome }}
+<div class="linha-topo-carrinho">
 
-                    </div>
+    <!-- NOME DO CARRINHO -->
 
-                </div>
+    <div class="titulo-carrinho">
 
+        <span class="icone-carrinho">
+            🚚
+        </span>
+
+        <h3>
+            {{ item.carrinho.nome }}
+        </h3>
+
+    </div>
+
+
+    <!-- =================================================
+         DESCOBRIR RESERVA ATUAL
+         ================================================= -->
+
+    {% set reserva_atual = namespace(reserva=None) %}
+
+    {% for horario_cabecalho in item.horarios %}
+
+        {% if horario_cabecalho.reserva
+              and horario_cabecalho.reserva.ativo
+              and reserva_atual.reserva is none %}
+
+            {% set reserva_atual.reserva =
+                horario_cabecalho.reserva %}
+
+        {% endif %}
+
+    {% endfor %}
+
+
+    <!-- =================================================
+         DESCOBRIR SE ESTÁ EM USO
+         ================================================= -->
+
+    {% set uso_atual = namespace(uso=None) %}
+
+    {% for horario_cabecalho in item.horarios %}
+
+        {% if horario_cabecalho.reserva %}
+
+            {% for uso in horario_cabecalho.reserva.uso_carrinho %}
+
+                {% if uso.checkout_em is none %}
+
+                    {% set uso_atual.uso = uso %}
+
+                {% endif %}
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endfor %}
+
+
+    <!-- =================================================
+         STATUS + BOTÃO
+         ================================================= -->
+
+    <div class="acoes-carrinho">
+
+        {% if uso_atual.uso %}
+
+            <span class="status-carrinho status-uso">
+                🔵 EM USO
+            </span>
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'routes.checkout',
+                    reserva_id=uso_atual.uso.reserva_id
+                ) }}"
+            >
+
+                <button
+                    type="submit"
+                    class="botao-checkout"
+                >
+                    CHECK-OUT
+                </button>
+
+            </form>
+
+
+        {% elif reserva_atual.reserva %}
+
+            <span class="status-carrinho status-reservado">
+                🟡 RESERVADO
+            </span>
+
+            <form
+                method="POST"
+                action="{{ url_for(
+                    'routes.checkin',
+                    reserva_id=reserva_atual.reserva.id
+                ) }}"
+            >
+
+                <button
+                    type="submit"
+                    class="botao-checkin"
+                >
+                    CHECK-IN
+                </button>
+
+            </form>
+
+
+        {% else %}
+
+            <span class="status-carrinho status-livre">
+                🟢 LIVRE
+            </span>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<!-- =================================================
+     LOCAL DO CARRINHO
+     ================================================= -->
+
+<div class="local-carrinho">
+
+    📍 {{ item.local.nome }}
+
+</div>
 
 
                 <!-- =================================================
@@ -244,14 +353,14 @@
 
                 <div class="lista-horarios-novo">
 
-
                     {% for horario in item.horarios %}
-
 
                     <div class="linha-horario-novo">
 
 
-                        <!-- HORÁRIO -->
+                        <!-- =================================================
+                             HORÁRIO
+                             ================================================= -->
 
                         <div class="hora-nova">
 
@@ -264,64 +373,70 @@
                         </div>
 
 
-
-                        <!-- SITUAÇÃO -->
+                        <!-- =================================================
+                             SITUAÇÃO
+                             ================================================= -->
 
                         <div class="situacao-nova">
 
+                            {% if horario.total >= horario.programacao.quantidade_maxima %}
 
-                            {% if horario.reserva %}
-
-
-                                <span class="ocupado-novo">
-
-                                    🔴 Ocupado
-
+                                <span class="ocupado-novo lotado">
+                                    🔴 Lotado
                                 </span>
 
+                            {% elif horario.total > 0 %}
+
+                                <span class="ocupado-novo reservado">
+                                    🟡 Reservado
+                                </span>
 
                             {% else %}
 
-
                                 <span class="livre-novo">
-
                                     🟢 Livre
-
                                 </span>
 
-
                             {% endif %}
-
 
                         </div>
 
 
-
-                        <!-- NOME DE QUEM RESERVOU -->
+                        <!-- =================================================
+                             NOMES
+                             ================================================= -->
 
                         <div class="nome-reserva">
 
+                            {% if horario.nomes %}
 
-                            {% if horario.reserva %}
+                                {% for nome in horario.nomes %}
 
-                                {{ horario.reserva.nome_principal }}
+                                    <div>
+                                        {{ nome }}
+                                    </div>
+
+                                {% endfor %}
 
                             {% endif %}
-
 
                         </div>
 
 
-
-                        <!-- AÇÃO -->
+                        <!-- =================================================
+                             AÇÃO
+                             ================================================= -->
 
                         <div class="acao-nova">
 
-
                             {% if horario.reserva %}
 
-
-                                <!-- EXCLUIR -->
+                                <!--
+                                Aqui NÃO mostramos novamente
+                                "Reservado".
+                                O status já aparece na coluna
+                                de situação.
+                                -->
 
                                 <form
                                     method="POST"
@@ -329,12 +444,10 @@
                                         'routes.excluir_reserva',
                                         reserva_id=horario.reserva.id
                                     ) }}"
-
                                     onsubmit="return confirm(
                                         'Deseja realmente excluir esta reserva?'
                                     );"
                                 >
-
 
                                     <button
                                         type="submit"
@@ -343,16 +456,12 @@
                                         Excluir
                                     </button>
 
-
                                 </form>
-
 
                             {% else %}
 
-
-                                <!-- RESERVAR -->
-
                                 <a
+                                    class="botao-reservar-horario"
                                     href="{{ url_for(
                                         'routes.participar',
                                         programacao_id=horario.programacao.id
@@ -361,35 +470,28 @@
                                     Reservar
                                 </a>
 
-
                             {% endif %}
-
 
                         </div>
 
-
                     </div>
-
 
                     {% endfor %}
 
-
                 </div>
-
 
             </section>
 
-
             {% endfor %}
-
 
         </div>
 
 
         {% else %}
 
-
-        <!-- SEM HORÁRIOS -->
+        <!-- =================================================
+             SEM HORÁRIOS
+             ================================================= -->
 
         <div class="sem-horarios-novo">
 
@@ -397,22 +499,17 @@
                 Nenhum horário cadastrado
             </strong>
 
-
             <p>
                 Não há programação para este dia.
             </p>
 
         </div>
 
-
         {% endif %}
-
 
     </main>
 
-
 </div>
-
 
 </body>
 
