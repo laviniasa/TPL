@@ -2156,3 +2156,530 @@ button:disabled {
     }
 
 }
+
+/* ================================
+   CARRINHOS - VISUAL
+================================ */
+
+.cabecalho-carrinho {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 22px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.cabecalho-carrinho h2 {
+    margin: 0;
+    font-size: 22px;
+    color: #111827;
+}
+
+.local-carrinho {
+    margin-top: 8px;
+    font-size: 15px;
+    color: #4b5563;
+}
+
+.acoes-carrinho {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+/* Status */
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.status-reservado {
+    background: #fff4cc;
+    color: #a16207;
+}
+
+.status-livre {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.status-uso {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+/* Botão check-in */
+
+.botao-checkin {
+    border: none;
+    background: #0b63c7;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.botao-checkin:hover {
+    background: #084f9e;
+}
+
+/* Botão check-out */
+
+.botao-checkout {
+    border: none;
+    background: #dc2626;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.botao-checkout:hover {
+    background: #b91c1c;
+}
+
+/* ================================
+   LINHA DOS HORÁRIOS
+================================ */
+
+.horario-linha {
+    display: grid;
+    grid-template-columns: 130px 120px 1fr auto;
+    align-items: center;
+    gap: 15px;
+    padding: 14px 18px;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.horario {
+    font-weight: 700;
+    color: #111827;
+}
+
+.situacao {
+    font-weight: 600;
+}
+
+.situacao.reservado {
+    color: #b45309;
+}
+
+.situacao.livre {
+    color: #15803d;
+}
+
+.participantes {
+    color: #4b5563;
+    font-size: 14px;
+}
+
+/* Botão reservar */
+
+.botao-reservar {
+    background: #087ff5;
+    color: white;
+    text-decoration: none;
+    padding: 9px 16px;
+    border-radius: 7px;
+    font-weight: 600;
+}
+
+.botao-reservar:hover {
+    background: #066dcc;
+}
+
+/* Botão excluir */
+
+.botao-excluir {
+    border: none;
+    background: transparent;
+    color: #dc2626;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.botao-excluir:hover {
+    text-decoration: underline;
+}
+
+/* ================================
+   CELULAR
+================================ */
+
+@media (max-width: 700px) {
+
+    .cabecalho-carrinho {
+        align-items: flex-start;
+    }
+
+    .acoes-carrinho {
+        align-items: flex-end;
+    }
+
+    .horario-linha {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .botao-reservar {
+        width: 100%;
+        text-align: center;
+    }
+
+}
+
+/* =========================================================
+   TPL - VISUAL MINIMALISTA DOS CARRINHOS
+   ========================================================= */
+
+.grid-carrinhos {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    align-items: start;
+}
+
+
+/* CARD */
+
+.card-carrinho-novo {
+    background: #fff;
+    border: 1px solid #e2e6ea;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+
+/* CABEÇALHO */
+
+.cabecalho-card {
+    padding: 14px 16px;
+    border-bottom: 1px solid #e8ebee;
+}
+
+
+/* LINHA CARRINHO + STATUS + CHECK-IN */
+
+.linha-topo-carrinho {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+
+/* NOME */
+
+.titulo-carrinho {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.titulo-carrinho h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.icone-carrinho {
+    font-size: 22px;
+}
+
+
+/* LOCAL */
+
+.local-carrinho {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+
+/* STATUS + BOTÃO */
+
+.acoes-carrinho {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+
+/* STATUS */
+
+.status-carrinho {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 8px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-reservado {
+    background: #fff5d6;
+    color: #a16207;
+}
+
+.status-uso {
+    background: #e0edff;
+    color: #1769c2;
+}
+
+.status-livre {
+    background: #e3f8eb;
+    color: #16834b;
+}
+
+
+/* CHECK-IN */
+
+.botao-checkin {
+    border: none;
+    background: #087ff5;
+    color: white;
+    padding: 7px 11px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.botao-checkin:hover {
+    background: #066dcc;
+}
+
+
+/* CHECK-OUT */
+
+.botao-checkout {
+    border: none;
+    background: #dc2626;
+    color: white;
+    padding: 7px 11px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.botao-checkout:hover {
+    background: #b91c1c;
+}
+
+
+/* =========================================================
+   PROGRAMAÇÃO
+   ========================================================= */
+
+.titulo-programacao {
+    padding: 9px 14px;
+    background: #fafbfc;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+
+/* LINHAS */
+
+.linha-horario-novo {
+    display: grid;
+    grid-template-columns: 100px 95px 1fr auto;
+    align-items: center;
+    gap: 8px;
+
+    min-height: 48px;
+
+    padding: 7px 14px;
+
+    border-bottom: 1px solid #f0f1f3;
+}
+
+.linha-horario-novo:last-child {
+    border-bottom: none;
+}
+
+
+/* HORÁRIO */
+
+.hora-nova {
+    font-size: 12px;
+    font-weight: 700;
+    color: #111827;
+    white-space: nowrap;
+}
+
+
+/* SITUAÇÃO */
+
+.situacao-nova {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.livre-novo {
+    color: #16834b;
+    font-weight: 600;
+}
+
+.reservado-novo {
+    color: #b77905;
+    font-weight: 600;
+}
+
+.lotado-novo {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+
+/* NOMES */
+
+.nome-reserva {
+    font-size: 11px;
+    color: #6b7280;
+    line-height: 1.25;
+}
+
+
+/* =========================================================
+   BOTÃO RESERVAR
+   ========================================================= */
+
+.botao-reservar-horario {
+    color: #087ff5;
+    background: transparent;
+    text-decoration: none;
+
+    padding: 5px 7px;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    border-radius: 5px;
+}
+
+.botao-reservar-horario:hover {
+    background: #eef6ff;
+}
+
+
+/* =========================================================
+   EXCLUIR
+   ========================================================= */
+
+.botao-excluir {
+    border: none;
+    background: transparent;
+
+    color: #dc2626;
+
+    padding: 5px 7px;
+
+    font-size: 11px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.botao-excluir:hover {
+    text-decoration: underline;
+}
+
+
+/* =========================================================
+   BOTÃO RESERVAR UM HORÁRIO
+   ========================================================= */
+
+.area-botao-reserva {
+    margin: 12px 0;
+    text-align: center;
+}
+
+.botao-reservar-novo {
+    display: inline-block;
+
+    background: #087ff5;
+    color: white;
+
+    text-decoration: none;
+
+    padding: 9px 14px;
+
+    border-radius: 8px;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.botao-reservar-novo:hover {
+    background: #066dcc;
+}
+
+
+/* =========================================================
+   CELULAR
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    .grid-carrinhos {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+}
+
+
+@media (max-width: 600px) {
+
+    .cabecalho-card {
+        padding: 12px;
+    }
+
+    .linha-topo-carrinho {
+        gap: 5px;
+    }
+
+    .titulo-carrinho h3 {
+        font-size: 17px;
+    }
+
+    .icone-carrinho {
+        font-size: 20px;
+    }
+
+    .status-carrinho {
+        font-size: 10px;
+        padding: 4px 6px;
+    }
+
+    .botao-checkin,
+    .botao-checkout {
+        padding: 6px 8px;
+        font-size: 10px;
+    }
+
+    .linha-horario-novo {
+        grid-template-columns: 90px 80px 1fr auto;
+        padding: 7px 10px;
+        gap: 5px;
+    }
+
+}
