@@ -1,4 +1,5 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from flask import redirect, url_for
 
 from flask import (
     Blueprint,
@@ -11,13 +12,14 @@ from flask import (
 from app.models import (
     db,
     Programacao,
+    ProgramacaoSemanal,
     Reserva,
     ReservaParticipante,
     Carrinho,
     Local,
-    Pessoa
+    Pessoa,
+    UsoCarrinho
 )
-
 
 routes = Blueprint("routes", __name__)
 
@@ -35,7 +37,54 @@ def pessoas_da_reserva(reserva):
 
     return nomes
 
+def garantir_programacao_do_dia(data):
+    """
+    Garante que a programação de uma determinada data
+    exista na tabela Programacao.
 
+    A programação é criada a partir da regra semanal.
+    """
+
+    dia_semana = data.weekday()
+
+    programacoes_semanais = (
+        ProgramacaoSemanal.query
+        .filter_by(dia_semana=dia_semana)
+        .order_by(
+            ProgramacaoSemanal.carrinho_id,
+            ProgramacaoSemanal.hora_inicio
+        )
+        .all()
+    )
+
+    criadas = 0
+
+    for semanal in programacoes_semanais:
+
+        existe = Programacao.query.filter_by(
+            data=data,
+            hora_inicio=semanal.hora_inicio,
+            hora_fim=semanal.hora_fim,
+            carrinho_id=semanal.carrinho_id
+        ).first()
+
+        if existe:
+            continue
+
+        programacao = Programacao(
+            data=data,
+            hora_inicio=semanal.hora_inicio,
+            hora_fim=semanal.hora_fim,
+            carrinho_id=semanal.carrinho_id,
+            local_id=semanal.local_id,
+            quantidade_maxima=semanal.quantidade_maxima
+        )
+
+        db.session.add(programacao)
+        criadas += 1
+
+    if criadas:
+        db.session.commit()
 # =========================================================
 # AGENDA
 # =========================================================
@@ -52,7 +101,8 @@ def agenda():
     else:
         data_selecionada = date.today()
 
-
+    # Garante que os horários desta data existam
+    garantir_programacao_do_dia(data_selecionada)
     # Segunda-feira da semana
 
     segunda = data_selecionada - timedelta(
@@ -679,4 +729,130 @@ def admin():
 
     return render_template(
         "admin.html"
+    )
+
+# =========================================================
+# CHECK-IN DO CARRINHO
+# =========================================================
+
+@routes.route("/checkin/<int:reserva_id>", methods=["POST"])
+def checkin(reserva_id):
+
+    reserva = Reserva.query.get_or_404(reserva_id)
+
+    # A reserva precisa estar ativa
+    if not reserva.ativo:
+        return "Esta reserva não está ativa.", 400
+
+    agora = datetime.now()
+
+    inicio = datetime.combine(
+        reserva.data_inicio,
+        reserva.hora_inicio
+    )
+
+    # Não permite pegar antes do horário
+    if agora < inicio:
+        return (
+            "O CHECK-IN ainda não está disponível. "
+            f"Seu horário começa às "
+            f"{reserva.hora_inicio.strftime('%H:%M')}."
+        ), 400
+
+    # Verifica se esta reserva já está em uso
+    uso_existente = UsoCarrinho.query.filter_by(
+        reserva_id=reserva.id,
+        checkout_em=None
+    ).first()
+
+    if uso_existente:
+        return (
+            "Esta reserva já está com o carrinho em uso."
+        ), 400
+
+    # =====================================================
+    # VERIFICA SE O CARRINHO ESTÁ SENDO USADO
+    # =====================================================
+
+    uso_outro = (
+        UsoCarrinho.query
+        .join(Reserva)
+        .filter(
+            Reserva.carrinho_id == reserva.carrinho_id,
+            Reserva.ativo == True,
+            UsoCarrinho.checkout_em == None,
+            UsoCarrinho.reserva_id != reserva.id
+        )
+        .first()
+    )
+
+    if uso_outro:
+        return (
+            "Este carrinho está em uso no momento. "
+            "Faça o CHECK-OUT quando devolvê-lo."
+        ), 400
+
+    # =====================================================
+    # REGISTRA O CHECK-IN
+    # =====================================================
+
+    uso = UsoCarrinho(
+        reserva_id=reserva.id,
+        checkin_em=agora
+    )
+
+    db.session.add(uso)
+    db.session.commit()
+
+    return redirect(
+        url_for(
+            "routes.agenda",
+            data=reserva.data_inicio.isoformat()
+        )
+    )
+
+
+# =========================================================
+# CHECK-OUT DO CARRINHO
+# =========================================================
+
+@routes.route("/checkout/<int:reserva_id>", methods=["POST"])
+def checkout(reserva_id):
+
+    reserva = Reserva.query.get_or_404(reserva_id)
+
+    # Procura o CHECK-IN ativo
+    uso = (
+        UsoCarrinho.query
+        .filter_by(
+            reserva_id=reserva.id,
+            checkout_em=None
+        )
+        .first()
+    )
+
+    if not uso:
+        return (
+            "Não existe um CHECK-IN ativo para esta reserva."
+        ), 400
+
+    # Registra a devolução
+    uso.checkout_em = datetime.now()
+
+    # =====================================================
+    # LIBERA A RESERVA DO DIA
+    #
+    # Não apagamos do banco.
+    # Apenas tiramos da agenda.
+    # =====================================================
+
+    reserva.ativo = False
+
+    db.session.commit()
+
+    return redirect(
+        url_for(
+            "routes.agenda",
+            data=reserva.data_inicio.isoformat()
+        )
     )
