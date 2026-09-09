@@ -1,7 +1,7 @@
 from datetime import date, time, timedelta
 
 from app import create_app
-from app.models import db, Carrinho, Local, Programacao
+from app.models import db, Carrinho, Local, Programacao, ProgramacaoSemanal
 
 
 app = create_app()
@@ -287,31 +287,32 @@ dias = {
 
 with app.app_context():
 
-    # Segunda-feira da semana de teste
-    segunda = date(2026, 8, 31)
-
     criados = 0
+
+    # =========================================================
+    # CADASTRAR PROGRAMAÇÃO SEMANAL
+    # =========================================================
 
     for nome_dia, dados_carrinhos in tabela.items():
 
-        data = segunda + timedelta(
-            days=dias[nome_dia]
-        )
+        dia = dias[nome_dia]
 
         print()
-        print(nome_dia, data)
+        print(nome_dia)
 
         for numero, dados in dados_carrinhos.items():
 
             nome_local, horarios = dados
 
-            # Carrinho
+            # -------------------------------------------------
+            # CARRINHO
+            # -------------------------------------------------
+
             carrinho = Carrinho.query.filter_by(
                 nome=f"Carrinho {numero}"
             ).first()
 
             if not carrinho:
-
                 carrinho = Carrinho(
                     nome=f"Carrinho {numero}"
                 )
@@ -319,14 +320,15 @@ with app.app_context():
                 db.session.add(carrinho)
                 db.session.flush()
 
+            # -------------------------------------------------
+            # LOCAL
+            # -------------------------------------------------
 
-            # Local
             local = Local.query.filter_by(
                 nome=nome_local
             ).first()
 
             if not local:
-
                 local = Local(
                     nome=nome_local
                 )
@@ -334,15 +336,17 @@ with app.app_context():
                 db.session.add(local)
                 db.session.flush()
 
+            # -------------------------------------------------
+            # HORÁRIOS SEMANAIS
+            # -------------------------------------------------
 
-            # Horários
             for inicio, fim in horarios:
 
                 hora_inicio = hora(inicio)
                 hora_fim = hora(fim)
 
-                existe = Programacao.query.filter_by(
-                    data=data,
+                existe = ProgramacaoSemanal.query.filter_by(
+                    dia_semana=dia,
                     hora_inicio=hora_inicio,
                     hora_fim=hora_fim,
                     carrinho_id=carrinho.id
@@ -351,9 +355,8 @@ with app.app_context():
                 if existe:
                     continue
 
-
-                programacao = Programacao(
-                    data=data,
+                programacao = ProgramacaoSemanal(
+                    dia_semana=dia,
                     hora_inicio=hora_inicio,
                     hora_fim=hora_fim,
                     carrinho_id=carrinho.id,
@@ -367,9 +370,10 @@ with app.app_context():
 
     db.session.commit()
 
-
     print()
     print("===================================")
-    print(f"{criados} horários criados.")
-    print("Programação cadastrada com sucesso!")
+    print(f"{criados} horários semanais criados.")
+    print("Programação semanal cadastrada!")
     print("===================================")
+
+    

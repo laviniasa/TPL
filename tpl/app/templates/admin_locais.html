@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Gerenciar Locais - TPL</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f6f8;
+            color: #222;
+        }
+
+        .topo {
+            background: #1f2937;
+            color: white;
+            padding: 18px;
+        }
+
+        .topo-conteudo {
+            max-width: 900px;
+            margin: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .topo h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .voltar {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 25px auto;
+            padding: 0 15px 40px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 18px;
+        }
+
+        .form-adicionar {
+            display: flex;
+            gap: 10px;
+        }
+
+        .form-adicionar input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        input {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 11px 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn-adicionar {
+            background: #2563eb;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .local {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .local:last-child {
+            border-bottom: none;
+        }
+
+        .nome-local {
+            flex: 1;
+            font-size: 16px;
+        }
+
+        .status {
+            font-size: 12px;
+            font-weight: bold;
+            padding: 5px 9px;
+            border-radius: 20px;
+        }
+
+        .ativo {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .inativo {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .acoes {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-editar {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .btn-alternar {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .form-editar {
+            display: none;
+            flex: 1;
+            gap: 8px;
+        }
+
+        .form-editar input {
+            flex: 1;
+        }
+
+        .btn-salvar {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-cancelar {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .sem-locais {
+            color: #666;
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media (max-width: 600px) {
+
+            .topo-conteudo {
+                align-items: flex-start;
+            }
+
+            .container {
+                margin-top: 15px;
+            }
+
+            .form-adicionar {
+                flex-direction: column;
+            }
+
+            .btn-adicionar {
+                width: 100%;
+            }
+
+            .local {
+                flex-wrap: wrap;
+            }
+
+            .nome-local {
+                min-width: 150px;
+            }
+
+            .acoes {
+                width: 100%;
+                margin-top: 5px;
+            }
+
+            .acoes button {
+                flex: 1;
+            }
+
+            .form-editar {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .form-editar input {
+                flex-basis: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="topo">
+        <div class="topo-conteudo">
+
+            <h1>📍 Gerenciar Locais</h1>
+
+            <a
+                href="{{ url_for('routes.admin') }}"
+                class="voltar"
+            >
+                ← Administração
+            </a>
+
+        </div>
+    </header>
+
+
+    <main class="container">
+
+        <!-- ADICIONAR LOCAL -->
+
+        <section class="card">
+
+            <h2>Adicionar novo local</h2>
+
+            <form
+                action="{{ url_for('routes.adicionar_local') }}"
+                method="POST"
+                class="form-adicionar"
+            >
+
+                <input
+                    type="text"
+                    name="nome"
+                    placeholder="Nome do local"
+                    required
+                >
+
+                <button
+                    type="submit"
+                    class="btn-adicionar"
+                >
+                    + Adicionar local
+                </button>
+
+            </form>
+
+        </section>
+
+
+        <!-- LISTA DE LOCAIS -->
+
+        <section class="card">
+
+            <h2>Locais cadastrados</h2>
+
+            {% if locais %}
+
+                {% for local in locais %}
+
+                <div class="local">
+
+                    <!-- NOME -->
+
+                    <div
+                        class="nome-local"
+                        id="nome-{{ local.id }}"
+                    >
+                        {{ local.nome }}
+                    </div>
+
+
+                    <!-- FORMULÁRIO DE EDIÇÃO -->
+
+                    <form
+                        action="{{ url_for('routes.editar_local', local_id=local.id) }}"
+                        method="POST"
+                        class="form-editar"
+                        id="editar-{{ local.id }}"
+                    >
+
+                        <input
+                            type="text"
+                            name="nome"
+                            value="{{ local.nome }}"
+                            required
+                        >
+
+                        <button
+                            type="submit"
+                            class="btn-salvar"
+                        >
+                            Salvar
+                        </button>
+
+                        <button
+                            type="button"
+                            class="btn-cancelar"
+                            onclick="cancelarEdicao({{ local.id }})"
+                        >
+                            Cancelar
+                        </button>
+
+                    </form>
+
+
+                    <!-- STATUS -->
+
+                    <span
+                        class="status {% if local.ativo %}ativo{% else %}inativo{% endif %}"
+                        id="status-{{ local.id }}"
+                    >
+                        {% if local.ativo %}
+                            ATIVO
+                        {% else %}
+                            INATIVO
+                        {% endif %}
+                    </span>
+
+
+                    <!-- AÇÕES -->
+
+                    <div
+                        class="acoes"
+                        id="acoes-{{ local.id }}"
+                    >
+
+                        <button
+                            type="button"
+                            class="btn-editar"
+                            onclick="editarLocal({{ local.id }})"
+                        >
+                            Editar
+                        </button>
+
+                        <form
+                            action="{{ url_for('routes.excluir_local', local_id=local.id) }}"
+                            method="POST"
+                            onsubmit="return confirmarExclusao('{{ local.nome }}')"
+                        >
+
+                            <button
+                                type="submit"
+                                class="btn-excluir"
+                            >
+                                🗑️ Excluir
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            {% else %}
+
+                <div class="sem-locais">
+                    Nenhum local cadastrado.
+                </div>
+
+            {% endif %}
+
+        </section>
+
+    </main>
+
+
+    <script>
+
+        function editarLocal(id) {
+
+            document.getElementById(
+                "nome-" + id
+            ).style.display = "none";
+
+            document.getElementById(
+                "status-" + id
+            ).style.display = "none";
+
+            document.getElementById(
+                "acoes-" + id
+            ).style.display = "none";
+
+            document.getElementById(
+                "editar-" + id
+            ).style.display = "flex";
+        }
+
+
+        function cancelarEdicao(id) {
+
+            document.getElementById(
+                "nome-" + id
+            ).style.display = "block";
+
+            document.getElementById(
+                "status-" + id
+            ).style.display = "inline-block";
+
+            document.getElementById(
+                "acoes-" + id
+            ).style.display = "flex";
+
+            document.getElementById(
+                "editar-" + id
+            ).style.display = "none";
+        }
+
+    </script>
+
+</body>
+</html>

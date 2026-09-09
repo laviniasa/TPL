@@ -11,6 +11,165 @@
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .botoes-topo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-calendario-topo,
+        .btn-admin {
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 10px;
+            padding: 9px 13px;
+            background: transparent;
+            color: white;
+            font-size: 13px;
+            font-weight: bold;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .btn-calendario-topo:hover,
+        .btn-admin:hover {
+            background: rgba(255,255,255,0.12);
+        }
+
+        .calendario-inicial {
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            margin: 20px auto;
+            max-width: 1000px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .calendario-inicial-cabecalho {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .calendario-inicial-cabecalho h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .seta-calendario {
+            border: none;
+            background: #f3f4f6;
+            border-radius: 8px;
+            width: 40px;
+            height: 40px;
+            font-size: 25px;
+            cursor: pointer;
+        }
+
+        .calendario-semana-inicial,
+        .dias-calendario-inicial {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .calendario-semana-inicial {
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .calendario-semana-inicial span {
+            font-size: 11px;
+            font-weight: bold;
+            color: #6b7280;
+        }
+
+        .dia-calendario-inicial {
+            min-height: 85px;
+            padding: 8px;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+
+        .dia-numero-inicial {
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .btn-voltar-agenda {
+            width: 100%;
+            margin-top: 18px;
+            padding: 13px;
+            border: none;
+            border-radius: 10px;
+            background: #1f2937;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .evento-calendario-fixa,
+        .evento-calendario-unica {
+            display: block;
+            margin-top: 5px;
+            padding: 5px;
+            border-radius: 6px;
+
+            font-size: 9px;
+            line-height: 1.2;
+
+            overflow: hidden;
+        }
+
+        .evento-calendario-fixa {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .evento-calendario-unica {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        .evento-calendario-fixa strong,
+        .evento-calendario-unica strong {
+            display: block;
+        }
+
+        .evento-calendario-fixa span,
+        .evento-calendario-unica span {
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @media (max-width: 600px) {
+            .botoes-topo {
+                gap: 5px;
+            }
+
+            .btn-calendario-topo,
+            .btn-admin {
+                padding: 8px 9px;
+                font-size: 11px;
+            }
+
+            .calendario-inicial {
+                margin: 12px;
+                padding: 12px;
+            }
+
+            .dia-calendario-inicial {
+                min-height: 75px;
+                padding: 6px;
+            }
+        }
+    </style>
+
+
 </head>
 
 <body>
@@ -42,14 +201,63 @@
 
         </div>
 
-        <a
-            class="minhas-reservas"
-            href="{{ url_for('routes.admin') }}"
-        >
-            ⚙ Admin
-        </a>
+<div class="botoes-topo">
 
+    <button
+        type="button"
+        class="btn-calendario-topo"
+        onclick="abrirCalendarioInicial()"
+    >
+        📅 Calendário
+    </button>
+
+    <a
+        href="{{ url_for('routes.admin') }}"
+        class="btn-admin"
+    >
+        ⚙ Administração
+    </a>
+
+</div>
     </header>
+
+
+    <!-- CALENDÁRIO -->
+
+    <section id="calendario-inicial" class="calendario-inicial" style="display: none;">
+
+        <div class="calendario-inicial-cabecalho">
+
+            <button type="button" onclick="mesAnteriorInicial()" class="seta-calendario">
+                ‹
+            </button>
+
+            <h2 id="mes-ano-inicial"></h2>
+
+            <button type="button" onclick="mesSeguinteInicial()" class="seta-calendario">
+                ›
+            </button>
+
+        </div>
+
+        <div class="calendario-semana-inicial">
+            <span>Dom</span>
+            <span>Seg</span>
+            <span>Ter</span>
+            <span>Qua</span>
+            <span>Qui</span>
+            <span>Sex</span>
+            <span>Sáb</span>
+        </div>
+
+        <div id="dias-calendario-inicial" class="dias-calendario-inicial"></div>
+
+        <button type="button" class="btn-voltar-agenda" onclick="fecharCalendarioInicial()">
+            ← Voltar para agenda
+        </button>
+
+    </section>
+
 
 
     <!-- =====================================================
@@ -507,9 +715,348 @@
 
         {% endif %}
 
+
+
+        
+
+
     </main>
 
 </div>
+
+
+
+<script>
+
+const reservasCalendario =
+    {{ reservas_calendario | tojson | safe }};
+
+
+function abrirCalendarioInicial() {
+
+    const diasSetas = document.querySelector(".dias-com-setas");
+
+    if (diasSetas) {
+        diasSetas.style.display = "none";
+    }
+
+    const conteudo = document.querySelector(".conteudo-novo");
+
+    if (conteudo) {
+        conteudo.style.display = "none";
+    }
+
+    const calendario = document.getElementById("calendario-inicial");
+
+    if (calendario) {
+        calendario.style.display = "block";
+    }
+
+    gerarCalendarioInicial();
+}
+
+
+function fecharCalendarioInicial() {
+
+    const calendario = document.getElementById("calendario-inicial");
+
+    if (calendario) {
+        calendario.style.display = "none";
+    }
+
+    const diasSetas = document.querySelector(".dias-com-setas");
+
+    if (diasSetas) {
+        diasSetas.style.display = "";
+    }
+
+    const conteudo = document.querySelector(".conteudo-novo");
+
+    if (conteudo) {
+        conteudo.style.display = "";
+    }
+}
+
+
+let dataCalendarioInicial = new Date();
+
+
+function gerarCalendarioInicial() {
+
+    const ano =
+        dataCalendarioInicial.getFullYear();
+
+    const mes =
+        dataCalendarioInicial.getMonth();
+
+
+    const nomesMeses = [
+        "Janeiro",
+        "Fevereiro",
+        "Março",
+        "Abril",
+        "Maio",
+        "Junho",
+        "Julho",
+        "Agosto",
+        "Setembro",
+        "Outubro",
+        "Novembro",
+        "Dezembro"
+    ];
+
+
+    document.getElementById(
+        "mes-ano-inicial"
+    ).textContent =
+        nomesMeses[mes] + " " + ano;
+
+
+    const primeiroDia =
+        new Date(
+            ano,
+            mes,
+            1
+        ).getDay();
+
+
+    const quantidadeDias =
+        new Date(
+            ano,
+            mes + 1,
+            0
+        ).getDate();
+
+
+    const container =
+        document.getElementById(
+            "dias-calendario-inicial"
+        );
+
+
+    if (!container) {
+        return;
+    }
+
+
+    container.innerHTML = "";
+
+
+    // Espaços antes do primeiro dia
+    for (
+        let i = 0;
+        i < primeiroDia;
+        i++
+    ) {
+
+        const vazio =
+            document.createElement("div");
+
+        container.appendChild(vazio);
+
+    }
+
+
+    // Criar cada dia do mês
+    for (
+        let dia = 1;
+        dia <= quantidadeDias;
+        dia++
+    ) {
+
+        const elemento =
+            document.createElement("div");
+
+
+        elemento.className =
+            "dia-calendario-inicial";
+
+
+        const dataDia =
+            new Date(
+                ano,
+                mes,
+                dia
+            );
+
+
+        const dataISO =
+            dataDia.getFullYear() +
+            "-" +
+            String(
+                dataDia.getMonth() + 1
+            ).padStart(2, "0") +
+            "-" +
+            String(
+                dataDia.getDate()
+            ).padStart(2, "0");
+
+
+        elemento.innerHTML = `
+            <div class="dia-numero-inicial">
+                ${dia}
+            </div>
+        `;
+
+
+        // =====================================================
+        // RESERVAS DESTE DIA
+        // =====================================================
+
+        const reservasDoDia =
+            reservasCalendario.filter(
+                reserva => {
+
+                    // -----------------------------------------
+                    // RESERVA ÚNICA
+                    // -----------------------------------------
+
+                    if (
+                        reserva.tipo === "UNICA"
+                    ) {
+
+                        return (
+                            reserva.data_inicio ===
+                            dataISO
+                        );
+
+                    }
+
+
+                    // -----------------------------------------
+                    // RESERVA FIXA
+                    // -----------------------------------------
+                    //
+                    // Python weekday:
+                    // Segunda = 0 ... Domingo = 6
+                    //
+                    // JavaScript getDay:
+                    // Domingo = 0 ... Sábado = 6
+                    //
+                    // Por isso fazemos:
+                    // (Python + 1) % 7
+                    // -----------------------------------------
+
+                    if (
+                        reserva.tipo === "FIXA"
+                    ) {
+
+                        const diaSemanaReserva =
+                            (
+                                reserva.dia_semana + 1
+                            ) % 7;
+
+
+                        return (
+                            diaSemanaReserva ===
+                            dataDia.getDay()
+                            &&
+                            reserva.data_inicio <=
+                            dataISO
+                        );
+
+                    }
+
+
+                    return false;
+
+                }
+            );
+
+
+        // =====================================================
+        // MOSTRAR RESERVAS
+        // =====================================================
+
+        reservasDoDia.forEach(
+            reserva => {
+
+                const evento =
+                    document.createElement("div");
+
+
+                if (
+                    reserva.tipo === "FIXA"
+                ) {
+
+                    evento.className =
+                        "evento-calendario-fixa";
+
+                    evento.innerHTML = `
+                        <strong>
+                            🔄 ${reserva.hora_inicio}
+                        </strong>
+
+                        <span>
+                            ${reserva.carrinho}
+                        </span>
+
+                        <span>
+                            ${reserva.responsavel}
+                        </span>
+                    `;
+
+                } else {
+
+                    evento.className =
+                        "evento-calendario-unica";
+
+                    evento.innerHTML = `
+                        <strong>
+                            🔵 ${reserva.hora_inicio}
+                        </strong>
+
+                        <span>
+                            ${reserva.carrinho}
+                        </span>
+
+                        <span>
+                            ${reserva.responsavel}
+                        </span>
+                    `;
+
+                }
+
+
+                elemento.appendChild(
+                    evento
+                );
+
+            }
+        );
+
+
+        container.appendChild(
+            elemento
+        );
+
+    }
+
+}
+
+
+function mesAnteriorInicial() {
+
+    dataCalendarioInicial.setMonth(
+        dataCalendarioInicial.getMonth() - 1
+    );
+
+    gerarCalendarioInicial();
+}
+
+
+function mesSeguinteInicial() {
+
+    dataCalendarioInicial.setMonth(
+        dataCalendarioInicial.getMonth() + 1
+    );
+
+    gerarCalendarioInicial();
+}
+
+</script>
+
+
 
 </body>
 

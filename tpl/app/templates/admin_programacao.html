@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Programação - TPL</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+    <style>
+
+        html,
+        body {
+            min-height: 100%;
+            height: auto;
+            overflow-y: auto;
+        }
+
+        .programacao-page {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+
+        .programacao-topo {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 18px;
+        }
+
+        .programacao-topo h1 {
+            margin: 0;
+            font-size: 25px;
+        }
+
+        .programacao-topo p {
+            margin: 5px 0 0;
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .btn-voltar {
+            color: #1769c2;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .dia-programacao {
+            margin-bottom: 18px;
+        }
+
+        .titulo-dia {
+            margin: 0 0 8px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .lista-programacao {
+            background: #fff;
+            border: 1px solid #e1e5ea;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .linha-programacao {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 11px 14px;
+            border-bottom: 1px solid #eef0f2;
+        }
+
+        .linha-programacao:last-child {
+            border-bottom: 0;
+        }
+
+        .programacao-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .programacao-carrinho {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .programacao-local {
+            margin-top: 3px;
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .programacao-horario {
+            white-space: nowrap;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .acoes-programacao {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 8px;
+            padding: 8px 11px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-editar {
+            background: #eef6ff;
+            color: #087ff5;
+        }
+
+        .editar-programacao {
+            display: none;
+            width: 100%;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eef0f2;
+        }
+
+        .linha-programacao.editando .editar-programacao {
+            display: block;
+        }
+
+        .form-edicao {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .campo-edicao {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .campo-edicao label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        .campo-edicao select,
+        .campo-edicao input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 9px 10px;
+            border: 1px solid #d8dde3;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 13px;
+        }
+
+        .botoes-edicao {
+            display: flex;
+            gap: 7px;
+            margin-top: 10px;
+        }
+
+        .btn-salvar {
+            background: #087ff5;
+            color: #fff;
+        }
+
+        .btn-cancelar {
+            background: #f1f3f5;
+            color: #555;
+        }
+
+        .sem-programacao {
+            background: #fff;
+            border: 1px solid #e1e5ea;
+            border-radius: 12px;
+            padding: 18px;
+            color: #6b7280;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        @media(max-width:600px) {
+
+            .programacao-page {
+                padding: 18px 12px;
+            }
+
+            .programacao-topo {
+                align-items: flex-start;
+            }
+
+            .programacao-topo h1 {
+                font-size: 22px;
+            }
+
+            .linha-programacao {
+                align-items: flex-start;
+                flex-wrap: wrap;
+            }
+
+            .programacao-horario {
+                font-size: 12px;
+            }
+
+            .acoes-programacao {
+                width: 100%;
+                justify-content: flex-end;
+            }
+
+            .form-edicao {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="app">
+
+    <main class="programacao-page">
+
+        <div class="programacao-topo">
+
+            <div>
+
+                <h1>
+                    📅 Programação
+                </h1>
+
+                <p>
+                    Gerencie os horários semanais
+                    dos carrinhos.
+                </p>
+
+            </div>
+
+            <a
+                class="btn-voltar"
+                href="{{ url_for('routes.admin') }}"
+            >
+                ← Voltar
+            </a>
+
+        </div>
+
+
+        {% for dia_numero in range(7) %}
+
+            {% if dia_numero in programacao_por_dia %}
+
+                <section class="dia-programacao">
+
+                    <h2 class="titulo-dia">
+                        {{ dias[dia_numero] }}
+                    </h2>
+
+                    <div class="lista-programacao">
+
+                        {% for programacao in programacao_por_dia[dia_numero] %}
+
+                            <div
+                                class="linha-programacao"
+                                id="programacao-{{ programacao.id }}"
+                            >
+
+                                <div class="programacao-info">
+
+                                    <div class="programacao-carrinho">
+                                        🚚 {{ programacao.carrinho.nome }}
+                                    </div>
+
+                                    <div class="programacao-local">
+                                        📍 {{ programacao.local.nome }}
+                                    </div>
+
+                                    <div class="programacao-horario">
+                                        {{ programacao.hora_inicio.strftime('%H:%M') }}
+                                        –
+                                        {{ programacao.hora_fim.strftime('%H:%M') }}
+                                    </div>
+
+
+                                    <div class="editar-programacao">
+
+                                        <form
+                                            class="form-edicao"
+                                            method="POST"
+                                            action="{{ url_for(
+                                                'routes.editar_programacao',
+                                                programacao_id=programacao.id
+                                            ) }}"
+                                        >
+
+                                            <div class="campo-edicao">
+
+                                                <label>
+                                                    Carrinho
+                                                </label>
+
+                                                <select name="carrinho_id" required>
+
+                                                    {% for carrinho in carrinhos %}
+
+                                                        <option
+                                                            value="{{ carrinho.id }}"
+                                                            {% if carrinho.id == programacao.carrinho_id %}
+                                                                selected
+                                                            {% endif %}
+                                                        >
+                                                            {{ carrinho.nome }}
+                                                        </option>
+
+                                                    {% endfor %}
+
+                                                </select>
+
+                                            </div>
+
+
+                                            <div class="campo-edicao">
+
+                                                <label>
+                                                    Local
+                                                </label>
+
+                                                <select name="local_id" required>
+
+                                                    {% for local in locais %}
+
+                                                        <option
+                                                            value="{{ local.id }}"
+                                                            {% if local.id == programacao.local_id %}
+                                                                selected
+                                                            {% endif %}
+                                                        >
+                                                            {{ local.nome }}
+                                                        </option>
+
+                                                    {% endfor %}
+
+                                                </select>
+
+                                            </div>
+
+
+                                            <div class="campo-edicao">
+
+                                                <label>
+                                                    Início
+                                                </label>
+
+                                                <input
+                                                    type="time"
+                                                    name="hora_inicio"
+                                                    value="{{ programacao.hora_inicio.strftime('%H:%M') }}"
+                                                    required
+                                                >
+
+                                            </div>
+
+
+                                            <div class="campo-edicao">
+
+                                                <label>
+                                                    Fim
+                                                </label>
+
+                                                <input
+                                                    type="time"
+                                                    name="hora_fim"
+                                                    value="{{ programacao.hora_fim.strftime('%H:%M') }}"
+                                                    required
+                                                >
+
+                                            </div>
+
+
+                                            <div class="botoes-edicao">
+
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-salvar"
+                                                >
+                                                    Salvar
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-cancelar"
+                                                    onclick="editarProgramacao({{ programacao.id }})"
+                                                >
+                                                    Cancelar
+                                                </button>
+
+                                            </div>
+
+                                        </form>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div class="acoes-programacao">
+
+                                    <button
+                                        type="button"
+                                        class="btn btn-editar"
+                                        onclick="editarProgramacao({{ programacao.id }})"
+                                    >
+                                        ✏️ Editar
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                </section>
+
+            {% endif %}
+
+        {% endfor %}
+
+
+        {% if not programacao_por_dia %}
+
+            <div class="sem-programacao">
+                Nenhuma programação cadastrada.
+            </div>
+
+        {% endif %}
+
+    </main>
+
+</div>
+
+
+<script>
+
+function editarProgramacao(id) {
+
+    const linha =
+        document.getElementById('programacao-' + id);
+
+    if (!linha) {
+        return;
+    }
+
+    linha.classList.toggle('editando');
+}
+
+</script>
+
+
+</body>
+
+</html>

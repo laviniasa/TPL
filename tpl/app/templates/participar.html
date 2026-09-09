@@ -223,7 +223,61 @@
 
                     </div>
 
+                <div class="reserva-fixa">
 
+                    {% if reserva_fixa_existente %}
+
+                    <div class="reserva-fixa-existente">
+
+                        <p>
+                            🔄 Este horário possui uma reserva fixa.
+                        </p>
+
+                        <p>
+                            <strong>
+                                {{ reserva_fixa_existente.nome_principal }}
+                            </strong>
+
+                            {% for participante in reserva_fixa_existente.participantes %}
+                                • {{ participante.nome }}
+                            {% endfor %}
+                        </p>
+
+                        <form
+                            action="{{ url_for('routes.cancelar_reserva_fixa', reserva_id=reserva_fixa_existente.id) }}"
+                            method="POST"
+                            onsubmit="return confirm('Tem certeza que deseja cancelar esta reserva fixa?')"
+                        >
+
+                            <button
+                                type="submit"
+                                class="btn-cancelar-fixa"
+                            >
+                                🛑 Cancelar reserva fixa
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                    {% endif %}
+
+                    <label>
+                        <input
+                            type="checkbox"
+                            name="reserva_fixa"
+                            value="sim"
+                        >
+
+                        Reservar este horário toda semana
+                    </label>
+
+                    <p>
+                        Esta opção manterá sua reserva neste mesmo dia,
+                        horário, carrinho e local todas as semanas.
+                    </p>
+
+                </div>
 
                     <!-- BOTÃO -->
 

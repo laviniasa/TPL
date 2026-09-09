@@ -1629,13 +1629,11 @@ button:disabled {
 /* Lista de pessoas */
 
 .lista-pessoas {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #e1e5e9;
-    border-radius: 10px;
-    overflow: hidden;
+    background: #fff;
+    border: 1px solid #e1e5ea;
+    border-radius: 12px;
+    overflow: visible;
 }
-
 
 /* Cada pessoa */
 
@@ -2682,4 +2680,104 @@ button:disabled {
         gap: 5px;
     }
 
+}
+
+.botoes-topo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-calendario-topo,
+.btn-admin {
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 10px;
+    padding: 9px 13px;
+
+    background: transparent;
+    color: white;
+
+    font-size: 13px;
+    font-weight: bold;
+
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.btn-calendario-topo:hover,
+.btn-admin:hover {
+    background: rgba(255,255,255,0.12);
+}
+
+.calendario-inicial {
+    background: white;
+    border-radius: 14px;
+    padding: 18px;
+    margin: 20px auto;
+    max-width: 1000px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.calendario-inicial-cabecalho {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.calendario-inicial-cabecalho h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.seta-calendario {
+    border: none;
+    background: #f3f4f6;
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    font-size: 25px;
+    cursor: pointer;
+}
+
+.calendario-semana-inicial,
+.dias-calendario-inicial {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.calendario-semana-inicial {
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+.calendario-semana-inicial span {
+    font-size: 11px;
+    font-weight: bold;
+    color: #6b7280;
+}
+
+.dia-calendario-inicial {
+    min-height: 65px;
+    padding: 8px;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.dia-numero-inicial {
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.btn-voltar-agenda {
+    width: 100%;
+    margin-top: 18px;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    background: #1f2937;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
 }

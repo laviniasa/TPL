@@ -1,103 +1,570 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
     <title>Pessoas - TPL</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
     <style>
-        .pessoas-page{max-width:900px;margin:0 auto;padding:24px 16px}
-        .pessoas-topo{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:18px}
-        .pessoas-topo h1{margin:0;font-size:25px}
-        .pessoas-topo p{margin:5px 0 0;color:#6b7280;font-size:13px}
-        .btn-voltar{color:#1769c2;text-decoration:none;font-size:13px}
-        .adicionar-box{background:#fff;border:1px solid #e1e5ea;border-radius:12px;padding:14px;margin-bottom:14px}
-        .adicionar-form{display:flex;gap:8px}
-        .adicionar-form input{flex:1;min-width:0;padding:10px 12px;border:1px solid #d8dde3;border-radius:8px;font-size:14px}
-        .btn{border:0;border-radius:8px;padding:9px 13px;font-size:13px;font-weight:600;cursor:pointer}
-        .btn-primary{background:#087ff5;color:#fff}
-        .lista-pessoas{background:#fff;border:1px solid #e1e5ea;border-radius:12px;overflow:hidden}
-        .pessoa{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid #eef0f2}
-        .pessoa:last-child{border-bottom:0}
-        .pessoa-nome{font-size:14px;font-weight:600}
-        .pessoa-meta{margin-top:3px;font-size:11px;color:#6b7280}
-        .pessoa-acoes{display:flex;align-items:center;gap:7px}
-        .badge{padding:5px 8px;border-radius:7px;font-size:10px;font-weight:700}
-        .badge-ativo{background:#e3f8eb;color:#16834b}
-        .badge-inativo{background:#f1f3f5;color:#6b7280}
-        .btn-editar{background:#eef6ff;color:#087ff5}
-        .btn-desativar{background:#fff0f0;color:#c62828}
-        .btn-ativar{background:#e3f8eb;color:#16834b}
-        .editar-form{display:none;grid-column:1/-1;gap:7px;margin-top:8px}
-        .editar-form input{padding:9px;border:1px solid #d8dde3;border-radius:7px}
-        .pessoa.editando .editar-form{display:grid}
-        @media(max-width:600px){.pessoas-topo{align-items:flex-start}.adicionar-form{flex-direction:column}.adicionar-form .btn{width:100%}.pessoa{align-items:flex-start}.pessoa-acoes{flex-wrap:wrap;justify-content:flex-end}}
+
+        .pessoas-page {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+
+        .pessoas-topo {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 18px;
+        }
+
+        .pessoas-topo h1 {
+            margin: 0;
+            font-size: 25px;
+        }
+
+        .pessoas-topo p {
+            margin: 5px 0 0;
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .btn-voltar {
+            color: #1769c2;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .adicionar-box {
+            background: #fff;
+            border: 1px solid #e1e5ea;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+
+        .adicionar-form {
+            display: flex;
+            gap: 8px;
+        }
+
+        .adicionar-form input {
+            flex: 1;
+            min-width: 0;
+            padding: 10px 12px;
+            border: 1px solid #d8dde3;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 8px;
+            padding: 9px 13px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #087ff5;
+            color: #fff;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+            height: auto;
+            overflow-y: auto;
+        }
+
+       .lista-pessoas {
+            background: #fff;
+            border: 1px solid #e1e5ea;
+            border-radius: 12px;
+            overflow: visible;
+            height: auto;
+            max-height: none;
+        }
+        .pessoas-page {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px 16px;
+            height: auto;
+            min-height: 100vh;
+        }
+
+        .busca-pessoas {
+            background: #fff;
+            border: 1px solid #e1e5ea;
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+        }
+
+        .busca-pessoas input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d8dde3;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .busca-pessoas input:focus {
+            border-color: #087ff5;
+        }
+
+        .pessoa.oculta {
+            display: none;
+        }
+
+        .nenhum-resultado {
+            display: none;
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+
+        .pessoa {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            border-bottom: 1px solid #eef0f2;
+            flex-wrap: wrap;
+        }
+
+        .pessoa:last-child {
+            border-bottom: 0;
+        }
+
+        .pessoa-nome {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .pessoa-meta {
+            margin-top: 3px;
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .pessoa-acoes {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .badge {
+            padding: 5px 8px;
+            border-radius: 7px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .badge-ativo {
+            background: #e3f8eb;
+            color: #16834b;
+        }
+
+        .badge-inativo {
+            background: #f1f3f5;
+            color: #6b7280;
+        }
+
+        .btn-editar {
+            background: #eef6ff;
+            color: #087ff5;
+        }
+
+        .btn-desativar {
+            background: #fff0f0;
+            color: #c62828;
+        }
+
+        .btn-ativar {
+            background: #e3f8eb;
+            color: #16834b;
+        }
+
+        .editar-form {
+            display: none;
+            width: 100%;
+            gap: 7px;
+            margin-top: 8px;
+        }
+
+        .editar-form input {
+            width: 100%;
+            padding: 9px;
+            border: 1px solid #d8dde3;
+            border-radius: 7px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .pessoa.editando .editar-form {
+            display: grid;
+        }
+
+        @media(max-width:600px) {
+
+            .pessoas-page {
+                padding: 18px 12px;
+            }
+
+            .pessoas-topo {
+                align-items: flex-start;
+            }
+
+            .pessoas-topo h1 {
+                font-size: 22px;
+            }
+
+            .adicionar-form {
+                flex-direction: column;
+            }
+
+            .adicionar-form input,
+            .adicionar-form .btn {
+                width: 100%;
+            }
+
+            .pessoa {
+                align-items: flex-start;
+            }
+
+            .pessoa > div:first-child {
+                flex: 1;
+                min-width: 120px;
+            }
+
+            .pessoa-acoes {
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            }
+
+            .editar-form .pessoa-acoes {
+                justify-content: flex-start;
+            }
+
+        }
+
     </style>
+
 </head>
+
+
 <body>
+
 <div class="app">
+
     <main class="pessoas-page">
+
+        <!-- CABEÇALHO -->
+
         <div class="pessoas-topo">
+
             <div>
-                <h1>👥 Pessoas</h1>
-                <p>Cadastre e gerencie os irmãos que participam das reservas.</p>
+
+                <h1>
+                    👥 Pessoas
+                </h1>
+
+                <p>
+                    Cadastre e gerencie os irmãos
+                    que participam das reservas.
+                </p>
+
             </div>
-            <a class="btn-voltar" href="{{ url_for('routes.admin') }}">← Voltar</a>
+
+
+            <a
+                class="btn-voltar"
+                href="{{ url_for('routes.admin') }}"
+            >
+                ← Voltar
+            </a>
+
         </div>
+
+
+        <!-- ADICIONAR PESSOA -->
 
         <div class="adicionar-box">
-            <form class="adicionar-form" method="POST" action="{{ url_for('people.adicionar') }}">
-                <input type="text" name="nome" placeholder="Nome do irmão" required autocomplete="off">
-                <button class="btn btn-primary" type="submit">+ Adicionar</button>
+
+            <form
+                class="adicionar-form"
+                method="POST"
+                action="{{ url_for('routes.adicionar_pessoa') }}"
+            >
+
+                <input
+                    type="text"
+                    name="nome"
+                    placeholder="Nome do irmão"
+                    required
+                    autocomplete="off"
+                >
+
+                <button
+                    class="btn btn-primary"
+                    type="submit"
+                >
+                    + Adicionar
+                </button>
+
             </form>
+
         </div>
+
+
+        <!-- BUSCAR PESSOA -->
+
+        <div class="busca-pessoas">
+            <input
+                type="search"
+                id="buscaPessoa"
+                placeholder="🔎 Pesquisar nome..."
+                autocomplete="off"
+            >
+        </div>
+
+
+        <!-- LISTA DE PESSOAS -->
 
         <div class="lista-pessoas">
+
             {% for pessoa in pessoas %}
+
                 <div class="pessoa">
+
+                    <!-- NOME -->
+
                     <div>
-                        <div class="pessoa-nome">{{ pessoa.nome }}</div>
-                        <div class="pessoa-meta">ID {{ pessoa.id }}</div>
+
+                        <div class="pessoa-nome">
+                            {{ pessoa.nome }}
+                        </div>
+
+                        <div class="pessoa-meta">
+                            ID {{ pessoa.id }}
+                        </div>
+
                     </div>
+
+
+                    <!-- AÇÕES -->
 
                     <div class="pessoa-acoes">
+
                         {% if pessoa.ativo %}
-                            <span class="badge badge-ativo">ATIVA</span>
+
+                            <span class="badge badge-ativo">
+                                ATIVA
+                            </span>
+
                         {% else %}
-                            <span class="badge badge-inativo">INATIVA</span>
+
+                            <span class="badge badge-inativo">
+                                INATIVA
+                            </span>
+
                         {% endif %}
 
-                        <button type="button" class="btn btn-editar" onclick="editarPessoa({{ pessoa.id }})">Editar</button>
 
-                        <form method="POST" action="{{ url_for('people.alternar', pessoa_id=pessoa.id) }}">
+                        <!-- EDITAR -->
+
+                        <button
+                            type="button"
+                            class="btn btn-editar"
+                            onclick="editarPessoa({{ pessoa.id }})"
+                        >
+                            Editar
+                        </button>
+
+
+                        <!-- ATIVAR / DESATIVAR -->
+
+                        <form
+                            method="POST"
+                            action="{{ url_for(
+                                'routes.alternar_pessoa',
+                                pessoa_id=pessoa.id
+                            ) }}"
+                        >
+
                             {% if pessoa.ativo %}
-                                <button class="btn btn-desativar" type="submit">Desativar</button>
+
+                                <button
+                                    class="btn btn-desativar"
+                                    type="submit"
+                                >
+                                    Desativar
+                                </button>
+
                             {% else %}
-                                <button class="btn btn-ativar" type="submit">Ativar</button>
+
+                                <button
+                                    class="btn btn-ativar"
+                                    type="submit"
+                                >
+                                    Ativar
+                                </button>
+
                             {% endif %}
+
                         </form>
+
                     </div>
 
-                    <form id="editar-{{ pessoa.id }}" class="editar-form" method="POST" action="{{ url_for('people.editar', pessoa_id=pessoa.id) }}">
-                        <input type="text" name="nome" value="{{ pessoa.nome }}" required>
+
+                    <!-- EDITAR PESSOA -->
+
+                    <form
+                        id="editar-{{ pessoa.id }}"
+                        class="editar-form"
+                        method="POST"
+                        action="{{ url_for(
+                            'routes.editar_pessoa',
+                            pessoa_id=pessoa.id
+                        ) }}"
+                    >
+
+                        <input
+                            type="text"
+                            name="nome"
+                            value="{{ pessoa.nome }}"
+                            required
+                            autocomplete="off"
+                        >
+
+
                         <div class="pessoa-acoes">
-                            <button class="btn btn-primary" type="submit">Salvar</button>
-                            <button class="btn btn-editar" type="button" onclick="editarPessoa({{ pessoa.id }})">Cancelar</button>
+
+                            <button
+                                class="btn btn-primary"
+                                type="submit"
+                            >
+                                Salvar
+                            </button>
+
+
+                            <button
+                                class="btn btn-editar"
+                                type="button"
+                                onclick="editarPessoa({{ pessoa.id }})"
+                            >
+                                Cancelar
+                            </button>
+
                         </div>
+
                     </form>
+
                 </div>
+
             {% else %}
-                <div style="padding:30px;text-align:center;color:#6b7280">Nenhuma pessoa cadastrada.</div>
+
+                <div
+                    style="
+                        padding:30px;
+                        text-align:center;
+                        color:#6b7280;
+                    "
+                >
+                    Nenhuma pessoa cadastrada.
+                </div>
+
             {% endfor %}
+
+            <div id="nenhumResultado" class="nenhum-resultado">
+                Nenhuma pessoa encontrada.
+            </div>
+
         </div>
+
     </main>
+
 </div>
 
+
 <script>
+
 function editarPessoa(id) {
-    const linha = document.getElementById('editar-' + id).closest('.pessoa');
+
+    const formulario =
+        document.getElementById('editar-' + id);
+
+    if (!formulario) {
+        return;
+    }
+
+    const linha =
+        formulario.closest('.pessoa');
+
+    if (!linha) {
+        return;
+    }
+
     linha.classList.toggle('editando');
+
 }
+
+
+    const campoBusca = document.getElementById('buscaPessoa');
+    const pessoas = document.querySelectorAll('.pessoa');
+    const nenhumResultado = document.getElementById('nenhumResultado');
+
+    campoBusca.addEventListener('input', function () {
+        const termo = this.value
+            .toLowerCase()
+            .trim();
+
+        let encontradas = 0;
+
+        pessoas.forEach(function (pessoa) {
+            const nome = pessoa
+                .querySelector('.pessoa-nome')
+                .textContent
+                .toLowerCase();
+
+            const encontrou = nome.includes(termo);
+
+            pessoa.classList.toggle('oculta', !encontrou);
+
+            if (encontrou) {
+                encontradas++;
+            }
+        });
+
+        nenhumResultado.style.display =
+            encontradas === 0 ? 'block' : 'none';
+    });
+
 </script>
+
+
 </body>
+
 </html>

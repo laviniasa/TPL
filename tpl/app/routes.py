@@ -193,22 +193,18 @@ def agenda():
             # -------------------------------------------------
 
             reservas = Reserva.query.filter(
-
-                Reserva.data_inicio
-                == programacao.data,
-
-                Reserva.carrinho_id
-                == programacao.carrinho_id,
-
-                Reserva.ativo
-                == True,
-
-                Reserva.hora_inicio
-                < programacao.hora_fim,
-
-                Reserva.hora_fim
-                > programacao.hora_inicio
-
+                Reserva.ativo == True,
+                Reserva.carrinho_id == programacao.carrinho_id,
+                Reserva.hora_inicio < programacao.hora_fim,
+                Reserva.hora_fim > programacao.hora_inicio,
+                db.or_(
+                    Reserva.data_inicio == programacao.data,
+                    db.and_(
+                        Reserva.tipo == "FIXA",
+                        Reserva.dia_semana == programacao.data.weekday(),
+                        Reserva.data_inicio <= programacao.data
+                    )
+                )
             ).all()
 
 
@@ -336,8 +332,36 @@ def agenda():
     )
 
 
-    return render_template(
+    # =====================================================
+    # RESERVAS PARA O CALENDÁRIO
+    # =====================================================
 
+    reservas_calendario = Reserva.query.filter(
+        Reserva.ativo == True
+    ).all()
+
+    dados_calendario = []
+
+    for reserva in reservas_calendario:
+
+        dados_calendario.append({
+            "id": reserva.id,
+            "tipo": reserva.tipo,
+            "data_inicio": reserva.data_inicio.isoformat(),
+            "dia_semana": reserva.dia_semana,
+            "hora_inicio": reserva.hora_inicio.strftime("%H:%M"),
+            "hora_fim": reserva.hora_fim.strftime("%H:%M"),
+            "carrinho": reserva.carrinho.nome,
+            "local": reserva.local.nome,
+            "responsavel": reserva.nome_principal,
+            "participantes": [
+                participante.nome
+                for participante in reserva.participantes
+            ]
+        })
+
+
+    return render_template(
         "agenda.html",
 
         carrinhos=carrinhos_lista,
@@ -348,10 +372,10 @@ def agenda():
 
         segunda=segunda,
 
-        timedelta=timedelta
+        timedelta=timedelta,
 
+        reservas_calendario=dados_calendario
     )
-
 
 # =========================================================
 # RESERVAR HORÁRIO
@@ -393,6 +417,10 @@ def participar(programacao_id):
         selecionados = request.form.getlist(
             "pessoas"
         )
+
+        reserva_fixa = request.form.get(
+            "reserva_fixa"
+        ) == "sim"
 
 
         if not nome_principal:
@@ -560,26 +588,27 @@ def participar(programacao_id):
         # CRIAR RESERVA
         # -------------------------------------------------
 
+        if reserva_fixa:
+            tipo_reserva = "FIXA"
+            data_fim_reserva = None
+            dia_semana_reserva = programacao.data.weekday()
+        else:
+            tipo_reserva = "UNICA"
+            data_fim_reserva = programacao.data
+            dia_semana_reserva = None
+
+
         reserva = Reserva(
-
             nome_principal=nome_principal,
-
-            tipo="UNICA",
-
+            tipo=tipo_reserva,
             data_inicio=programacao.data,
-
-            data_fim=programacao.data,
-
+            data_fim=data_fim_reserva,
+            dia_semana=dia_semana_reserva,
             hora_inicio=programacao.hora_inicio,
-
             hora_fim=programacao.hora_fim,
-
             carrinho_id=programacao.carrinho_id,
-
             local_id=programacao.local_id,
-
             ativo=True
-
         )
 
 
@@ -622,15 +651,21 @@ def participar(programacao_id):
 
         )
 
+    reserva_fixa_existente = Reserva.query.filter(
+        Reserva.tipo == "FIXA",
+        Reserva.ativo == True,
+        Reserva.carrinho_id == programacao.carrinho_id,
+        Reserva.dia_semana == programacao.data.weekday(),
+        Reserva.hora_inicio == programacao.hora_inicio,
+        Reserva.hora_fim == programacao.hora_fim,
+        Reserva.data_inicio <= programacao.data
+    ).first()
 
     return render_template(
-
         "participar.html",
-
         programacao=programacao,
-
-        pessoas=pessoas
-
+        pessoas=pessoas,
+        reserva_fixa_existente=reserva_fixa_existente
     )
 
 
@@ -671,6 +706,36 @@ def excluir_reserva(reserva_id):
 
         )
 
+    )
+
+# =========================================================
+# CANCELAR RESERVA FIXA
+# =========================================================
+
+@routes.route(
+    "/cancelar-reserva-fixa/<int:reserva_id>",
+    methods=["POST"]
+)
+def cancelar_reserva_fixa(reserva_id):
+
+    reserva = Reserva.query.get_or_404(
+        reserva_id
+    )
+
+    # Verifica se realmente é uma reserva fixa
+    if reserva.tipo != "FIXA":
+        return "Esta não é uma reserva fixa.", 400
+
+    # Cancela a reserva fixa
+    reserva.ativo = False
+
+    db.session.commit()
+
+    return redirect(
+        url_for(
+            "routes.agenda",
+            data=date.today().isoformat()
+        )
     )
 
 
@@ -729,6 +794,342 @@ def admin():
 
     return render_template(
         "admin.html"
+    )
+
+
+# =========================================================
+# ADMIN - CARRINHOS
+# =========================================================
+
+@routes.route("/admin/carrinhos")
+def admin_carrinhos():
+
+    carrinhos = (
+        Carrinho.query
+        .order_by(Carrinho.id)
+        .all()
+    )
+
+    return render_template(
+        "admin_carrinhos.html",
+        carrinhos=carrinhos
+    )
+
+
+@routes.route(
+    "/admin/carrinhos/adicionar",
+    methods=["POST"]
+)
+def adicionar_carrinho():
+
+    nome = request.form.get(
+        "nome",
+        ""
+    ).strip()
+
+    if not nome:
+        return "Informe o nome do carrinho.", 400
+
+    carrinho_existente = (
+        Carrinho.query
+        .filter_by(nome=nome)
+        .first()
+    )
+
+    if carrinho_existente:
+        return "Já existe um carrinho com esse nome.", 400
+
+    carrinho = Carrinho(
+        nome=nome,
+        ativo=True
+    )
+
+    db.session.add(carrinho)
+    db.session.commit()
+
+    return redirect(
+        url_for("routes.admin_carrinhos")
+    )
+
+
+@routes.route(
+    "/admin/carrinhos/editar/<int:carrinho_id>",
+    methods=["POST"]
+)
+def editar_carrinho(carrinho_id):
+
+    carrinho = Carrinho.query.get_or_404(
+        carrinho_id
+    )
+
+    nome = request.form.get(
+        "nome",
+        ""
+    ).strip()
+
+    if not nome:
+        return "Informe o nome do carrinho.", 400
+
+    outro_carrinho = (
+        Carrinho.query
+        .filter(
+            Carrinho.nome == nome,
+            Carrinho.id != carrinho.id
+        )
+        .first()
+    )
+
+    if outro_carrinho:
+        return "Já existe um carrinho com esse nome.", 400
+
+    carrinho.nome = nome
+
+    db.session.commit()
+
+    return redirect(
+        url_for("routes.admin_carrinhos")
+    )
+
+
+@routes.route(
+    "/admin/carrinhos/alternar/<int:carrinho_id>",
+    methods=["POST"]
+)
+def alternar_carrinho(carrinho_id):
+
+    carrinho = Carrinho.query.get_or_404(
+        carrinho_id
+    )
+
+    carrinho.ativo = not carrinho.ativo
+
+    db.session.commit()
+
+    return redirect(
+        url_for("routes.admin_carrinhos")
+    )
+
+
+@routes.route("/admin/pessoas")
+def admin_pessoas():
+    pessoas = Pessoa.query.order_by(Pessoa.nome).all()
+
+    return render_template(
+        "admin_pessoas.html",
+        pessoas=pessoas
+    )
+
+
+@routes.route("/admin/pessoas/adicionar", methods=["POST"])
+def adicionar_pessoa():
+    nome = request.form.get("nome", "").strip()
+
+    if not nome:
+        return "Informe o nome do irmão.", 400
+
+    pessoa_existente = Pessoa.query.filter_by(nome=nome).first()
+
+    if pessoa_existente:
+        return "Esta pessoa já está cadastrada.", 400
+
+    pessoa = Pessoa(
+        nome=nome,
+        ativo=True
+    )
+
+    db.session.add(pessoa)
+    db.session.commit()
+
+    return redirect(url_for("routes.admin_pessoas"))
+
+
+@routes.route("/admin/pessoas/editar/<int:pessoa_id>", methods=["POST"])
+def editar_pessoa(pessoa_id):
+    pessoa = Pessoa.query.get_or_404(pessoa_id)
+
+    nome = request.form.get("nome", "").strip()
+
+    if not nome:
+        return "Informe o nome do irmão.", 400
+
+    outra_pessoa = (
+        Pessoa.query
+        .filter(
+            Pessoa.nome == nome,
+            Pessoa.id != pessoa.id
+        )
+        .first()
+    )
+
+    if outra_pessoa:
+        return "Já existe uma pessoa com esse nome.", 400
+
+    pessoa.nome = nome
+
+    db.session.commit()
+
+    return redirect(url_for("routes.admin_pessoas"))
+
+
+@routes.route("/admin/pessoas/alternar/<int:pessoa_id>", methods=["POST"])
+def alternar_pessoa(pessoa_id):
+    pessoa = Pessoa.query.get_or_404(pessoa_id)
+
+    pessoa.ativo = not pessoa.ativo
+
+    db.session.commit()
+
+    return redirect(url_for("routes.admin_pessoas"))
+
+
+# =========================================================
+# ADMIN - LOCAIS
+# =========================================================
+
+@routes.route("/admin/locais")
+def admin_locais():
+
+    locais = (
+        Local.query
+        .order_by(Local.nome)
+        .all()
+    )
+
+    return render_template(
+        "admin_locais.html",
+        locais=locais
+    )
+
+
+@routes.route(
+    "/admin/locais/adicionar",
+    methods=["POST"]
+)
+def adicionar_local():
+
+    nome = request.form.get(
+        "nome",
+        ""
+    ).strip()
+
+    if not nome:
+        return "Informe o nome do local.", 400
+
+    local_existente = (
+        Local.query
+        .filter_by(nome=nome)
+        .first()
+    )
+
+    if local_existente:
+        return "Já existe um local com esse nome.", 400
+
+    local = Local(
+        nome=nome,
+        ativo=True
+    )
+
+    db.session.add(local)
+    db.session.commit()
+
+    return redirect(
+        url_for("routes.admin_locais")
+    )
+
+
+@routes.route(
+    "/admin/locais/editar/<int:local_id>",
+    methods=["POST"]
+)
+def editar_local(local_id):
+
+    local = Local.query.get_or_404(
+        local_id
+    )
+
+    nome = request.form.get(
+        "nome",
+        ""
+    ).strip()
+
+    if not nome:
+        return "Informe o nome do local.", 400
+
+    outro_local = (
+        Local.query
+        .filter(
+            Local.nome == nome,
+            Local.id != local.id
+        )
+        .first()
+    )
+
+    if outro_local:
+        return "Já existe um local com esse nome.", 400
+
+    local.nome = nome
+
+    db.session.commit()
+
+    return redirect(
+        url_for("routes.admin_locais")
+    )
+
+# =========================================================
+# ADMIN - EXCLUIR LOCAL
+# =========================================================
+
+@routes.route(
+    "/admin/locais/excluir/<int:local_id>",
+    methods=["POST"]
+)
+def excluir_local(local_id):
+
+    local = Local.query.get_or_404(
+        local_id
+    )
+
+    # Verifica se o local está sendo usado
+    # em alguma programação semanal
+    uso_programacao_semanal = (
+        ProgramacaoSemanal.query
+        .filter_by(local_id=local.id)
+        .first()
+    )
+
+    # Verifica se o local está sendo usado
+    # em alguma programação de uma data
+    uso_programacao = (
+        Programacao.query
+        .filter_by(local_id=local.id)
+        .first()
+    )
+
+    # Verifica se o local está sendo usado
+    # em alguma reserva
+    uso_reserva = (
+        Reserva.query
+        .filter_by(local_id=local.id)
+        .first()
+    )
+
+    if (
+        uso_programacao_semanal
+        or uso_programacao
+        or uso_reserva
+    ):
+        return (
+            "Este local já está sendo utilizado "
+            "em uma programação ou reserva e "
+            "não pode ser excluído."
+        ), 400
+
+    # Se nunca foi utilizado, pode excluir
+    db.session.delete(local)
+    db.session.commit()
+
+    return redirect(
+        url_for("routes.admin_locais")
     )
 
 # =========================================================
@@ -855,4 +1256,120 @@ def checkout(reserva_id):
             "routes.agenda",
             data=reserva.data_inicio.isoformat()
         )
+    )
+
+@routes.route("/admin/programacao")
+def admin_programacao():
+    programacoes = (
+        ProgramacaoSemanal.query
+        .order_by(
+            ProgramacaoSemanal.dia_semana,
+            ProgramacaoSemanal.hora_inicio
+        )
+        .all()
+    )
+
+    dias = {
+        0: "SEGUNDA-FEIRA",
+        1: "TERÇA-FEIRA",
+        2: "QUARTA-FEIRA",
+        3: "QUINTA-FEIRA",
+        4: "SEXTA-FEIRA",
+        5: "SÁBADO",
+        6: "DOMINGO"
+    }
+
+    programacao_por_dia = {}
+
+    for programacao in programacoes:
+        if programacao.dia_semana not in programacao_por_dia:
+            programacao_por_dia[programacao.dia_semana] = []
+
+        programacao_por_dia[programacao.dia_semana].append(
+            programacao
+        )
+
+    return render_template(
+        "admin_programacao.html",
+        programacao_por_dia=programacao_por_dia,
+        dias=dias,
+        carrinhos=Carrinho.query.filter_by(ativo=True).order_by(Carrinho.id).all(),
+        locais=Local.query.filter_by(ativo=True).order_by(Local.nome).all()
+    )
+
+@routes.route("/admin/programacao/editar/<int:programacao_id>", methods=["POST"])
+def editar_programacao(programacao_id):
+    programacao = ProgramacaoSemanal.query.get_or_404(programacao_id)
+
+    carrinho_id = request.form.get("carrinho_id")
+    local_id = request.form.get("local_id")
+    hora_inicio = request.form.get("hora_inicio")
+    hora_fim = request.form.get("hora_fim")
+
+    if not carrinho_id or not local_id or not hora_inicio or not hora_fim:
+        return "Preencha todos os campos.", 400
+
+    try:
+        inicio = datetime.strptime(hora_inicio, "%H:%M").time()
+        fim = datetime.strptime(hora_fim, "%H:%M").time()
+    except ValueError:
+        return "Horário inválido.", 400
+
+    if inicio >= fim:
+        return "O horário de início deve ser anterior ao horário de fim.", 400
+
+    programacao.carrinho_id = int(carrinho_id)
+    programacao.local_id = int(local_id)
+    programacao.hora_inicio = inicio
+    programacao.hora_fim = fim
+
+    db.session.commit()
+
+    return redirect(url_for("routes.admin_programacao"))
+
+    # =========================================================
+# ADMIN - RESERVAS
+# =========================================================
+
+@routes.route("/admin/reservas")
+def admin_reservas():
+
+    # Reservas fixas que aparecem na tela principal
+    reservas = Reserva.query.filter(
+        Reserva.tipo == "FIXA",
+        Reserva.ativo == True
+    ).order_by(
+        Reserva.dia_semana,
+        Reserva.hora_inicio
+    ).all()
+
+    # Todas as reservas ativas que serão usadas pelo calendário
+    reservas_calendario = Reserva.query.filter(
+        Reserva.ativo == True
+    ).all()
+
+    dados_calendario = []
+
+    for reserva in reservas_calendario:
+
+        dados_calendario.append({
+            "id": reserva.id,
+            "tipo": reserva.tipo,
+            "data_inicio": reserva.data_inicio.isoformat(),
+            "dia_semana": reserva.dia_semana,
+            "hora_inicio": reserva.hora_inicio.strftime("%H:%M"),
+            "hora_fim": reserva.hora_fim.strftime("%H:%M"),
+            "carrinho": reserva.carrinho.nome,
+            "local": reserva.local.nome,
+            "responsavel": reserva.nome_principal,
+            "participantes": [
+                participante.nome
+                for participante in reserva.participantes
+            ]
+        })
+
+    return render_template(
+        "admin_reservas.html",
+        reservas=reservas,
+        reservas_calendario=dados_calendario
     )
