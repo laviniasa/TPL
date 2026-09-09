@@ -2,6 +2,11 @@
 
 Aplicação web responsiva desenvolvida em **Python e Flask** para organizar a programação do Testemunho Público Local (TPL) da congregação.
 
+## 🌐 Aplicações online
+
+- **Ana Tortas:** https://ana-tortas.onrender.com
+- **Kit na Mão:** https://kit-na-mao.onrender.com
+
 ## Sobre o projeto
 
 O sistema foi pensado para facilitar a organização dos horários de testemunho público, permitindo consultar a agenda e reservar horários de acordo com os carrinhos, locais e participantes disponíveis.
@@ -56,7 +61,7 @@ No Windows:
 
 ```bash
 python -m venv venv
-venv\Scripts\activate
+venv\\Scripts\\activate
 ```
 
 No Linux/macOS:
