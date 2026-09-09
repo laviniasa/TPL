@@ -1,240 +1,71 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - TPL</title>
-
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}"
-    >
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .grid-admin{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+        .card-admin{display:flex;align-items:center;gap:18px;background:#fff;border:1px solid #e1e5ea;border-radius:14px;padding:20px;text-decoration:none;color:#111827;box-shadow:0 1px 4px rgba(0,0,0,.04);transition:.15s}
+        .card-admin:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.07)}
+        .icone-admin{width:52px;height:52px;border-radius:12px;background:#eef6ff;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+        .card-admin h2{margin:0 0 4px;font-size:18px}
+        .card-admin p{margin:0;color:#6b7280;font-size:13px}
+        .seta-admin{margin-left:auto;color:#087ff5;font-size:22px}
+        @media(max-width:700px){.grid-admin{grid-template-columns:1fr}.card-admin{padding:16px}}
+    </style>
 </head>
-
-
 <body>
-
 <div class="app">
-
-
-    <!-- =========================================
-         CABEÇALHO
-         ========================================= -->
-
     <header class="topo-novo">
-
         <div class="topo-esquerda">
-
-            <a
-                href="{{ url_for('routes.agenda') }}"
-                class="logo-tpl"
-            >
-                TPL
-            </a>
-
-            <div class="subtitulo-tpl">
-                Testemunho Público Local
-            </div>
-
+            <a href="{{ url_for('routes.agenda') }}" class="logo-tpl">TPL</a>
+            <div class="subtitulo-tpl">Testemunho Público Local</div>
         </div>
-
-
-        <a
-            class="minhas-reservas"
-            href="{{ url_for('routes.agenda') }}"
-        >
-            ← Agenda
-        </a>
-
+        <a class="minhas-reservas" href="{{ url_for('routes.agenda') }}">← Agenda</a>
     </header>
 
-
-
-    <!-- =========================================
-         CONTEÚDO
-         ========================================= -->
-
     <main class="conteudo-admin">
-
-
         <div class="cabecalho-admin">
-
             <div>
-
-                <h1>
-                    Área administrativa
-                </h1>
-
-                <p>
-                    Gerencie o sistema TPL.
-                </p>
-
+                <h1>Área administrativa</h1>
+                <p>Gerencie o sistema TPL.</p>
             </div>
-
         </div>
-
-
-
-        <!-- =========================================
-             MENU ADMIN
-             ========================================= -->
 
         <div class="grid-admin">
-
-
-            <!-- PESSOAS -->
-
-            <a
-                href="#"
-                class="card-admin"
-            >
-
-                <div class="icone-admin">
-                    👥
-                </div>
-
-                <div>
-
-                    <h2>
-                        Pessoas
-                    </h2>
-
-                    <p>
-                        Cadastrar e gerenciar
-                        os irmãos.
-                    </p>
-
-                </div>
-
+            <a href="{{ url_for('people.pessoas') }}" class="card-admin">
+                <div class="icone-admin">👥</div>
+                <div><h2>Pessoas</h2><p>Cadastrar e gerenciar os irmãos.</p></div>
+                <span class="seta-admin">→</span>
             </a>
 
-
-
-            <!-- PROGRAMAÇÃO -->
-
-            <a
-                href="#"
-                class="card-admin"
-            >
-
-                <div class="icone-admin">
-                    📅
-                </div>
-
-                <div>
-
-                    <h2>
-                        Programação
-                    </h2>
-
-                    <p>
-                        Gerenciar horários
-                        e dias.
-                    </p>
-
-                </div>
-
+            <a href="#" class="card-admin">
+                <div class="icone-admin">📅</div>
+                <div><h2>Programação</h2><p>Gerenciar horários e dias.</p></div>
+                <span class="seta-admin">→</span>
             </a>
 
-
-
-            <!-- CARRINHOS -->
-
-            <a
-                href="#"
-                class="card-admin"
-            >
-
-                <div class="icone-admin">
-                    🚚
-                </div>
-
-                <div>
-
-                    <h2>
-                        Carrinhos
-                    </h2>
-
-                    <p>
-                        Gerenciar os
-                        carrinhos.
-                    </p>
-
-                </div>
-
+            <a href="#" class="card-admin">
+                <div class="icone-admin">🚚</div>
+                <div><h2>Carrinhos</h2><p>Gerenciar os carrinhos.</p></div>
+                <span class="seta-admin">→</span>
             </a>
 
-
-
-            <!-- LOCAIS -->
-
-            <a
-                href="#"
-                class="card-admin"
-            >
-
-                <div class="icone-admin">
-                    📍
-                </div>
-
-                <div>
-
-                    <h2>
-                        Locais
-                    </h2>
-
-                    <p>
-                        Gerenciar os locais
-                        de testemunho.
-                    </p>
-
-                </div>
-
+            <a href="#" class="card-admin">
+                <div class="icone-admin">📍</div>
+                <div><h2>Locais</h2><p>Gerenciar os locais de testemunho.</p></div>
+                <span class="seta-admin">→</span>
             </a>
 
-
-
-            <!-- RESERVAS -->
-
-            <a
-                href="#"
-                class="card-admin"
-            >
-
-                <div class="icone-admin">
-                    📋
-                </div>
-
-                <div>
-
-                    <h2>
-                        Reservas
-                    </h2>
-
-                    <p>
-                        Consultar e gerenciar
-                        reservas.
-                    </p>
-
-                </div>
-
+            <a href="#" class="card-admin">
+                <div class="icone-admin">📋</div>
+                <div><h2>Reservas</h2><p>Consultar e gerenciar reservas.</p></div>
+                <span class="seta-admin">→</span>
             </a>
-
-
         </div>
-
     </main>
-
 </div>
-
 </body>
-
 </html>
