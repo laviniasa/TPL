@@ -17,41 +17,22 @@ def create_app():
 
     db.init_app(app)
 
-
     from app.routes import routes
-    app.register_blueprint(routes)
+    from app.people_routes import people
 
+    app.register_blueprint(routes)
+    app.register_blueprint(people)
 
     with app.app_context():
 
         db.create_all()
 
-
-        # =========================
-        # CRIAR CARRINHOS
-        # =========================
-
         if Carrinho.query.count() == 0:
-
-            db.session.add(
-                Carrinho(nome="Carrinho 1")
-            )
-
-            db.session.add(
-                Carrinho(nome="Carrinho 2")
-            )
-
-            db.session.add(
-                Carrinho(nome="Carrinho 3")
-            )
-
-
-        # =========================
-        # CRIAR LOCAIS
-        # =========================
+            db.session.add(Carrinho(nome="Carrinho 1"))
+            db.session.add(Carrinho(nome="Carrinho 2"))
+            db.session.add(Carrinho(nome="Carrinho 3"))
 
         if Local.query.count() == 0:
-
             locais = [
                 "Praça Central",
                 "Rodoviária",
@@ -60,76 +41,25 @@ def create_app():
             ]
 
             for nome in locais:
-
-                db.session.add(
-                    Local(nome=nome)
-                )
-
-
-        # =========================
-        # CRIAR PESSOAS
-        # =========================
+                db.session.add(Local(nome=nome))
 
         pessoas = [
-            "Adriana",
-            "Ana Laura",
-            "Andréia",
-            "Cassiana",
-            "Deise",
-            "Diego",
-            "Ederson",
-            "Evaldo",
-            "Evelise",
-            "Flaviane",
-            "Heloisa",
-            "Isabel Lamin",
-            "João",
-            "José Carlos",
-            "José Rocha",
-            "Juliana",
-            "Karina",
-            "Lavínia",
-            "Lívia",
-            "Luana",
-            "Lucélia",
-            "Luiza Ferrete",
-            "Luiza Pereira",
-            "Marinete",
-            "Mauro",
-            "Nathalia",
-            "Raphael",
-            "Rebeca",
-            "Ricardo",
-            "Romeu",
-            "Serginho Merendi",
-            "Sérgio Ribeiro",
-            "Sérgio Toledo",
-            "Tiago",
-            "Veraldo",
-            "Vinicius Andrade",
-            "Vinicius Gimenes",
-            "Yuri"
+            "Adriana", "Ana Laura", "Andréia", "Cassiana", "Deise",
+            "Diego", "Ederson", "Evaldo", "Evelise", "Flaviane",
+            "Heloisa", "Isabel Lamin", "João", "José Carlos", "José Rocha",
+            "Juliana", "Karina", "Lavínia", "Lívia", "Luana", "Lucélia",
+            "Luiza Ferrete", "Luiza Pereira", "Marinete", "Mauro", "Nathalia",
+            "Raphael", "Rebeca", "Ricardo", "Romeu", "Serginho Merendi",
+            "Sérgio Ribeiro", "Sérgio Toledo", "Tiago", "Veraldo",
+            "Vinicius Andrade", "Vinicius Gimenes", "Yuri"
         ]
 
-
         for nome in pessoas:
-
-            pessoa_existente = Pessoa.query.filter_by(
-                nome=nome
-            ).first()
+            pessoa_existente = Pessoa.query.filter_by(nome=nome).first()
 
             if not pessoa_existente:
-
-                db.session.add(
-                    Pessoa(nome=nome)
-                )
-
-
-        # =========================
-        # SALVAR
-        # =========================
+                db.session.add(Pessoa(nome=nome))
 
         db.session.commit()
-
 
     return app
