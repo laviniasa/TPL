@@ -343,93 +343,367 @@
                 padding: 6px;
             }
         }
+
+        /* =========================================================
+           NOVA IDENTIDADE TPL + SAUDAÇÃO + POP-UPS
+           ========================================================= */
+        :root {
+            --tpl-blue: #0875c9;
+            --tpl-blue-dark: #075da0;
+            --tpl-blue-soft: #eaf5ff;
+            --tpl-bg: #f4f8fc;
+            --tpl-text: #172033;
+            --tpl-muted: #667085;
+            --tpl-success: #16a34a;
+            --tpl-warning: #f59e0b;
+            --tpl-danger: #dc2626;
+        }
+
+        body {
+            background: var(--tpl-bg);
+            color: var(--tpl-text);
+        }
+
+        .topo-novo {
+            background: linear-gradient(135deg, var(--tpl-blue-dark), var(--tpl-blue));
+            color: #fff;
+            min-height: 78px;
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 18px rgba(8,117,201,.18);
+        }
+
+        .topo-esquerda {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .menu-botao {
+            width: 44px;
+            height: 44px;
+            border: 0;
+            border-radius: 12px;
+            background: rgba(255,255,255,.12);
+            color: #fff;
+            font-size: 27px;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .logo-tpl {
+            font-size: 30px;
+            line-height: 1;
+            font-weight: 900;
+            letter-spacing: .5px;
+        }
+
+        .saudacao-tpl {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-left: 4px;
+            min-width: 0;
+        }
+
+        .saudacao-tpl .ola {
+            font-size: 12px;
+            opacity: .86;
+        }
+
+        .saudacao-tpl .nome {
+            font-size: 15px;
+            font-weight: 800;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+        }
+
+        .subtitulo-tpl {
+            display: none;
+        }
+
+        .conteudo-novo {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 18px 16px 36px;
+        }
+
+        .titulo-dia-novo h2 {
+            color: var(--tpl-text);
+            margin: 16px 0 18px;
+            text-align: center;
+        }
+
+        .card-carrinho-novo {
+            background: rgba(255,255,255,.96);
+            border: 1px solid #dce6f0;
+            border-radius: 22px;
+            box-shadow: 0 6px 22px rgba(16,24,40,.07);
+            overflow: hidden;
+            margin-bottom: 18px;
+        }
+
+        .linha-topo-carrinho {
+            padding: 16px 18px 12px;
+        }
+
+        .titulo-carrinho h3 {
+            color: var(--tpl-text);
+            font-size: 21px;
+        }
+
+        .icone-carrinho-imagem {
+            width: 48px;
+            height: 66px;
+        }
+
+        .local-carrinho {
+            margin: 0 18px 12px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: var(--tpl-blue-soft);
+            color: #24567e;
+            font-weight: 700;
+        }
+
+        .lista-horarios-novo {
+            border-top: 1px solid #edf2f7;
+            padding: 0 14px;
+        }
+
+        .linha-horario-novo {
+            min-height: 64px;
+            border-bottom: 1px solid #edf2f7;
+            display: grid;
+            grid-template-columns: 1.05fr .95fr 1fr auto;
+            gap: 10px;
+            align-items: center;
+            padding: 9px 4px;
+        }
+
+        .linha-horario-novo:last-child {
+            border-bottom: 0;
+        }
+
+        .hora-nova {
+            font-weight: 800;
+            color: var(--tpl-text);
+        }
+
+        .livre-novo,
+        .ocupado-novo {
+            font-weight: 800;
+        }
+
+        .botao-reservar-horario,
+        .botao-checkin,
+        .botao-checkout,
+        .botao-excluir {
+            border-radius: 10px;
+            padding: 9px 13px;
+            font-weight: 800;
+        }
+
+        .botao-reservar-horario {
+            color: var(--tpl-blue);
+            text-decoration: none;
+        }
+
+        /* ---------- Modal reutilizável ---------- */
+
+        .tpl-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, .48);
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            z-index: 3000;
+            padding: 14px;
+        }
+
+        .tpl-modal-backdrop.aberto {
+            display: flex;
+        }
+
+        .tpl-modal {
+            width: min(100%, 460px);
+            background: #fff;
+            border-radius: 26px;
+            padding: 22px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.24);
+            animation: tplSubir .22s ease-out;
+        }
+
+        @keyframes tplSubir {
+            from { transform: translateY(18px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .tpl-modal-fechar {
+            float: right;
+            border: 0;
+            background: #f2f4f7;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .tpl-modal-icone {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            display: grid;
+            place-items: center;
+            font-size: 25px;
+            margin-bottom: 12px;
+        }
+
+        .tpl-modal-icone.atencao { background: #fff4d6; }
+        .tpl-modal-icone.sucesso { background: #e8f8ee; }
+        .tpl-modal-icone.erro { background: #feecec; }
+        .tpl-modal-icone.info { background: #eaf5ff; }
+
+        .tpl-modal h3 {
+            margin: 0 38px 7px 0;
+            font-size: 23px;
+            color: #14213d;
+        }
+
+        .tpl-modal p {
+            margin: 0 0 16px;
+            color: #667085;
+            line-height: 1.5;
+        }
+
+        .tpl-modal-carrinho {
+            display: block;
+            width: 118px;
+            height: 150px;
+            object-fit: contain;
+            margin: 0 auto 8px;
+        }
+
+        .tpl-modal-detalhes {
+            background: #f6f9fc;
+            border-radius: 16px;
+            padding: 13px;
+            margin: 12px 0 16px;
+            color: #344054;
+            line-height: 1.55;
+        }
+
+        .tpl-modal-acoes {
+            display: grid;
+            gap: 9px;
+        }
+
+        .tpl-btn-principal,
+        .tpl-btn-secundario {
+            width: 100%;
+            border: 0;
+            border-radius: 13px;
+            padding: 13px 16px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .tpl-btn-principal {
+            background: var(--tpl-blue);
+            color: #fff;
+        }
+
+        .tpl-btn-secundario {
+            background: #eef3f8;
+            color: #1f2937;
+        }
+
+        .tpl-flash-area {
+            position: fixed;
+            inset: 0;
+            z-index: 3100;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 14px;
+            background: rgba(15,23,42,.48);
+        }
+
+        .tpl-flash-area.visivel {
+            display: flex;
+        }
+
+        @media (min-width: 700px) {
+            .tpl-modal-backdrop,
+            .tpl-flash-area {
+                align-items: center;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .linha-horario-novo {
+                grid-template-columns: 1fr 1fr auto;
+            }
+
+            .nome-reserva {
+                grid-column: 1 / -1;
+                grid-row: 2;
+                font-size: 13px;
+                color: var(--tpl-muted);
+            }
+
+            .acao-nova {
+                grid-column: 3;
+                grid-row: 1;
+            }
+
+            .situacao-nova {
+                grid-column: 2;
+                grid-row: 1;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .topo-novo {
+                min-height: 72px;
+                padding: 9px 12px;
+            }
+
+            .logo-tpl {
+                font-size: 27px;
+            }
+
+            .saudacao-tpl .nome {
+                max-width: 145px;
+            }
+
+            .conteudo-novo {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            .card-carrinho-novo {
+                border-radius: 18px;
+            }
+
+            .tpl-modal {
+                border-radius: 23px 23px 18px 18px;
+            }
+        }
+
     </style>
 
-
-
-<style>
-    /* ===== TELA DE ABERTURA TPL ===== */
-    #tpl-splash {
-        position: fixed;
-        inset: 0;
-        z-index: 99999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #0875c9;
-        opacity: 1;
-        visibility: visible;
-        transition: opacity .35s ease, visibility .35s ease;
-    }
-
-    #tpl-splash.ocultar {
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-    }
-
-    .tpl-splash-conteudo {
-        width: min(82vw, 360px);
-        text-align: center;
-        animation: tplSplashEntrada .55s ease-out;
-    }
-
-    .tpl-splash-carrinho {
-        width: min(68vw, 270px);
-        max-height: 58vh;
-        object-fit: contain;
-        display: block;
-        margin: 0 auto;
-    }
-
-    .tpl-splash-subtitulo {
-        margin: 22px 0 0;
-        color: #ffffff;
-        font-size: 18px;
-        line-height: 1.35;
-        font-weight: 500;
-    }
-
-    @keyframes tplSplashEntrada {
-        from {
-            opacity: 0;
-            transform: translateY(12px) scale(.97);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        #tpl-splash {
-            transition: none;
-        }
-
-        .tpl-splash-conteudo {
-            animation: none;
-        }
-    }
-</style>
 
 </head>
 
 <body>
-
-<!-- TELA DE ABERTURA TPL -->
-<div id="tpl-splash" aria-label="Abrindo TPL">
-    <div class="tpl-splash-conteudo">
-        <img
-            src="{{ url_for('static', filename='icons/icon-512.png') }}"
-            alt="Carrinho TPL"
-            class="tpl-splash-carrinho"
-        >
-        <p class="tpl-splash-subtitulo">
-            TPL
-        </p>
-    </div>
-</div>
-
 
 <!-- =====================================================
      MENU LATERAL
@@ -546,13 +820,14 @@
                 ☰
             </button>
 
-            <div class="logo-tpl">
-                TPL
-            </div>
+            <div class="logo-tpl">TPL</div>
 
-            <div class="subtitulo-tpl">
-                Testemunho Público Local
+            {% if current_user.is_authenticated %}
+            <div class="saudacao-tpl">
+                <span class="ola">Olá,</span>
+                <span class="nome">{{ current_user.nome }}! 👋</span>
             </div>
+            {% endif %}
 
         </div>
 
@@ -852,6 +1127,8 @@
                                     data-dia-semana="{{ horario_cabecalho.reserva.dia_semana if horario_cabecalho.reserva.dia_semana is not none else '' }}"
                                     data-hora-inicio="{{ horario_cabecalho.reserva.hora_inicio.strftime('%H:%M') }}"
                                     data-hora-fim="{{ horario_cabecalho.reserva.hora_fim.strftime('%H:%M') }}"
+                                    data-carrinho="{{ item.carrinho.nome }}"
+                                    data-local="{{ item.local.nome }}"
                                 ></span>
 
                             {% endif %}
@@ -1043,6 +1320,69 @@
 </div>
 
 
+
+
+<!-- =========================================================
+     POP-UP TPL: HORÁRIO / CHECK-IN
+     ========================================================= -->
+<div id="tplModalBackdrop" class="tpl-modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="tpl-modal">
+        <button type="button" class="tpl-modal-fechar" onclick="fecharTplModal()" aria-label="Fechar">×</button>
+
+        <div id="tplModalIcone" class="tpl-modal-icone atencao">🔔</div>
+
+        <img id="tplModalCarrinho"
+             class="tpl-modal-carrinho"
+             src="{{ url_for('static', filename='imagens/carrinho_tpl.png') }}"
+             alt="Carrinho de publicações">
+
+        <h3 id="tplModalTitulo">Seu horário do carrinho chegou!</h3>
+        <p id="tplModalTexto">É hora de se dirigir ao local e fazer o check-in para confirmar sua presença.</p>
+
+        <div id="tplModalDetalhes" class="tpl-modal-detalhes"></div>
+
+        <div class="tpl-modal-acoes">
+            <button id="tplModalPrincipal" type="button" class="tpl-btn-principal" onclick="acaoTplModal()">
+                Fazer check-in
+            </button>
+            <button type="button" class="tpl-btn-secundario" onclick="fecharTplModal()">
+                Agora não
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================
+     POP-UP DE FLASH: SUCESSO / ERRO / ATENÇÃO
+     ========================================================= -->
+<div id="tplFlashArea" class="tpl-flash-area">
+    <div class="tpl-modal">
+        <button type="button" class="tpl-modal-fechar" onclick="fecharFlashTpl()" aria-label="Fechar">×</button>
+        <div id="tplFlashIcone" class="tpl-modal-icone info">ℹ️</div>
+        <h3 id="tplFlashTitulo">Mensagem</h3>
+        <p id="tplFlashTexto"></p>
+        <div class="tpl-modal-acoes">
+            <button type="button" class="tpl-btn-principal" onclick="fecharFlashTpl()">Entendi</button>
+        </div>
+    </div>
+</div>
+
+
+{% with mensagens = get_flashed_messages(with_categories=true) %}
+    {% if mensagens %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            {% for categoria, mensagem in mensagens %}
+            mostrarFlashTpl(
+                "{{ categoria }}",
+                {% if categoria == "success" %}"Check-in realizado!"{% elif categoria == "danger" %}"Não foi possível concluir"{% elif categoria == "warning" %}"Atenção"{% else %}"Informação"{% endif %},
+                {{ mensagem|tojson }}
+            );
+            {% endfor %}
+        });
+    </script>
+    {% endif %}
+{% endwith %}
 
 <script>
 
@@ -1615,27 +1955,6 @@ setInterval(
             });
         }
     </script>
-
-
-<script>
-    /* ===== FECHA A TELA DE ABERTURA ===== */
-    window.addEventListener("load", function () {
-        const splash = document.getElementById("tpl-splash");
-
-        if (!splash) {
-            return;
-        }
-
-        setTimeout(function () {
-            splash.classList.add("ocultar");
-
-            setTimeout(function () {
-                splash.remove();
-            }, 400);
-
-        }, 1000);
-    });
-</script>
 
 </body>
 
