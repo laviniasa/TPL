@@ -348,6 +348,7 @@
 
 
 <style>
+    /* ===== TELA DE ABERTURA TPL ===== */
     #tpl-splash {
         position: fixed;
         inset: 0;
@@ -355,7 +356,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(180deg, #0875c9 0%, #005ca8 100%);
+        background: #0875c9;
         opacity: 1;
         visibility: visible;
         transition: opacity .35s ease, visibility .35s ease;
@@ -368,32 +369,23 @@
     }
 
     .tpl-splash-conteudo {
-        width: min(82vw, 330px);
+        width: min(82vw, 360px);
         text-align: center;
-        color: white;
         animation: tplSplashEntrada .55s ease-out;
     }
 
     .tpl-splash-carrinho {
-        width: min(62vw, 230px);
-        max-height: 52vh;
+        width: min(68vw, 270px);
+        max-height: 58vh;
         object-fit: contain;
         display: block;
-        margin: 0 auto 18px;
-        filter: drop-shadow(0 10px 18px rgba(0,0,0,.22));
-    }
-
-    .tpl-splash-titulo {
-        margin: 0;
-        font-size: 42px;
-        line-height: 1;
-        font-weight: 800;
-        letter-spacing: 2px;
+        margin: 0 auto;
     }
 
     .tpl-splash-subtitulo {
-        margin: 10px 0 0;
-        font-size: 16px;
+        margin: 22px 0 0;
+        color: #ffffff;
+        font-size: 18px;
         line-height: 1.35;
         font-weight: 500;
     }
@@ -424,15 +416,17 @@
 
 <body>
 
+<!-- TELA DE ABERTURA TPL -->
 <div id="tpl-splash" aria-label="Abrindo TPL">
     <div class="tpl-splash-conteudo">
         <img
-            src="{{ url_for('static', filename='icons/apple-touch-icon.png') }}"
+            src="{{ url_for('static', filename='icons/icon-512.png') }}"
             alt="Carrinho TPL"
             class="tpl-splash-carrinho"
         >
-        <h1 class="tpl-splash-titulo">TPL</h1>
-        <p class="tpl-splash-subtitulo">Testemunho Público Local</p>
+        <p class="tpl-splash-subtitulo">
+            TPL
+        </p>
     </div>
 </div>
 
@@ -1624,9 +1618,13 @@ setInterval(
 
 
 <script>
+    /* ===== FECHA A TELA DE ABERTURA ===== */
     window.addEventListener("load", function () {
         const splash = document.getElementById("tpl-splash");
-        if (!splash) return;
+
+        if (!splash) {
+            return;
+        }
 
         setTimeout(function () {
             splash.classList.add("ocultar");
@@ -1634,7 +1632,8 @@ setInterval(
             setTimeout(function () {
                 splash.remove();
             }, 400);
-        }, 1200);
+
+        }, 1000);
     });
 </script>
 
