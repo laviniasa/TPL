@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -8,9 +10,51 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
     >
 
-    <meta name="theme-color" content="#087dcc">
-
     <title>Login | TPL</title>
+
+
+    <!-- =====================================================
+         PWA
+    ====================================================== -->
+
+    <link
+        rel="manifest"
+        href="{{ url_for('static', filename='manifest.json') }}"
+    >
+
+    <meta
+        name="theme-color"
+        content="#0875c9"
+    >
+
+    <meta
+        name="mobile-web-app-capable"
+        content="yes"
+    >
+
+    <meta
+        name="apple-mobile-web-app-capable"
+        content="yes"
+    >
+
+    <meta
+        name="apple-mobile-web-app-status-bar-style"
+        content="default"
+    >
+
+    <meta
+        name="apple-mobile-web-app-title"
+        content="TPL"
+    >
+
+    <link
+        rel="apple-touch-icon"
+        href="{{ url_for(
+            'static',
+            filename='icons/apple-touch-icon.png'
+        ) }}"
+    >
+
 
     <style>
 
@@ -20,10 +64,13 @@
             padding: 0;
         }
 
+
         html,
         body {
+
             width: 100%;
             min-height: 100%;
+
             font-family:
                 -apple-system,
                 BlinkMacSystemFont,
@@ -33,7 +80,9 @@
                 sans-serif;
         }
 
+
         body {
+
             background:
                 linear-gradient(
                     135deg,
@@ -45,22 +94,27 @@
             color: #123b60;
 
             display: flex;
+
             align-items: center;
             justify-content: center;
 
             min-height: 100vh;
+
             padding: 20px;
 
             overflow-x: hidden;
         }
 
 
-        /* =====================================
+
+        /* =====================================================
            SPLASH SCREEN
-        ===================================== */
+        ====================================================== */
 
         #splash {
+
             position: fixed;
+
             inset: 0;
 
             z-index: 9999;
@@ -68,11 +122,14 @@
             background: #ffffff;
 
             display: flex;
+
             flex-direction: column;
+
             align-items: center;
             justify-content: center;
 
             opacity: 1;
+
             visibility: visible;
 
             transition:
@@ -80,14 +137,21 @@
                 visibility 0.6s ease;
         }
 
+
         #splash.esconder {
+
             opacity: 0;
+
             visibility: hidden;
+
             pointer-events: none;
         }
 
+
         .splash-carrinho {
+
             width: 145px;
+
             max-width: 45vw;
 
             object-fit: contain;
@@ -97,31 +161,41 @@
                 flutuarCarrinho 2.5s ease-in-out 0.8s infinite;
         }
 
+
         .splash-logo {
+
             margin-top: 10px;
 
             color: #087dcc;
 
             font-size: 42px;
+
             font-weight: 800;
 
             letter-spacing: -1px;
 
-            animation: aparecerTexto 0.8s ease 0.2s both;
+            animation:
+                aparecerTexto 0.8s ease 0.2s both;
         }
 
+
         .splash-subtitulo {
+
             margin-top: 3px;
 
             color: #8296aa;
 
             font-size: 15px;
+
             font-weight: 500;
 
-            animation: aparecerTexto 0.8s ease 0.35s both;
+            animation:
+                aparecerTexto 0.8s ease 0.35s both;
         }
 
+
         .splash-loader {
+
             width: 34px;
             height: 34px;
 
@@ -130,78 +204,114 @@
             border-radius: 50%;
 
             border: 3px solid #dceaf5;
+
             border-top-color: #087dcc;
 
-            animation: girar 0.9s linear infinite;
+            animation:
+                girar 0.9s linear infinite;
         }
 
+
         .splash-carregando {
+
             margin-top: 12px;
 
             color: #8296aa;
 
             font-size: 13px;
+
             font-weight: 500;
 
-            animation: aparecerTexto 0.8s ease 0.5s both;
+            animation:
+                aparecerTexto 0.8s ease 0.5s both;
         }
 
 
-        /* =====================================
-           ANIMAÇÕES SPLASH
-        ===================================== */
+
+        /* =====================================================
+           ANIMAÇÕES
+        ====================================================== */
 
         @keyframes aparecerCarrinho {
+
             from {
+
                 opacity: 0;
-                transform: translateY(18px) scale(0.94);
+
+                transform:
+                    translateY(18px)
+                    scale(0.94);
             }
 
             to {
+
                 opacity: 1;
-                transform: translateY(0) scale(1);
+
+                transform:
+                    translateY(0)
+                    scale(1);
             }
         }
+
 
         @keyframes aparecerTexto {
+
             from {
+
                 opacity: 0;
-                transform: translateY(8px);
+
+                transform:
+                    translateY(8px);
             }
 
             to {
+
                 opacity: 1;
-                transform: translateY(0);
+
+                transform:
+                    translateY(0);
             }
         }
+
 
         @keyframes flutuarCarrinho {
 
             0%,
             100% {
-                transform: translateY(0);
+
+                transform:
+                    translateY(0);
             }
 
             50% {
-                transform: translateY(-7px);
+
+                transform:
+                    translateY(-7px);
             }
         }
+
 
         @keyframes girar {
+
             to {
-                transform: rotate(360deg);
+
+                transform:
+                    rotate(360deg);
             }
         }
 
 
-        /* =====================================
+
+        /* =====================================================
            CONTAINER
-        ===================================== */
+        ====================================================== */
 
         .login-container {
+
             width: 100%;
 
             display: flex;
+
             justify-content: center;
             align-items: center;
 
@@ -209,47 +319,62 @@
         }
 
 
-        /* =====================================
-           CARD DE LOGIN
-        ===================================== */
+
+        /* =====================================================
+           CARD
+        ====================================================== */
 
         .login-card {
+
             position: relative;
 
             width: 100%;
+
             max-width: 410px;
 
-            background: rgba(255, 255, 255, 0.97);
+            background:
+                rgba(255, 255, 255, 0.97);
 
             border-radius: 28px;
 
-            padding: 32px 30px 22px;
+            padding:
+                32px 30px 22px;
 
             box-shadow:
-                0 20px 50px rgba(20, 63, 105, 0.10),
-                0 4px 15px rgba(20, 63, 105, 0.05);
+                0 20px 50px
+                rgba(20, 63, 105, 0.10),
 
-            border: 1px solid rgba(255, 255, 255, 0.9);
+                0 4px 15px
+                rgba(20, 63, 105, 0.05);
+
+            border:
+                1px solid
+                rgba(255, 255, 255, 0.9);
 
             overflow: hidden;
         }
 
 
-        /* =====================================
-           DETALHE AZUL DO TOPO
-        ===================================== */
+
+        /* =====================================================
+           DETALHE AZUL
+        ====================================================== */
 
         .login-card::before {
+
             content: "";
 
             position: absolute;
 
             top: 0;
+
             left: 50%;
 
-            transform: translateX(-50%);
+            transform:
+                translateX(-50%);
 
             width: 90px;
+
             height: 5px;
 
             background:
@@ -259,43 +384,53 @@
                     #1595df
                 );
 
-            border-radius: 0 0 10px 10px;
+            border-radius:
+                0 0 10px 10px;
         }
 
 
-        /* =====================================
+
+        /* =====================================================
            TÍTULO
-        ===================================== */
+        ====================================================== */
 
         .login-card h1 {
-            margin: 3px 0 6px;
+
+            margin:
+                3px 0 6px;
 
             text-align: center;
 
             color: #082f57;
 
             font-size: 30px;
+
             font-weight: 800;
 
             letter-spacing: -0.8px;
         }
 
+
         .subtitulo {
+
             text-align: center;
 
             color: #7690aa;
 
             font-size: 16px;
 
-            margin: 0 0 34px;
+            margin:
+                0 0 34px;
         }
 
 
-        /* =====================================
+
+        /* =====================================================
            FORMULÁRIO
-        ===================================== */
+        ====================================================== */
 
         .login-form {
+
             display: flex;
 
             flex-direction: column;
@@ -304,15 +439,19 @@
         }
 
 
-        /* =====================================
+
+        /* =====================================================
            CAMPOS
-        ===================================== */
+        ====================================================== */
 
         .login-field {
+
             position: relative;
         }
 
+
         .login-field label {
+
             display: block;
 
             margin-bottom: 8px;
@@ -324,15 +463,21 @@
             font-weight: 600;
         }
 
+
         .login-field input {
+
             width: 100%;
+
             height: 56px;
 
-            padding: 0 18px;
+            padding:
+                0 18px;
 
             background: #f8fafc;
 
-            border: 1.5px solid #d5e0eb;
+            border:
+                1.5px solid
+                #d5e0eb;
 
             border-radius: 14px;
 
@@ -349,49 +494,66 @@
                 transform 0.2s ease;
         }
 
+
         .login-field input::placeholder {
+
             color: #9aabc0;
         }
 
+
         .login-field input:hover {
+
             background: #ffffff;
 
             border-color: #b8cbe0;
         }
 
+
         .login-field input:focus {
+
             background: #ffffff;
 
             border-color: #1387d1;
 
             box-shadow:
-                0 0 0 4px rgba(19, 135, 209, 0.10);
+                0 0 0 4px
+                rgba(19, 135, 209, 0.10);
 
-            transform: translateY(-1px);
+            transform:
+                translateY(-1px);
         }
 
 
-        /* =====================================
+
+        /* =====================================================
            SENHA
-        ===================================== */
+        ====================================================== */
 
         .password-wrapper {
+
             position: relative;
         }
 
+
         .password-wrapper input {
+
             padding-right: 55px;
         }
 
+
         .password-toggle {
+
             position: absolute;
 
             right: 13px;
+
             top: 50%;
 
-            transform: translateY(-50%);
+            transform:
+                translateY(-50%);
 
             width: 38px;
+
             height: 38px;
 
             border: none;
@@ -416,19 +578,24 @@
                 color 0.2s ease;
         }
 
+
         .password-toggle:hover {
+
             background: #edf5fb;
 
             color: #087dcc;
         }
 
 
-        /* =====================================
-           BOTÃO ENTRAR
-        ===================================== */
+
+        /* =====================================================
+           BOTÃO
+        ====================================================== */
 
         .login-button {
+
             width: 100%;
+
             height: 66px;
 
             margin-top: 4px;
@@ -453,7 +620,8 @@
             cursor: pointer;
 
             box-shadow:
-                0 12px 25px rgba(8, 125, 204, 0.22);
+                0 12px 25px
+                rgba(8, 125, 204, 0.22);
 
             transition:
                 transform 0.2s ease,
@@ -462,23 +630,34 @@
                 opacity 0.2s ease;
         }
 
+
         .login-button:hover {
-            transform: translateY(-2px);
+
+            transform:
+                translateY(-2px);
 
             box-shadow:
-                0 15px 30px rgba(8, 125, 204, 0.28);
+                0 15px 30px
+                rgba(8, 125, 204, 0.28);
 
-            filter: brightness(1.03);
+            filter:
+                brightness(1.03);
         }
+
 
         .login-button:active {
-            transform: translateY(0);
+
+            transform:
+                translateY(0);
 
             box-shadow:
-                0 7px 15px rgba(8, 125, 204, 0.20);
+                0 7px 15px
+                rgba(8, 125, 204, 0.20);
         }
 
+
         .login-button:disabled {
+
             cursor: wait;
 
             opacity: 0.75;
@@ -487,11 +666,13 @@
         }
 
 
-        /* =====================================
+
+        /* =====================================================
            RODAPÉ
-        ===================================== */
+        ====================================================== */
 
         .login-footer {
+
             margin-top: 28px;
 
             text-align: center;
@@ -503,38 +684,50 @@
             font-weight: 500;
         }
 
+
         .login-footer::before {
+
             content: "";
 
             display: block;
 
             width: 42px;
+
             height: 1px;
 
-            margin: 0 auto 18px;
+            margin:
+                0 auto 18px;
 
-            background: #dce6ef;
+            background:
+                #dce6ef;
         }
 
+
         .login-footer span {
+
             color: #087dcc;
 
             font-weight: 600;
         }
 
 
-        /* =====================================
-           MENSAGENS FLASK
-        ===================================== */
+
+        /* =====================================================
+           FLASH
+        ====================================================== */
 
         .flash-container {
+
             width: 100%;
 
             margin-bottom: 20px;
         }
 
+
         .flash {
-            padding: 13px 16px;
+
+            padding:
+                13px 16px;
 
             border-radius: 12px;
 
@@ -545,84 +738,118 @@
             text-align: center;
         }
 
+
         .flash.success {
+
             background: #edf9f2;
 
             color: #207245;
 
-            border: 1px solid #ccebd8;
+            border:
+                1px solid
+                #ccebd8;
         }
 
+
         .flash.danger {
+
             background: #fff1f1;
 
             color: #b23b3b;
 
-            border: 1px solid #f0cccc;
+            border:
+                1px solid
+                #f0cccc;
         }
 
+
         .flash.warning {
+
             background: #fff8e9;
 
             color: #996d13;
 
-            border: 1px solid #f1dfb1;
+            border:
+                1px solid
+                #f1dfb1;
         }
 
+
         .flash.info {
+
             background: #eef7ff;
 
             color: #21618c;
 
-            border: 1px solid #d2e7f7;
+            border:
+                1px solid
+                #d2e7f7;
         }
 
 
-        /* =====================================
+
+        /* =====================================================
            MOBILE
-        ===================================== */
+        ====================================================== */
 
         @media (max-width: 600px) {
 
             body {
+
                 padding: 14px;
             }
 
+
             .login-container {
-                padding: 5px 0;
+
+                padding:
+                    5px 0;
             }
 
+
             .login-card {
+
                 max-width: 100%;
 
-                padding: 36px 22px 25px;
+                padding:
+                    36px 22px 25px;
 
                 border-radius: 26px;
             }
 
+
             .login-card h1 {
+
                 font-size: 30px;
 
                 letter-spacing: -0.6px;
             }
 
+
             .subtitulo {
+
                 font-size: 15px;
 
                 margin-bottom: 28px;
             }
 
+
             .login-form {
+
                 gap: 16px;
             }
 
+
             .login-field input {
+
                 height: 60px;
 
                 border-radius: 15px;
             }
 
+
             .login-button {
+
                 height: 56px;
 
                 border-radius: 14px;
@@ -630,90 +857,127 @@
                 font-size: 18px;
             }
 
+
             .login-footer {
+
                 margin-top: 20px;
 
                 font-size: 12px;
             }
 
+
             .splash-carrinho {
+
                 width: 125px;
             }
 
+
             .splash-logo {
+
                 font-size: 36px;
             }
 
+
             .splash-subtitulo {
+
                 font-size: 14px;
             }
+
         }
 
 
-        /* =====================================
-           CELULARES PEQUENOS
-        ===================================== */
 
-        @media (max-height: 700px) and (max-width: 600px) {
+        /* =====================================================
+           CELULARES PEQUENOS
+        ====================================================== */
+
+        @media (
+            max-height: 700px
+        ) and (
+            max-width: 600px
+        ) {
 
             .login-card {
+
                 padding-top: 30px;
+
                 padding-bottom: 20px;
             }
 
+
             .login-card h1 {
+
                 font-size: 27px;
             }
 
+
             .subtitulo {
+
                 margin-bottom: 22px;
             }
 
+
             .login-form {
+
                 gap: 15px;
             }
 
+
             .login-field input {
+
                 height: 55px;
             }
 
+
             .login-button {
+
                 height: 57px;
             }
 
+
             .login-footer {
+
                 margin-top: 18px;
             }
+
         }
 
     </style>
+
 </head>
 
 
 <body>
 
 
-    <!-- =====================================
+    <!-- =====================================================
          SPLASH
-    ====================================== -->
+    ====================================================== -->
 
     <div id="splash">
 
         <img
-            src="{{ url_for('static', filename='icons/carrinho-tpl.png') }}"
+            src="{{ url_for(
+                'static',
+                filename='icons/carrinho-tpl.png'
+            ) }}"
             class="splash-carrinho"
             alt="Carrinho TPL"
         >
+
 
         <div class="splash-logo">
             TPL
         </div>
 
+
         <div class="splash-subtitulo">
             Testemunho Público Local
         </div>
 
+
         <div class="splash-loader"></div>
+
 
         <div
             class="splash-carregando"
@@ -726,9 +990,9 @@
 
 
 
-    <!-- =====================================
+    <!-- =====================================================
          LOGIN
-    ====================================== -->
+    ====================================================== -->
 
     <main class="login-container">
 
@@ -738,14 +1002,20 @@
                 Bem-vindo!
             </h1>
 
+
             <p class="subtitulo">
                 Entre para acessar sua agenda.
             </p>
 
 
-            <!-- MENSAGENS -->
 
-            {% with messages = get_flashed_messages(with_categories=true) %}
+            <!-- =================================================
+                 MENSAGENS
+            ================================================== -->
+
+            {% with messages = get_flashed_messages(
+                with_categories=true
+            ) %}
 
                 {% if messages %}
 
@@ -767,7 +1037,9 @@
 
 
 
-            <!-- FORMULÁRIO -->
+            <!-- =================================================
+                 FORMULÁRIO
+            ================================================== -->
 
             <form
                 method="POST"
@@ -783,6 +1055,7 @@
                     <label for="email">
                         E-mail
                     </label>
+
 
                     <input
                         type="email"
@@ -805,6 +1078,7 @@
                         Senha
                     </label>
 
+
                     <div class="password-wrapper">
 
                         <input
@@ -815,6 +1089,7 @@
                             autocomplete="current-password"
                             required
                         >
+
 
                         <button
                             type="button"
@@ -845,11 +1120,16 @@
 
 
 
-            <!-- RODAPÉ -->
+            <!-- =================================================
+                 RODAPÉ
+            ================================================== -->
 
             <div class="login-footer">
+
                 <span>TPL</span>
+
                 · Testemunho Público Local
+
             </div>
 
         </section>
@@ -858,14 +1138,21 @@
 
 
 
+    <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
+
     <script>
 
-        /* =====================================
+        /* =====================================================
            SPLASH
-        ====================================== */
+        ====================================================== */
 
-        const splash = document.getElementById("splash");
-        const splashTexto = document.getElementById("splashTexto");
+        const splash =
+            document.getElementById("splash");
+
+        const splashTexto =
+            document.getElementById("splashTexto");
 
 
         function esconderSplash() {
@@ -878,7 +1165,9 @@
         }
 
 
-        function mostrarSplash(texto = "Carregando...") {
+        function mostrarSplash(
+            texto = "Carregando..."
+        ) {
 
             if (!splash) {
                 return;
@@ -891,49 +1180,65 @@
 
 
         /*
-         * Tempo do splash:
-         * 4 segundos
+         * Mostra o splash durante 4 segundos.
          */
 
         setTimeout(
             function () {
+
                 esconderSplash();
+
             },
             4000
         );
 
 
 
-        /* =====================================
+        /* =====================================================
            MOSTRAR / ESCONDER SENHA
-        ====================================== */
+        ====================================================== */
 
-        const senhaInput = document.getElementById("senha");
-        const toggleSenha = document.getElementById("toggleSenha");
+        const senhaInput =
+            document.getElementById("senha");
+
+        const toggleSenha =
+            document.getElementById("toggleSenha");
 
 
-        if (toggleSenha && senhaInput) {
+        if (
+            toggleSenha &&
+            senhaInput
+        ) {
 
             toggleSenha.addEventListener(
                 "click",
                 function () {
 
-                    if (senhaInput.type === "password") {
+                    if (
+                        senhaInput.type ===
+                        "password"
+                    ) {
 
-                        senhaInput.type = "text";
+                        senhaInput.type =
+                            "text";
 
-                        toggleSenha.textContent = "◉";
+                        toggleSenha.textContent =
+                            "◉";
 
                         toggleSenha.setAttribute(
                             "aria-label",
                             "Ocultar senha"
                         );
 
-                    } else {
+                    }
 
-                        senhaInput.type = "password";
+                    else {
 
-                        toggleSenha.textContent = "◉";
+                        senhaInput.type =
+                            "password";
+
+                        toggleSenha.textContent =
+                            "◉";
 
                         toggleSenha.setAttribute(
                             "aria-label",
@@ -949,12 +1254,15 @@
 
 
 
-        /* =====================================
+        /* =====================================================
            LOGIN
-        ====================================== */
+        ====================================================== */
 
-        const loginForm = document.getElementById("loginForm");
-        const loginButton = document.getElementById("loginButton");
+        const loginForm =
+            document.getElementById("loginForm");
+
+        const loginButton =
+            document.getElementById("loginButton");
 
 
         if (loginForm) {
@@ -965,13 +1273,17 @@
 
                     if (loginButton) {
 
-                        loginButton.disabled = true;
+                        loginButton.disabled =
+                            true;
 
-                        loginButton.textContent = "Entrando...";
+                        loginButton.textContent =
+                            "Entrando...";
 
                     }
 
-                    mostrarSplash("Entrando...");
+                    mostrarSplash(
+                        "Entrando..."
+                    );
 
                 }
             );
@@ -980,12 +1292,9 @@
 
 
 
-        /* =====================================
+        /* =====================================================
            PAGESHOW
-           
-           Faz o splash aparecer novamente
-           quando a página volta do cache
-        ====================================== */
+        ====================================================== */
 
         window.addEventListener(
             "pageshow",
@@ -993,11 +1302,15 @@
 
                 if (event.persisted) {
 
-                    mostrarSplash("Carregando...");
+                    mostrarSplash(
+                        "Carregando..."
+                    );
 
                     setTimeout(
                         function () {
+
                             esconderSplash();
+
                         },
                         4000
                     );
@@ -1007,7 +1320,52 @@
             }
         );
 
+
+
+        /* =====================================================
+           SERVICE WORKER / PWA
+        ====================================================== */
+
+        if ("serviceWorker" in navigator) {
+
+            window.addEventListener(
+                "load",
+                function () {
+
+                    navigator.serviceWorker
+                        .register(
+                            "/service-worker.js",
+                            {
+                                scope: "/"
+                            }
+                        )
+                        .then(
+                            function () {
+
+                                console.log(
+                                    "TPL PWA: Service Worker ativo."
+                                );
+
+                            }
+                        )
+                        .catch(
+                            function (erro) {
+
+                                console.error(
+                                    "TPL PWA: erro ao registrar Service Worker.",
+                                    erro
+                                );
+
+                            }
+                        );
+
+                }
+            );
+
+        }
+
     </script>
 
 </body>
+
 </html>
