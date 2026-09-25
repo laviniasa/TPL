@@ -49,9 +49,6 @@ def service_worker():
         mimetype="application/javascript"
     )
 
-
-SAO_PAULO = ZoneInfo("America/Sao_Paulo")__)
-
 SAO_PAULO = ZoneInfo("America/Sao_Paulo")
 
 
