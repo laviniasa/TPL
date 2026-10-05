@@ -19,10 +19,26 @@ def create_app():
     # =========================
 
     app.config["SECRET_KEY"] = "uma-chave-secreta-tpl"
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-    "DATABASE_URL",
-    "sqlite:///tpl.db"
-)
+    database_url = os.environ.get(
+        "DATABASE_URL",
+        "sqlite:///tpl.db"
+    )
+    
+    if database_url.startswith("postgresql://"):
+        database_url = database_url.replace(
+            "postgresql://",
+            "postgresql+psycopg://",
+            1
+        )
+    
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace(
+            "postgres://",
+            "postgresql+psycopg://",
+            1
+        )
+    
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     # =========================
