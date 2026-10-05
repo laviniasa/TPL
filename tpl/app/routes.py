@@ -7,9 +7,7 @@ from flask import (
     request,
     redirect,
     url_for,
-    flash,
-    current_app,
-    send_from_directory
+    flash
 )
 
 from flask_login import (
@@ -39,15 +37,6 @@ from app.models import (
 
 
 routes = Blueprint("routes", __name__)
-
-
-@routes.route("/service-worker.js")
-def service_worker():
-    return send_from_directory(
-        current_app.static_folder,
-        "service-worker.js",
-        mimetype="application/javascript"
-    )
 
 SAO_PAULO = ZoneInfo("America/Sao_Paulo")
 
