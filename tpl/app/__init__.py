@@ -1,5 +1,5 @@
 from flask import Flask
-
+import os
 from flask_login import LoginManager
 
 from app.models import (
@@ -19,7 +19,10 @@ def create_app():
     # =========================
 
     app.config["SECRET_KEY"] = "uma-chave-secreta-tpl"
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///tpl.db"
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "DATABASE_URL",
+    "sqlite:///tpl.db"
+)
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     # =========================
