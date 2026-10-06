@@ -728,8 +728,80 @@
             color: #98a2b3;
         }
 
+    /* =========================================================
+    RESULTADOS DA BUSCA
+    ========================================================= */
 
-        .search-icon {
+    .resultados-busca {
+        display: none;
+        margin-top: -7px;
+        margin-bottom: 15px;
+        background: #fff;
+        border: 1px solid var(--tpl-border);
+        border-radius: 14px;
+        box-shadow: 0 8px 22px rgba(16, 24, 40, .10);
+        overflow: hidden;
+        position: relative;
+        z-index: 20;
+    }
+
+    .resultado-busca-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        text-decoration: none;
+        color: var(--tpl-text);
+        border-bottom: 1px solid #edf2f7;
+        background: #fff;
+        transition: background .15s ease;
+    }
+
+    .resultado-busca-item:last-child {
+        border-bottom: 0;
+    }
+
+    .resultado-busca-item:hover {
+        background: var(--tpl-blue-light);
+    }
+
+    .resultado-busca-icone {
+        width: 36px;
+        height: 36px;
+        flex: 0 0 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: var(--tpl-blue-light);
+        font-size: 18px;
+    }
+
+    .resultado-busca-texto {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .resultado-busca-texto strong {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--tpl-text);
+    }
+
+    .resultado-busca-texto small {
+        font-size: 11px;
+        color: var(--tpl-text-secondary);
+    }
+
+    .resultado-vazio {
+        padding: 16px;
+        text-align: center;
+        color: var(--tpl-text-secondary);
+        font-size: 12px;
+    }
+            .search-icon {
 
             position: absolute;
 
@@ -746,7 +818,21 @@
 
             pointer-events: none;
         }
+/* =========================================================
+   DESTAQUE DO LOCAL ENCONTRADO
+   ========================================================= */
 
+.cart-card.cart-card-destaque {
+    border: 3px solid var(--tpl-blue);
+    box-shadow:
+        0 0 0 5px rgba(8, 117, 201, .12),
+        0 12px 30px rgba(8, 117, 201, .20);
+    transform: translateY(-3px);
+    transition:
+        border .2s ease,
+        box-shadow .2s ease,
+        transform .2s ease;
+}
 
         /* =========================================================
            SELETOR DE DATA
@@ -2925,6 +3011,7 @@
 
     </div>
 
+    <div id="resultadosBusca" class="resultados-busca"></div>
 
     <!-- =====================================================
          AGENDA
@@ -4308,78 +4395,6 @@
         });
 
     }
-
-
-    /* =========================================================
-       BUSCA
-       ========================================================= */
-
-    const searchInput =
-        document.getElementById(
-            "searchInput"
-        );
-
-
-    if (searchInput) {
-
-        searchInput.addEventListener(
-            "input",
-            function() {
-
-
-                const termo =
-                    this.value
-                        .toLowerCase()
-                        .trim();
-
-
-                document
-                    .querySelectorAll(
-                        ".cart-card"
-                    )
-                    .forEach(
-                        card => {
-
-
-                            const nome =
-                                card.dataset
-                                    .cartName
-                                    .toLowerCase();
-
-
-                            const local =
-                                card.dataset
-                                    .location
-                                    .toLowerCase();
-
-
-                            const encontrado =
-
-                                nome.includes(
-                                    termo
-                                )
-
-                                ||
-
-                                local.includes(
-                                    termo
-                                );
-
-
-                            card.style.display =
-                                encontrado
-                                ? ""
-                                : "none";
-
-                        }
-                    );
-
-            }
-        );
-
-    }
-
-
     /* =========================================================
        MODAL
        ========================================================= */
@@ -4447,8 +4462,148 @@
         atualizarCheckin,
         30000
     );
+/* =========================================================
+   BUSCA RÁPIDA
+   ========================================================= */
 
+const searchInput = document.getElementById("searchInput");
+const resultadosBusca = document.getElementById("resultadosBusca");
 
+if (searchInput && resultadosBusca) {
+
+    searchInput.addEventListener("input", async function () {
+
+        const termo = this.value.trim();
+
+        if (!termo) {
+            resultadosBusca.innerHTML = "";
+            resultadosBusca.style.display = "none";
+            return;
+        }
+
+        try {
+
+            const resposta = await fetch(
+                "/buscar?q=" + encodeURIComponent(termo)
+            );
+
+            const dados = await resposta.json();
+
+            if (!dados.resultados.length) {
+
+                resultadosBusca.innerHTML = `
+                    <div class="resultado-vazio">
+                        Nenhum resultado encontrado.
+                    </div>
+                `;
+
+                resultadosBusca.style.display = "block";
+                return;
+            }
+
+            resultadosBusca.innerHTML =
+                dados.resultados.map(resultado => `
+                    <a
+                        href="${resultado.url}"
+                        class="resultado-busca-item"
+                    >
+                        <span class="resultado-busca-icone">
+                            ${resultado.icone}
+                        </span>
+
+                        <span class="resultado-busca-texto">
+                            <strong>
+                                ${resultado.titulo}
+                            </strong>
+
+                            <small>
+                                ${resultado.subtitulo}
+                            </small>
+                        </span>
+                    </a>
+                `).join("");
+
+            resultadosBusca.style.display = "block";
+
+        } catch (erro) {
+
+            console.error(
+                "Erro na busca:",
+                erro
+            );
+
+            resultadosBusca.innerHTML = `
+                <div class="resultado-vazio">
+                    Não foi possível realizar a busca.
+                </div>
+            `;
+
+            resultadosBusca.style.display = "block";
+        }
+
+    });
+
+}
+
+/* =========================================================
+   DESTACA LOCAL DA BUSCA
+   ========================================================= */
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const parametrosBusca =
+        new URLSearchParams(window.location.search);
+
+    const localBuscado =
+        parametrosBusca.get("local");
+
+    if (!localBuscado) {
+        return;
+    }
+
+    const localNormalizado =
+        localBuscado
+            .trim()
+            .toLowerCase();
+
+    const carrinhos =
+        document.querySelectorAll(".cart-card");
+
+    let encontrou = false;
+
+    carrinhos.forEach(function (card) {
+
+        const localDoCarrinho =
+            (card.dataset.location || "")
+                .trim()
+                .toLowerCase();
+
+        if (localDoCarrinho === localNormalizado) {
+
+            card.classList.add("cart-card-destaque");
+
+            if (!encontrou) {
+
+                card.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+
+                encontrou = true;
+            }
+
+            setTimeout(function () {
+
+                card.classList.remove(
+                    "cart-card-destaque"
+                );
+
+            }, 4000);
+        }
+
+    });
+
+});
     /*
      * Fecha modal clicando fora.
      */
