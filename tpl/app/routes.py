@@ -133,6 +133,121 @@ def garantir_programacao_do_dia(data):
 
     if criadas:
         db.session.commit()
+
+
+# =========================================================
+# BUSCA RÁPIDA
+# =========================================================
+
+@routes.route("/buscar")
+@login_required
+def buscar():
+    termo = request.args.get("q", "").strip()
+
+    if not termo:
+        return {"resultados": []}
+
+    busca = f"%{termo}%"
+
+    resultados = []
+
+    # Pessoas
+    pessoas = (
+        Pessoa.query
+        .filter(
+            Pessoa.nome.ilike(busca),
+            Pessoa.ativo == True
+        )
+        .order_by(Pessoa.nome)
+        .limit(10)
+        .all()
+    )
+
+    for pessoa in pessoas:
+        resultados.append({
+            "tipo": "pessoa",
+            "icone": "👤",
+            "titulo": pessoa.nome,
+            "subtitulo": "Irmão",
+            "url": url_for("routes.admin_pessoas")
+        })
+
+    # Carrinhos
+    carrinhos = (
+        Carrinho.query
+        .filter(
+            Carrinho.nome.ilike(busca),
+            Carrinho.ativo == True
+        )
+        .order_by(Carrinho.nome)
+        .limit(10)
+        .all()
+    )
+
+    for carrinho in carrinhos:
+        resultados.append({
+            "tipo": "carrinho",
+            "icone": "🛒",
+            "titulo": carrinho.nome,
+            "subtitulo": "Carrinho",
+        })
+
+    # Locais
+    locais = (
+        Local.query
+        .filter(
+            Local.nome.ilike(busca),
+            Local.ativo == True
+        )
+        .order_by(Local.nome)
+        .limit(10)
+        .all()
+    )
+
+    for local in locais:
+        resultados.append({
+            "tipo": "local",
+            "icone": "📍",
+            "titulo": local.nome,
+            "subtitulo": "Local",
+            "url": url_for(
+            "routes.agenda",
+            local=local.nome
+        )
+        })
+
+    # Reservas
+    reservas = (
+        Reserva.query
+        .filter(
+            Reserva.ativo == True,
+            Reserva.nome_principal.ilike(busca)
+        )
+        .order_by(Reserva.data_inicio, Reserva.hora_inicio)
+        .limit(10)
+        .all()
+    )
+
+    for reserva in reservas:
+        resultados.append({
+            "tipo": "reserva",
+            "icone": "📋",
+            "titulo": reserva.nome_principal,
+            "subtitulo": (
+                f"{reserva.data_inicio.strftime('%d/%m/%Y')} "
+                f"• {reserva.hora_inicio.strftime('%H:%M')} "
+                f"às {reserva.hora_fim.strftime('%H:%M')} "
+                f"• {reserva.carrinho.nome}"
+            ),
+            "url": url_for(
+                "routes.agenda",
+                data=reserva.data_inicio.isoformat()
+            )
+        })
+
+    return {"resultados": resultados}
+
+
 # =========================================================
 # AGENDA
 # =========================================================
