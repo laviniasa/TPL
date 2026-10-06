@@ -7,7 +7,8 @@ from flask import (
     request,
     redirect,
     url_for,
-    flash
+    flash,
+    jsonify
 )
 
 from flask_login import (
@@ -32,7 +33,7 @@ from app.models import (
     Carrinho,
     Local,
     Pessoa,
-    UsoCarrinho
+    Notificacao
 )
 
 
@@ -583,7 +584,59 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for("routes.login"))
+@routes.route("/notificacoes")
+@login_required
+def notificacoes():
 
+    notificacoes = Notificacao.query.filter_by(
+        usuario_id=current_user.id
+    ).order_by(
+        Notificacao.criado_em.desc()
+    ).all()
+    quantidade_nao_lidas = Notificacao.query.filter_by(
+        usuario_id=current_user.id,
+        lida=False
+    ).count()
+
+    return jsonify({
+        "quantidade": quantidade_nao_lidas,
+        "notificacoes": [
+            {
+                "id": notificacao.id,
+                "titulo": notificacao.titulo,
+                "mensagem": notificacao.mensagem,
+                "lida": notificacao.lida,
+                "criado_em": (
+                    notificacao.criado_em.strftime("%d/%m/%Y %H:%M")
+                    if notificacao.criado_em
+                    else ""
+                )
+            }
+            for notificacao in notificacoes
+        ]
+    })
+
+@routes.route("/notificacoes/<int:notificacao_id>", methods=["DELETE"])
+@login_required
+def excluir_notificacao(notificacao_id):
+
+    notificacao = Notificacao.query.filter_by(
+        id=notificacao_id,
+        usuario_id=current_user.id
+    ).first()
+
+    if not notificacao:
+        return jsonify({
+            "sucesso": False,
+            "mensagem": "Notificação não encontrada."
+        }), 404
+
+    db.session.delete(notificacao)
+    db.session.commit()
+
+    return jsonify({
+        "sucesso": True
+    })
 @routes.route(
     "/participar/<int:programacao_id>",
     methods=["GET", "POST"]
@@ -845,31 +898,31 @@ def participar(programacao_id):
         for nome in selecionados:
 
             participante = ReservaParticipante(
-
                 reserva_id=reserva.id,
-
                 nome=nome
-
             )
 
-            db.session.add(
-                participante
-            )
+            db.session.add(participante)
 
+            pessoa = Pessoa.query.filter_by(
+                nome=nome
+            ).first()
 
+            if pessoa and pessoa.usuario_id:
+                notificacao = Notificacao(
+                    usuario_id=pessoa.usuario_id,
+                    reserva_id=reserva.id,
+                    titulo="Você recebeu um convite!",
+                    mensagem=(
+                        f"Oii! Você recebeu um convite de "
+                        f"{current_user.nome} para trabalharem juntos!"
+                    ),
+                    lida=False
+                )
+
+                db.session.add(notificacao)
+    
         db.session.commit()
-
-        flash(
-            f"Reserva criada para {programacao.hora_inicio.strftime('%H:%M')} às {programacao.hora_fim.strftime('%H:%M')}.",
-            "success"
-        )
-
-        return redirect(
-            url_for(
-                "routes.agenda",
-                data=programacao.data.isoformat()
-            )
-        )
 
     reserva_fixa_existente = Reserva.query.filter(
         Reserva.tipo == "FIXA",
