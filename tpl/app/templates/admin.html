@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Admin - TPL</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+    <style>
+
+        /* =====================================================
+           CABEÇALHO ADMIN
+           Mesmo modelo visual da Agenda
+           ===================================================== */
+
+        .topo-novo {
+            width: 100% !important;
+            height: 98px !important;
+            min-height: 98px !important;
+
+            background: linear-gradient(
+                90deg,
+                #0868ad 0%,
+                #0874c9 100%
+            ) !important;
+
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+
+            padding: 0 28px !important;
+            margin: 0 !important;
+
+            box-sizing: border-box !important;
+        }
+
+
+        /* =====================================================
+           LADO ESQUERDO
+           ===================================================== */
+
+        .topo-esquerda {
+            display: flex !important;
+            align-items: center !important;
+
+            gap: 14px !important;
+
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+
+        /* Botão de menu */
+
+        .menu-admin {
+            width: 54px !important;
+            height: 54px !important;
+
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+
+            border-radius: 15px !important;
+
+            background: rgba(255, 255, 255, 0.16) !important;
+
+            color: #ffffff !important;
+
+            font-size: 31px !important;
+            font-weight: 700 !important;
+
+            line-height: 1 !important;
+
+            border: none !important;
+
+            cursor: default !important;
+
+            box-sizing: border-box !important;
+        }
+
+
+        /* =====================================================
+           LOGO TPL
+           ===================================================== */
+
+        .topo-novo .logo-tpl {
+
+            display: flex !important;
+            align-items: center !important;
+
+            color: #ffffff !important;
+
+            font-size: 36px !important;
+            font-weight: 800 !important;
+
+            line-height: 1 !important;
+
+            letter-spacing: -1.5px !important;
+
+            text-decoration: none !important;
+
+            margin: 0 !important;
+            padding: 0 !important;
+
+            white-space: nowrap !important;
+        }
+
+
+        /* =====================================================
+           SAUDAÇÃO
+           ===================================================== */
+
+        .saudacao-admin {
+
+            display: flex !important;
+            flex-direction: column !important;
+
+            justify-content: center !important;
+
+            margin-left: 0 !important;
+
+            line-height: 1.15 !important;
+
+            color: #ffffff !important;
+        }
+
+        .saudacao-admin .ola {
+
+            font-size: 13px !important;
+            font-weight: 400 !important;
+
+            color: rgba(255, 255, 255, 0.92) !important;
+
+            margin: 0 0 3px 0 !important;
+            padding: 0 !important;
+        }
+
+        .saudacao-admin .nome {
+
+            font-size: 15px !important;
+            font-weight: 700 !important;
+
+            color: #ffffff !important;
+
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+
+        /* =====================================================
+           BOTÃO VOLTAR PARA A AGENDA
+           ===================================================== */
+
+        .topo-novo .minhas-reservas {
+
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+
+            height: 52px !important;
+
+            min-width: 125px !important;
+
+            padding: 0 19px !important;
+
+            margin: 0 !important;
+
+            box-sizing: border-box !important;
+
+            background: rgba(255, 255, 255, 0.10) !important;
+
+            border: 1px solid rgba(
+                255,
+                255,
+                255,
+                0.45
+            ) !important;
+
+            border-radius: 14px !important;
+
+            color: #ffffff !important;
+
+            font-size: 15px !important;
+            font-weight: 600 !important;
+
+            text-decoration: none !important;
+
+            white-space: nowrap !important;
+
+            transition: all 0.2s ease !important;
+        }
+
+
+        .topo-novo .minhas-reservas:hover {
+
+            background: rgba(
+                255,
+                255,
+                255,
+                0.18
+            ) !important;
+
+            border-color: #ffffff !important;
+
+            transform: translateY(-1px);
+        }
+
+
+        /* =====================================================
+           CONTEÚDO ADMIN
+           ===================================================== */
+
+        .conteudo-admin {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+
+        /* =====================================================
+           CELULAR
+           ===================================================== */
+
+        @media (max-width: 700px) {
+
+            .topo-novo {
+
+                height: 82px !important;
+                min-height: 82px !important;
+
+                padding: 0 16px !important;
+            }
+
+
+            .topo-esquerda {
+
+                gap: 11px !important;
+            }
+
+
+            .menu-admin {
+
+                width: 48px !important;
+                height: 48px !important;
+
+                border-radius: 13px !important;
+
+                font-size: 27px !important;
+            }
+
+
+            .topo-novo .logo-tpl {
+
+                font-size: 31px !important;
+            }
+
+
+            .saudacao-admin .ola {
+
+                font-size: 11px !important;
+            }
+
+
+            .saudacao-admin .nome {
+
+                font-size: 13px !important;
+            }
+
+
+            .topo-novo .minhas-reservas {
+
+                height: 44px !important;
+
+                min-width: auto !important;
+
+                padding: 0 13px !important;
+
+                border-radius: 12px !important;
+
+                font-size: 13px !important;
+            }
+        }
+
+
+        /* =====================================================
+           CELULAR PEQUENO
+           ===================================================== */
+
+        @media (max-width: 480px) {
+
+            .topo-novo {
+
+                padding: 0 12px !important;
+            }
+
+
+            .topo-esquerda {
+
+                gap: 8px !important;
+            }
+
+
+            .menu-admin {
+
+                width: 44px !important;
+                height: 44px !important;
+
+                font-size: 24px !important;
+            }
+
+
+            .topo-novo .logo-tpl {
+
+                font-size: 28px !important;
+            }
+
+
+            .saudacao-admin .ola {
+
+                font-size: 10px !important;
+            }
+
+
+            .saudacao-admin .nome {
+
+                font-size: 12px !important;
+            }
+
+
+            .topo-novo .minhas-reservas {
+
+                padding: 0 10px !important;
+
+                font-size: 12px !important;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="app">
+
+
+    <!-- =====================================================
+         CABEÇALHO
+         ===================================================== -->
+
+    <header class="topo-novo">
+
+
+        <!-- LADO ESQUERDO -->
+
+        <div class="topo-esquerda">
+
+
+            <!-- MENU -->
+
+            <div class="menu-admin">
+                ☰
+            </div>
+
+
+            <!-- LOGO -->
+
+            <a
+                href="{{ url_for('routes.agenda') }}"
+                class="logo-tpl"
+            >
+                TPL
+            </a>
+
+
+
+        </div>
+
+
+        <!-- VOLTAR PARA A AGENDA -->
+
+        <a
+            class="minhas-reservas"
+            href="{{ url_for('routes.agenda') }}"
+        >
+            ← Agenda
+        </a>
+
+
+    </header>
+
+
+
+    <!-- =====================================================
+         CONTEÚDO
+         ===================================================== -->
+
+    <main class="conteudo-admin">
+
+
+        <!-- CABEÇALHO -->
+
+        <div class="cabecalho-admin">
+
+            <div>
+
+                <h1>
+                    Área administrativa
+                </h1>
+
+                <p>
+                    Gerencie o sistema TPL.
+                </p>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =================================================
+             MENU ADMIN
+             ================================================= -->
+
+        <div class="grid-admin">
+
+
+            <!-- PESSOAS -->
+
+            <a
+                href="{{ url_for('routes.admin_pessoas') }}"
+                class="card-admin"
+            >
+
+                <div class="icone-admin">
+                    👥
+                </div>
+
+                <div>
+
+                    <h2>
+                        Pessoas
+                    </h2>
+
+                    <p>
+                        Cadastrar e gerenciar
+                        os irmãos.
+                    </p>
+
+                </div>
+
+            </a>
+
+
+
+            <!-- PROGRAMAÇÃO -->
+
+            <a
+                href="{{ url_for('routes.admin_programacao') }}"
+                class="card-admin"
+            >
+
+                <div class="icone-admin">
+                    📅
+                </div>
+
+                <div>
+
+                    <h2>
+                        Programação
+                    </h2>
+
+                    <p>
+                        Gerenciar horários
+                        e dias.
+                    </p>
+
+                </div>
+
+            </a>
+
+
+
+            <!-- CARRINHOS -->
+
+            <a
+                href="{{ url_for('routes.admin_carrinhos') }}"
+                class="card-admin"
+            >
+
+                <div class="icone-admin">
+                    🚚
+                </div>
+
+                <div>
+
+                    <h2>
+                        Carrinhos
+                    </h2>
+
+                    <p>
+                        Gerenciar os
+                        carrinhos.
+                    </p>
+
+                </div>
+
+            </a>
+
+
+
+            <!-- LOCAIS -->
+
+            <a
+                href="{{ url_for('routes.admin_locais') }}"
+                class="card-admin"
+            >
+
+                <div class="card-icon">
+                    📍
+                </div>
+
+                <div class="card-content">
+
+                    <h2>
+                        Locais
+                    </h2>
+
+                    <p>
+                        Gerenciar os locais
+                        de testemunho.
+                    </p>
+
+                </div>
+
+            </a>
+
+
+
+            <!-- RESERVAS -->
+
+            <a
+                href="{{ url_for('routes.admin_reservas') }}"
+                class="card-admin"
+            >
+
+                <div class="card-icon">
+                    📋
+                </div>
+
+                <div class="card-content">
+
+                    <h2>
+                        Reservas
+                    </h2>
+
+                    <p>
+                        Consultar e gerenciar
+                        reservas.
+                    </p>
+
+                </div>
+
+            </a>
+
+
+        </div>
+
+
+    </main>
+
+
+</div>
+
+</body>
+
+</html>
