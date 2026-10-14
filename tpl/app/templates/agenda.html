@@ -530,15 +530,33 @@
         .resultado-busca-item:hover { background: var(--tpl-blue-light); }
 
         .resultado-busca-icone {
-            width: 36px;
-            height: 36px;
-            flex: 0 0 36px;
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 10px;
+            overflow: hidden;
+            border-radius: 50%;
             background: var(--tpl-blue-light);
+            color: var(--tpl-blue);
             font-size: 18px;
+        }
+
+        .resultado-busca-icone img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .resultado-busca-fallback {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
         }
 
         .resultado-busca-texto {
@@ -2764,20 +2782,27 @@
                     return;
                 }
 
-                resultadosBusca.innerHTML = dados.resultados.map(resultado => `
-                    <a href="${resultado.url}" class="resultado-busca-item">
+                resultadosBusca.innerHTML = dados.resultados.map(resultado => {
+                    const foto = resultado.foto
+                        ? `<img src="${resultado.foto}" alt="Foto de ${resultado.titulo}"
+                               loading="lazy"
+                               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                           <span class="resultado-busca-fallback" style="display:none;">${resultado.icone || "👤"}</span>`
+                        : `<span class="resultado-busca-fallback">${resultado.icone || "👤"}</span>`;
 
-                        <span class="resultado-busca-icone">
-                            ${resultado.icone}
-                        </span>
+                    return `
+                        <a href="${resultado.url}" class="resultado-busca-item">
+                            <span class="resultado-busca-icone">
+                                ${foto}
+                            </span>
 
-                        <span class="resultado-busca-texto">
-                            <strong>${resultado.titulo}</strong>
-                            <small>${resultado.subtitulo}</small>
-                        </span>
-
-                    </a>
-                `).join("");
+                            <span class="resultado-busca-texto">
+                                <strong>${resultado.titulo}</strong>
+                                <small>${resultado.subtitulo}</small>
+                            </span>
+                        </a>
+                    `;
+                }).join("");
 
                 resultadosBusca.style.display = "block";
 
