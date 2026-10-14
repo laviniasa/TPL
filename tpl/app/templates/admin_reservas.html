@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Reservas - TPL</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f6f8;
+            color: #222;
+        }
+
+        .topo {
+            background: #1f2937;
+            color: white;
+            padding: 18px;
+        }
+
+        .topo-conteudo {
+            max-width: 1000px;
+            margin: auto;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 15px;
+        }
+
+        .topo h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .voltar {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 25px auto;
+            padding: 0 15px 40px;
+        }
+
+        .resumo {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .resumo-card {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .resumo-titulo {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .resumo-numero {
+            font-size: 26px;
+            font-weight: bold;
+        }
+
+        .lista {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .reserva {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .reserva-cabecalho {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+
+            margin-bottom: 15px;
+        }
+
+        .data {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .status {
+            padding: 6px 10px;
+            border-radius: 20px;
+
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-ativo {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-inativo {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .informacoes {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+
+            margin-bottom: 15px;
+        }
+
+        .informacao {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .rotulo {
+            display: block;
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .valor {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .participantes {
+            border-top: 1px solid #eee;
+            padding-top: 14px;
+        }
+
+        .participantes-titulo {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .pessoas {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .pessoa {
+            background: #eef2ff;
+            padding: 6px 9px;
+            border-radius: 15px;
+            font-size: 13px;
+        }
+
+        .vazio {
+            background: white;
+            border-radius: 12px;
+            padding: 40px 20px;
+
+            text-align: center;
+            color: #666;
+
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .tipo-fixa {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 5px 9px;
+            border-radius: 15px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .tipo-unica {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 5px 9px;
+            border-radius: 15px;
+            background: #f3f4f6;
+            color: #6b7280;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .titulo-reservas {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 20px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .titulo-reservas h2 {
+            margin: 0 0 5px;
+            font-size: 20px;
+        }
+
+        .titulo-reservas p {
+            margin: 0;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .contador-fixas {
+            min-width: 45px;
+            height: 45px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 50%;
+            background: #dbeafe;
+            color: #1d4ed8;
+
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+
+            .topo-conteudo {
+                align-items: flex-start;
+            }
+
+            .container {
+                margin-top: 15px;
+            }
+
+            .resumo {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .resumo-card {
+                padding: 14px;
+            }
+
+            .reserva {
+                padding: 15px;
+            }
+
+            .informacoes {
+                grid-template-columns: 1fr;
+            }
+
+            .reserva-cabecalho {
+                align-items: flex-start;
+            }
+
+        }
+
+        .acoes-reserva {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .btn-cancelar-fixa {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px;
+            background: #fee2e2;
+            color: #991b1b;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-cancelar-fixa:hover {
+            background: #fecaca;
+        }
+        
+        .alternar-visualizacao {
+            margin-bottom: 20px;
+        }
+
+        .btn-calendario {
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+            padding: 13px 16px;
+
+            background: white;
+            color: #1f2937;
+
+            font-size: 14px;
+            font-weight: bold;
+
+            cursor: pointer;
+
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .btn-calendario:hover {
+            background: #f8fafc;
+        }
+
+        .calendario {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .calendario-cabecalho {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .calendario-cabecalho h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .calendario-cabecalho button {
+            border: none;
+            background: #f3f4f6;
+            border-radius: 8px;
+            width: 40px;
+            height: 40px;
+            font-size: 25px;
+            cursor: pointer;
+        }
+
+        .calendario-semana {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .calendario-semana span {
+            font-size: 11px;
+            font-weight: bold;
+            color: #6b7280;
+        }
+
+        .dias-calendario {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .dia-calendario {
+            min-height: 55px;
+            padding: 8px;
+            border-radius: 8px;
+            background: #f8fafc;
+            cursor: pointer;
+        }
+
+        .dia-calendario:hover {
+            background: #e5e7eb;
+        }
+
+        .dia-numero {
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .evento-fixa,
+        .evento-unica {
+            margin-top: 5px;
+            padding: 4px;
+            border-radius: 6px;
+            font-size: 9px;
+            line-height: 1.2;
+        }
+
+        .evento-fixa {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .evento-unica {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        .btn-voltar-fixas {
+            width: 100%;
+            margin-top: 18px;
+            border: none;
+            border-radius: 10px;
+            padding: 13px;
+            background: #1f2937;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header class="topo">
+
+    <div class="topo-conteudo">
+
+        <h1>📋 Reservas</h1>
+
+        <a
+            href="{{ url_for('routes.admin') }}"
+            class="voltar"
+        >
+            ← Administração
+        </a>
+
+    </div>
+
+</header>
+
+
+
+<main class="container">
+
+
+<section class="titulo-reservas">
+
+    <div>
+        <h2>🔄 Reservas Fixas</h2>
+        <p>Horários reservados semanalmente.</p>
+    </div>
+
+    <div class="contador-fixas">
+        {{ reservas|length }}
+    </div>
+
+</section>
+
+<div class="alternar-visualizacao">
+
+    <button
+        type="button"
+        class="btn-calendario"
+        onclick="mostrarCalendario()"
+    >
+        📅 Ver calendário
+    </button>
+
+</div>
+
+<section id="calendario" class="calendario" style="display: none;">
+
+    <div class="calendario-cabecalho">
+
+        <button type="button" onclick="mesAnterior()">
+            ‹
+        </button>
+
+        <div>
+            <h2 id="mes-ano"></h2>
+        </div>
+
+        <button type="button" onclick="mesSeguinte()">
+            ›
+        </button>
+
+    </div>
+
+    <div class="calendario-semana">
+        <span>Dom</span>
+        <span>Seg</span>
+        <span>Ter</span>
+        <span>Qua</span>
+        <span>Qui</span>
+        <span>Sex</span>
+        <span>Sáb</span>
+    </div>
+
+    <div id="dias-calendario" class="dias-calendario"></div>
+
+    <button
+        type="button"
+        class="btn-voltar-fixas"
+        onclick="mostrarFixas()"
+    >
+        🔄 Ver reservas fixas
+    </button>
+
+</section>
+    <!-- LISTA -->
+
+    {% if reservas %}
+
+        <section class="lista">
+
+            {% for reserva in reservas %}
+
+                <article class="reserva">
+
+
+                    <div class="reserva-cabecalho">
+
+                        <div>
+                            <div class="data">
+                                {{ reserva.data_inicio.strftime('%d/%m/%Y') }}
+                            </div>
+
+                            {% if reserva.tipo == "FIXA" %}
+                                <span class="tipo-fixa">
+                                    🔄 RESERVA FIXA
+                                </span>
+                            {% else %}
+                                <span class="tipo-unica">
+                                    RESERVA ÚNICA
+                                </span>
+                            {% endif %}
+                        </div>
+
+
+                        {% if reserva.ativo %}
+                            <span class="status status-ativo">
+                                ATIVA
+                            </span>
+
+                        {% else %}
+
+                            <span class="status status-inativo">
+                                ENCERRADA
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+
+
+                    <div class="informacoes">
+
+
+                        <div class="informacao">
+
+                            <span class="rotulo">
+                                Horário
+                            </span>
+
+                            <span class="valor">
+
+                                {{ reserva.hora_inicio.strftime('%H:%M') }}
+
+                                -
+
+                                {{ reserva.hora_fim.strftime('%H:%M') }}
+
+                            </span>
+
+                        </div>
+
+
+                        <div class="informacao">
+
+                            <span class="rotulo">
+                                Carrinho
+                            </span>
+
+                            <span class="valor">
+
+                                {{ reserva.carrinho.nome }}
+
+                            </span>
+
+                        </div>
+
+
+                        <div class="informacao">
+
+                            <span class="rotulo">
+                                Local
+                            </span>
+
+                            <span class="valor">
+
+                                {{ reserva.local.nome }}
+
+                            </span>
+
+                        </div>
+
+
+                        <div class="informacao">
+
+                            <span class="rotulo">
+                                Responsável
+                            </span>
+
+                            <span class="valor">
+
+                                {{ reserva.nome_principal }}
+
+                            </span>
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <!-- PARTICIPANTES -->
+
+                    <div class="participantes">
+
+                        <div class="participantes-titulo">
+
+                            Participantes
+
+                        </div>
+
+
+                        <div class="pessoas">
+
+
+                            <span class="pessoa">
+
+                                {{ reserva.nome_principal }}
+
+                            </span>
+
+
+                            {% for participante in reserva.participantes %}
+
+                                <span class="pessoa">
+
+                                    {{ participante.nome }}
+
+                                </span>
+
+                            {% endfor %}
+
+
+                        </div>
+
+                    </div>
+
+{% if reserva.tipo == "FIXA" and reserva.ativo %}
+
+    <div class="acoes-reserva">
+
+        <form
+            action="{{ url_for('routes.cancelar_reserva_fixa', reserva_id=reserva.id) }}"
+            method="POST"
+            onsubmit="return confirm('Tem certeza que deseja cancelar esta reserva fixa?')"
+        >
+
+            <button type="submit" class="btn-cancelar-fixa">
+                🛑 Cancelar reserva fixa
+            </button>
+
+        </form>
+
+    </div>
+
+{% endif %}
+                </article>
+
+            {% endfor %}
+
+        </section>
+
+
+    {% else %}
+
+        <div class="vazio">
+
+            Nenhuma reserva cadastrada.
+
+        </div>
+
+    {% endif %}
+
+
+</main>
+
+<script>
+
+const reservasCalendario =
+    {{ reservas_calendario | tojson | safe }};
+
+let dataCalendario = new Date();
+
+
+function mostrarCalendario() {
+
+    document.querySelector(".titulo-reservas").style.display = "none";
+    document.querySelector(".alternar-visualizacao").style.display = "none";
+
+    document.querySelector(".lista").style.display = "none";
+
+    document.getElementById("calendario").style.display = "block";
+
+    gerarCalendario();
+
+}
+
+
+function mostrarFixas() {
+
+    document.querySelector(".titulo-reservas").style.display = "flex";
+    document.querySelector(".alternar-visualizacao").style.display = "block";
+
+    document.querySelector(".lista").style.display = "flex";
+
+    document.getElementById("calendario").style.display = "none";
+
+}
+
+
+function gerarCalendario() {
+
+    const ano = dataCalendario.getFullYear();
+    const mes = dataCalendario.getMonth();
+
+
+    const nomesMeses = [
+        "Janeiro",
+        "Fevereiro",
+        "Março",
+        "Abril",
+        "Maio",
+        "Junho",
+        "Julho",
+        "Agosto",
+        "Setembro",
+        "Outubro",
+        "Novembro",
+        "Dezembro"
+    ];
+
+
+    document.getElementById("mes-ano").textContent =
+        nomesMeses[mes] + " " + ano;
+
+
+    const primeiroDia =
+        new Date(ano, mes, 1).getDay();
+
+
+    const quantidadeDias =
+        new Date(ano, mes + 1, 0).getDate();
+
+
+    const container =
+        document.getElementById("dias-calendario");
+
+
+    container.innerHTML = "";
+
+
+    // Espaços antes do primeiro dia do mês
+    for (let i = 0; i < primeiroDia; i++) {
+
+        const vazio =
+            document.createElement("div");
+
+        container.appendChild(vazio);
+
+    }
+
+
+    // Criar cada dia do mês
+    for (
+        let dia = 1;
+        dia <= quantidadeDias;
+        dia++
+    ) {
+
+        const elemento =
+            document.createElement("div");
+
+
+        elemento.className =
+            "dia-calendario";
+
+
+        const dataDia =
+            new Date(
+                ano,
+                mes,
+                dia
+            );
+
+
+        const dataISO =
+            dataDia.getFullYear() +
+            "-" +
+            String(
+                dataDia.getMonth() + 1
+            ).padStart(2, "0") +
+            "-" +
+            String(
+                dataDia.getDate()
+            ).padStart(2, "0");
+
+
+        // Número do dia
+        elemento.innerHTML =
+            `<div class="dia-numero">${dia}</div>`;
+
+
+        // Procurar reservas deste dia
+        const reservasDoDia =
+            reservasCalendario.filter(
+                reserva => {
+
+
+                    // Reserva única
+                    if (
+                        reserva.tipo === "UNICA"
+                    ) {
+
+                        return (
+                            reserva.data_inicio ===
+                            dataISO
+                        );
+
+                    }
+
+
+                    // Reserva fixa
+                    if (
+                        reserva.tipo === "FIXA"
+                    ) {
+
+                        return (
+                            reserva.dia_semana ===
+                            dataDia.getDay() &&
+                            reserva.data_inicio <=
+                            dataISO
+                        );
+
+                    }
+
+
+                    return false;
+
+                }
+            );
+
+
+        // Mostrar as reservas encontradas
+        reservasDoDia.forEach(
+            reserva => {
+
+                const reservaElemento =
+                    document.createElement("div");
+
+
+                reservaElemento.className =
+                    reserva.tipo === "FIXA"
+                        ? "evento-fixa"
+                        : "evento-unica";
+
+
+                const icone =
+                    reserva.tipo === "FIXA"
+                        ? "🔄"
+                        : "🔵";
+
+
+                const numeroCarrinho =
+                    reserva.carrinho.replace(
+                        "Carrinho ",
+                        ""
+                    );
+
+
+                reservaElemento.innerHTML = `
+                    <strong>
+                        ${icone}
+                        ${reserva.hora_inicio}
+                    </strong>
+                    <br>
+                    C${numeroCarrinho}
+                    <br>
+                    ${reserva.responsavel}
+                `;
+
+
+                elemento.appendChild(
+                    reservaElemento
+                );
+
+            }
+        );
+
+
+        container.appendChild(
+            elemento
+        );
+
+    }
+
+}
+
+
+function mesAnterior() {
+
+    dataCalendario.setMonth(
+        dataCalendario.getMonth() - 1
+    );
+
+
+    gerarCalendario();
+
+}
+
+
+function mesSeguinte() {
+
+    dataCalendario.setMonth(
+        dataCalendario.getMonth() + 1
+    );
+
+
+    gerarCalendario();
+
+}
+
+</script>
+
+</body>
+
+</html>
