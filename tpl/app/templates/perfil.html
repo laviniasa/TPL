@@ -1,0 +1,399 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPL - {{ pessoa.nome }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#0875c9">
+
+    <style>
+        :root {
+            --blue: #0875c9;
+            --blue-dark: #075da0;
+            --blue-light: #eaf5ff;
+            --text: #10233f;
+            --muted: #667085;
+            --border: #e4ebf2;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            color: var(--text);
+            background: linear-gradient(180deg, #f7faff 0%, #f3f7fb 100%);
+            font-family: Inter, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+            min-height: 100vh;
+        }
+
+        .topo {
+            background: linear-gradient(135deg, var(--blue-dark), var(--blue));
+            color: #fff;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .topo a {
+            color: #fff;
+            text-decoration: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 13px;
+            background: rgba(255, 255, 255, .16);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .topo strong { font-size: 18px; }
+
+        .pagina {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 16px 12px 40px;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            box-shadow: 0 4px 18px rgba(16, 24, 40, .06);
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .perfil-topo { text-align: center; }
+
+        .avatar {
+            width: 112px;
+            height: 112px;
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            background: var(--blue-light);
+            color: var(--blue);
+            display: grid;
+            place-items: center;
+            font-size: 44px;
+            font-weight: 900;
+            overflow: hidden;
+            border: 4px solid #fff;
+            box-shadow: 0 4px 14px rgba(8, 117, 201, .25);
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .perfil-topo h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .perfil-topo small { color: var(--muted); }
+
+        .upload { margin-top: 14px; }
+        .upload input[type="file"] { display: none; }
+
+        .btn {
+            display: inline-block;
+            border: 0;
+            border-radius: 12px;
+            padding: 11px 16px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            background: var(--blue);
+            color: #fff;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn.sec {
+            background: #edf2f7;
+            color: #344054;
+        }
+
+        .btn:hover { filter: brightness(.97); }
+
+        .nome-arquivo {
+            display: block;
+            margin: 8px 0;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        h2 {
+            font-size: 16px;
+            margin: 0 0 12px;
+        }
+
+        .reserva {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 0;
+            border-bottom: 1px solid #edf2f7;
+            font-size: 13px;
+        }
+
+        .reserva:last-child { border-bottom: 0; }
+
+        .reserva-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .reserva strong {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        .reserva-info > span {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .reserva-link {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .reserva-link:hover { text-decoration: underline; }
+
+        .tag {
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 900;
+            white-space: nowrap;
+            background: var(--blue-light);
+            color: var(--blue);
+        }
+
+        .tag.fixa {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .vazio {
+            color: var(--muted);
+            font-size: 13px;
+            text-align: center;
+            padding: 10px 0;
+        }
+
+        .flash {
+            padding: 12px 14px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .flash.success { background: #eaf8ef; color: #16a34a; }
+        .flash.danger { background: #feecec; color: #dc2626; }
+        .flash.warning { background: #fff6dc; color: #b76e00; }
+
+        .form-excluir { margin: 0; }
+
+        @media (max-width: 480px) {
+            .card { padding: 16px; }
+            .reserva { flex-wrap: wrap; }
+            .reserva-info { flex-basis: 55%; }
+            .btn { padding: 10px 12px; }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="topo">
+    <a href="{{ url_for('routes.agenda') }}" aria-label="Voltar">‹</a>
+    <strong>Perfil</strong>
+</header>
+
+<main class="pagina">
+
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+        {% for categoria, mensagem in mensagens %}
+            <div class="flash {{ categoria }}">{{ mensagem }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <!-- PERFIL E FOTO -->
+    <section class="card perfil-topo">
+
+        <div class="avatar" id="avatar">
+            {% if pessoa.foto %}
+                <img src="{{ url_for('static', filename=pessoa.foto) }}"
+                     alt="Foto de {{ pessoa.nome }}">
+            {% else %}
+                {{ pessoa.nome[0]|upper }}
+            {% endif %}
+        </div>
+
+        <h1>{{ pessoa.nome }}</h1>
+        <small>Irmão</small>
+
+        {% if pode_editar %}
+
+            {% if pessoa.foto and pessoa.usuario_id == current_user.id %}
+                <form method="POST"
+                      action="{{ url_for('routes.remover_foto', pessoa_id=pessoa.id) }}"
+                      onsubmit="return confirm('Deseja realmente remover sua foto?');"
+                      style="margin-top: 10px;">
+
+                    <button type="submit" class="btn sec">
+                        Remover foto
+                    </button>
+                </form>
+            {% endif %}
+
+            <form class="upload"
+                  method="POST"
+                  enctype="multipart/form-data"
+                  action="{{ url_for('routes.alterar_foto', pessoa_id=pessoa.id) }}">
+
+                <label class="btn sec" for="foto">📷 Escolher foto</label>
+
+                <input type="file"
+                       id="foto"
+                       name="foto"
+                       accept="image/png,image/jpeg,image/webp">
+
+                <span class="nome-arquivo" id="nomeArquivo"></span>
+
+                <button type="submit"
+                        class="btn"
+                        id="salvarFoto"
+                        style="display: none;">
+                    Salvar foto
+                </button>
+            </form>
+
+        {% endif %}
+    </section>
+
+    <!-- RESERVAS FIXAS -->
+    <section class="card">
+        <h2>🔄 Reservas fixas</h2>
+
+        {% for r in fixas %}
+            <div class="reserva">
+
+                <div class="reserva-info">
+                    <strong>
+                        {{ dias[r.dia_semana] }} •
+                        {{ r.hora_inicio.strftime('%H:%M') }} às
+                        {{ r.hora_fim.strftime('%H:%M') }}
+                    </strong>
+
+                    <span>
+                        {{ r.carrinho.nome }} • {{ r.local.nome }}
+                    </span>
+                </div>
+
+                <span class="tag fixa">Semanal</span>
+
+                {% if r.usuario_id == current_user.id %}
+                    <form class="form-excluir"
+                          method="POST"
+                          action="{{ url_for('routes.excluir_reserva_perfil', reserva_id=r.id) }}"
+                          onsubmit="return confirm('Deseja realmente excluir esta reserva?');">
+
+                        <button type="submit" class="btn sec">
+                            Excluir
+                        </button>
+                    </form>
+                {% endif %}
+
+            </div>
+        {% else %}
+            <div class="vazio">Nenhuma reserva fixa.</div>
+        {% endfor %}
+    </section>
+
+    <!-- PRÓXIMAS RESERVAS -->
+    <section class="card">
+        <h2>📅 Próximas reservas</h2>
+
+        {% for r in proximas %}
+            <div class="reserva">
+
+                <div class="reserva-info">
+                    <strong>
+                        <a class="reserva-link"
+                           href="{{ url_for('routes.agenda', data=r.data_inicio.isoformat()) }}">
+                            {{ r.data_inicio.strftime('%d/%m/%Y') }} •
+                            {{ r.hora_inicio.strftime('%H:%M') }} às
+                            {{ r.hora_fim.strftime('%H:%M') }}
+                        </a>
+                    </strong>
+
+                    <span>
+                        {{ r.carrinho.nome }} • {{ r.local.nome }}
+                    </span>
+                </div>
+
+                <span class="tag">Única</span>
+
+                {% if r.usuario_id == current_user.id %}
+                    <form class="form-excluir"
+                          method="POST"
+                          action="{{ url_for('routes.excluir_reserva_perfil', reserva_id=r.id) }}"
+                          onsubmit="return confirm('Deseja realmente excluir esta reserva?');">
+
+                        <button type="submit" class="btn sec">
+                            Excluir
+                        </button>
+                    </form>
+                {% endif %}
+
+            </div>
+        {% else %}
+            <div class="vazio">Nenhuma reserva futura.</div>
+        {% endfor %}
+    </section>
+
+</main>
+
+<script>
+    const inputFoto = document.getElementById("foto");
+
+    if (inputFoto) {
+        inputFoto.addEventListener("change", function () {
+            const arquivo = this.files[0];
+
+            if (!arquivo) return;
+
+            document.getElementById("nomeArquivo").textContent = arquivo.name;
+            document.getElementById("salvarFoto").style.display = "inline-block";
+
+            // Pré-visualização da foto selecionada
+            const leitor = new FileReader();
+
+            leitor.onload = function (e) {
+                document.getElementById("avatar").innerHTML =
+                    '<img src="' + e.target.result + '" alt="Pré-visualização da foto">';
+            };
+
+            leitor.readAsDataURL(arquivo);
+        });
+    }
+</script>
+
+</body>
+</html>
