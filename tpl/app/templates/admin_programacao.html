@@ -1,4 +1,3 @@
-
 {% extends "admin_base.html" %}
 
 {% block title %}Programação{% endblock %}
@@ -70,6 +69,14 @@
         font-weight: 700;
         text-decoration: none;
     }
+
+    /* Adicionar horário */
+
+    .form-novo-horario .grade {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .form-remover { margin: 0; }
 
     /* Dias */
 
@@ -235,6 +242,101 @@
     </details>
 
 
+    <!-- ADICIONAR HORÁRIO -->
+
+    <details class="card novo-local" {% if not programacao_por_dia %}open{% endif %}>
+
+        <summary>
+            <span>➕ Adicionar horário</span>
+            <small>Use para colocar um carrinho novo na agenda</small>
+        </summary>
+
+        <div class="corpo">
+
+            {% if carrinhos and locais %}
+
+            <form
+                class="form-novo-horario"
+                method="POST"
+                action="{{ url_for('routes.adicionar_programacao') }}"
+            >
+
+                <div class="grade">
+
+                    <div class="field">
+                        <label for="novo-dia">Dia da semana</label>
+                        <select id="novo-dia" name="dia_semana" required>
+                            {% for numero in range(7) %}
+                            <option value="{{ numero }}">{{ dias[numero] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="novo-carrinho">Carrinho</label>
+                        <select id="novo-carrinho" name="carrinho_id" required>
+                            {% for carrinho in carrinhos %}
+                            <option value="{{ carrinho.id }}">{{ carrinho.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="novo-local-horario">Local</label>
+                        <select id="novo-local-horario" name="local_id" required>
+                            {% for local in locais %}
+                            <option value="{{ local.id }}">{{ local.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="novo-inicio">Início</label>
+                        <input id="novo-inicio" type="time" name="hora_inicio" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="novo-fim">Fim</label>
+                        <input id="novo-fim" type="time" name="hora_fim" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="novo-vagas">Vagas</label>
+                        <input
+                            id="novo-vagas"
+                            type="number"
+                            name="quantidade_maxima"
+                            min="1"
+                            max="20"
+                            value="3"
+                            required
+                        >
+                    </div>
+
+                </div>
+
+                <div class="grade-acoes">
+                    <button type="submit" class="btn btn-primary">
+                        Adicionar horário
+                    </button>
+                </div>
+
+            </form>
+
+            {% else %}
+
+            <p>
+                Para adicionar horários é preciso ter pelo menos um
+                carrinho ativo e um local ativo.
+            </p>
+
+            {% endif %}
+
+        </div>
+
+    </details>
+
+
     <!-- PROGRAMAÇÃO POR DIA -->
 
     {% for dia_numero in range(7) %}
@@ -369,6 +471,17 @@
 
                             </div>
 
+                        </form>
+
+                        <form
+                            class="form-remover grade-acoes"
+                            method="POST"
+                            action="{{ url_for('routes.remover_programacao', programacao_id=programacao.id) }}"
+                            onsubmit="return confirm('Remover este horário da programação? Ele deixa de aparecer na agenda de hoje em diante.');"
+                        >
+                            <button type="submit" class="btn btn-danger">
+                                🗑️ Remover horário
+                            </button>
                         </form>
 
                     </div>

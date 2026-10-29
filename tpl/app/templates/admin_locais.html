@@ -1,434 +1,244 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends "admin_base.html" %}
 
-    <title>Gerenciar Locais - TPL</title>
+{% block title %}Locais{% endblock %}
+{% block heading %}📍 Locais{% endblock %}
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+{% block extra_css %}
+<style>
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f5f6f8;
-            color: #222;
-        }
+    /* Novo local */
 
-        .topo {
-            background: #1f2937;
-            color: white;
-            padding: 18px;
-        }
+    .novo-local {
+        display: flex;
+        gap: 8px;
+    }
 
-        .topo-conteudo {
-            max-width: 900px;
-            margin: auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-        }
+    .novo-local .input { flex: 1; }
 
-        .topo h1 {
-            margin: 0;
-            font-size: 22px;
-        }
+    .novo-local .btn { min-height: 44px; font-size: 14px; }
 
-        .voltar {
-            color: white;
-            text-decoration: none;
-            font-size: 14px;
-        }
+    /* Lista */
 
-        .container {
-            max-width: 900px;
-            margin: 25px auto;
-            padding: 0 15px 40px;
-        }
+    .lista {
+        padding: 0;
+        overflow: visible;
+    }
 
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
+    .local {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 13px 16px;
+        border-top: 1px solid #edf2f7;
+    }
 
-        .card h2 {
-            margin-top: 0;
-            font-size: 18px;
-        }
+    .local:first-child { border-top: 0; }
 
-        .form-adicionar {
-            display: flex;
-            gap: 10px;
-        }
+    .local:last-child { border-radius: 0 0 20px 20px; }
 
-        .form-adicionar input {
-            flex: 1;
-            min-width: 0;
-        }
+    .local.inativo { background: #f7f8fa; }
 
-        input {
-            width: 100%;
-            padding: 11px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 15px;
-        }
+    .local-nome {
+        font-size: 15px;
+        font-weight: 800;
+        word-break: break-word;
+    }
 
-        button {
-            border: none;
-            border-radius: 8px;
-            padding: 11px 16px;
-            font-size: 14px;
-            cursor: pointer;
-        }
+    .local.inativo .local-nome { color: #98a2b3; }
 
-        .btn-adicionar {
-            background: #2563eb;
-            color: white;
-            white-space: nowrap;
-        }
+    .local-info {
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 12px;
+    }
 
-        .local {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 14px 0;
-            border-bottom: 1px solid #eee;
-        }
+    /* Menu ⋯ */
 
-        .local:last-child {
-            border-bottom: none;
-        }
+    .menu { position: relative; flex: 0 0 auto; }
 
-        .nome-local {
-            flex: 1;
-            font-size: 16px;
-        }
+    .menu summary {
+        list-style: none;
+        cursor: pointer;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: 900;
+        color: var(--muted);
+        background: #f2f5f9;
+    }
 
-        .status {
-            font-size: 12px;
-            font-weight: bold;
-            padding: 5px 9px;
-            border-radius: 20px;
-        }
+    .menu summary::-webkit-details-marker { display: none; }
 
-        .ativo {
-            background: #dcfce7;
-            color: #166534;
-        }
+    .menu-corpo {
+        position: absolute;
+        right: 0;
+        top: 42px;
+        z-index: 20;
+        width: 270px;
+        padding: 12px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .16);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
 
-        .inativo {
-            background: #fee2e2;
-            color: #991b1b;
-        }
+    .menu-corpo form { margin: 0; }
 
-        .acoes {
-            display: flex;
-            gap: 6px;
-        }
+    .menu-corpo .renomear { display: flex; gap: 6px; }
 
-        .btn-editar {
-            background: #e5e7eb;
-            color: #111827;
-        }
+    .menu-corpo .renomear .input { height: 40px; }
 
-        .btn-alternar {
-            background: #f3f4f6;
-            color: #374151;
-        }
+    .menu-corpo .btn-largo { width: 100%; }
 
-        .form-editar {
-            display: none;
-            flex: 1;
-            gap: 8px;
-        }
+    .menu-dica {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.4;
+    }
 
-        .form-editar input {
-            flex: 1;
-        }
+</style>
+{% endblock %}
 
-        .btn-salvar {
-            background: #16a34a;
-            color: white;
-        }
 
-        .btn-cancelar {
-            background: #e5e7eb;
-            color: #111827;
-        }
+{% block content %}
 
-        .sem-locais {
-            color: #666;
-            text-align: center;
-            padding: 20px;
-        }
+    <!-- NOVO LOCAL -->
 
-        @media (max-width: 600px) {
-
-            .topo-conteudo {
-                align-items: flex-start;
-            }
-
-            .container {
-                margin-top: 15px;
-            }
-
-            .form-adicionar {
-                flex-direction: column;
-            }
-
-            .btn-adicionar {
-                width: 100%;
-            }
-
-            .local {
-                flex-wrap: wrap;
-            }
-
-            .nome-local {
-                min-width: 150px;
-            }
-
-            .acoes {
-                width: 100%;
-                margin-top: 5px;
-            }
-
-            .acoes button {
-                flex: 1;
-            }
-
-            .form-editar {
-                width: 100%;
-                flex-wrap: wrap;
-            }
-
-            .form-editar input {
-                flex-basis: 100%;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-    <header class="topo">
-        <div class="topo-conteudo">
-
-            <h1>📍 Gerenciar Locais</h1>
-
-            <a
-                href="{{ url_for('routes.admin') }}"
-                class="voltar"
+    <section class="card">
+        <form
+            class="novo-local"
+            method="POST"
+            action="{{ url_for('routes.adicionar_local') }}"
+        >
+            <input
+                class="input"
+                type="text"
+                name="nome"
+                placeholder="Novo local"
+                maxlength="100"
+                required
+                autocomplete="off"
+                aria-label="Nome do novo local"
             >
-                ← Administração
-            </a>
-
-        </div>
-    </header>
+            <button type="submit" class="btn btn-primary">+ Adicionar</button>
+        </form>
+    </section>
 
 
-    <main class="container">
+    <!-- LISTA DE LOCAIS -->
 
-        <!-- ADICIONAR LOCAL -->
+    {% if locais %}
+    <section class="card lista">
 
-        <section class="card">
+        {% for local in locais %}
+        {% set info = resumo[local.id] %}
 
-            <h2>Adicionar novo local</h2>
+        <div class="local {% if not local.ativo %}inativo{% endif %}">
 
-            <form
-                action="{{ url_for('routes.adicionar_local') }}"
-                method="POST"
-                class="form-adicionar"
-            >
+            <div>
+                <div class="local-nome">{{ local.nome }}</div>
+                <div class="local-info">
+                    {% if not local.ativo %}
+                        Desativado
+                    {% elif info.carrinhos %}
+                        Usado por {{ info.carrinhos }} carrinho{{ '' if info.carrinhos == 1 else 's' }}
+                    {% else %}
+                        Sem uso
+                    {% endif %}
+                </div>
+            </div>
 
-                <input
-                    type="text"
-                    name="nome"
-                    placeholder="Nome do local"
-                    required
-                >
+            <details class="menu">
+                <summary aria-label="Opções de {{ local.nome }}">⋯</summary>
 
-                <button
-                    type="submit"
-                    class="btn-adicionar"
-                >
-                    + Adicionar local
-                </button>
-
-            </form>
-
-        </section>
-
-
-        <!-- LISTA DE LOCAIS -->
-
-        <section class="card">
-
-            <h2>Locais cadastrados</h2>
-
-            {% if locais %}
-
-                {% for local in locais %}
-
-                <div class="local">
-
-                    <!-- NOME -->
-
-                    <div
-                        class="nome-local"
-                        id="nome-{{ local.id }}"
-                    >
-                        {{ local.nome }}
-                    </div>
-
-
-                    <!-- FORMULÁRIO DE EDIÇÃO -->
+                <div class="menu-corpo">
 
                     <form
-                        action="{{ url_for('routes.editar_local', local_id=local.id) }}"
+                        class="renomear"
                         method="POST"
-                        class="form-editar"
-                        id="editar-{{ local.id }}"
+                        action="{{ url_for('routes.editar_local', local_id=local.id) }}"
                     >
-
                         <input
+                            class="input"
                             type="text"
                             name="nome"
                             value="{{ local.nome }}"
+                            maxlength="100"
                             required
+                            aria-label="Novo nome"
                         >
-
-                        <button
-                            type="submit"
-                            class="btn-salvar"
-                        >
-                            Salvar
-                        </button>
-
-                        <button
-                            type="button"
-                            class="btn-cancelar"
-                            onclick="cancelarEdicao({{ local.id }})"
-                        >
-                            Cancelar
-                        </button>
-
+                        <button type="submit" class="btn btn-soft">Renomear</button>
                     </form>
 
-
-                    <!-- STATUS -->
-
-                    <span
-                        class="status {% if local.ativo %}ativo{% else %}inativo{% endif %}"
-                        id="status-{{ local.id }}"
+                    <form
+                        method="POST"
+                        action="{{ url_for('routes.alternar_local', local_id=local.id) }}"
+                        {% if local.ativo and info.carrinhos %}
+                        onsubmit="return confirm('Desativar este local? Ele deixa de aparecer na lista de locais para novos horários. Os horários que já usam este local continuam iguais.');"
+                        {% endif %}
                     >
                         {% if local.ativo %}
-                            ATIVO
+                            <button type="submit" class="btn btn-neutral btn-largo">Desativar local</button>
                         {% else %}
-                            INATIVO
+                            <button type="submit" class="btn btn-soft btn-largo">Ativar local</button>
                         {% endif %}
-                    </span>
+                    </form>
 
+                    {% if info.horarios or info.reservas %}
+                        {% set aviso = "Excluir " ~ local.nome ~ "? Isso apaga também " ~ info.horarios ~ " horário" ~ ("" if info.horarios == 1 else "s") ~ " e " ~ info.reservas ~ " reserva" ~ ("" if info.reservas == 1 else "s") ~ " deste local. Não dá pra desfazer." %}
+                    {% else %}
+                        {% set aviso = "Excluir " ~ local.nome ~ "? Não dá pra desfazer." %}
+                    {% endif %}
 
-                    <!-- AÇÕES -->
-
-                    <div
-                        class="acoes"
-                        id="acoes-{{ local.id }}"
+                    <form
+                        method="POST"
+                        action="{{ url_for('routes.excluir_local', local_id=local.id) }}"
+                        data-aviso="{{ aviso }}"
+                        onsubmit="return confirm(this.dataset.aviso);"
                     >
+                        <button type="submit" class="btn btn-danger btn-largo">🗑️ Excluir local</button>
+                    </form>
 
-                        <button
-                            type="button"
-                            class="btn-editar"
-                            onclick="editarLocal({{ local.id }})"
-                        >
-                            Editar
-                        </button>
-
-                        <form
-                            action="{{ url_for('routes.excluir_local', local_id=local.id) }}"
-                            method="POST"
-                            onsubmit="return confirmarExclusao('{{ local.nome }}')"
-                        >
-
-                            <button
-                                type="submit"
-                                class="btn-excluir"
-                            >
-                                🗑️ Excluir
-                            </button>
-
-                        </form>
-
-                    </div>
+                    {% if info.horarios or info.reservas %}
+                        <div class="menu-dica">
+                            Apaga também {{ info.horarios }} horário{{ '' if info.horarios == 1 else 's' }}
+                            e {{ info.reservas }} reserva{{ '' if info.reservas == 1 else 's' }}.
+                        </div>
+                    {% endif %}
 
                 </div>
+            </details>
 
-                {% endfor %}
+        </div>
+        {% endfor %}
 
-            {% else %}
+    </section>
+    {% else %}
 
-                <div class="sem-locais">
-                    Nenhum local cadastrado.
-                </div>
+    <div class="card">Nenhum local cadastrado ainda.</div>
 
-            {% endif %}
+    {% endif %}
 
-        </section>
-
-    </main>
-
-
-    <script>
-
-        function editarLocal(id) {
-
-            document.getElementById(
-                "nome-" + id
-            ).style.display = "none";
-
-            document.getElementById(
-                "status-" + id
-            ).style.display = "none";
-
-            document.getElementById(
-                "acoes-" + id
-            ).style.display = "none";
-
-            document.getElementById(
-                "editar-" + id
-            ).style.display = "flex";
-        }
+{% endblock %}
 
 
-        function cancelarEdicao(id) {
+{% block scripts %}
+<script>
 
-            document.getElementById(
-                "nome-" + id
-            ).style.display = "block";
+    // Fecha o menu ⋯ ao clicar fora e deixa só um aberto por vez
+    document.addEventListener("click", function (evento) {
+        document.querySelectorAll("details.menu[open]").forEach(function (menu) {
+            if (!menu.contains(evento.target)) menu.removeAttribute("open");
+        });
+    });
 
-            document.getElementById(
-                "status-" + id
-            ).style.display = "inline-block";
-
-            document.getElementById(
-                "acoes-" + id
-            ).style.display = "flex";
-
-            document.getElementById(
-                "editar-" + id
-            ).style.display = "none";
-        }
-
-    </script>
-
-</body>
-</html>
+</script>
+{% endblock %}

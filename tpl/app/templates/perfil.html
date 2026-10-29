@@ -303,6 +303,9 @@
 
                     <span>
                         {{ r.carrinho.nome }} • {{ r.local.nome }}
+                        {% if r.data_inicio > hoje %}
+                            • a partir de {{ r.data_inicio.strftime('%d/%m/%Y') }}
+                        {% endif %}
                     </span>
                 </div>
 

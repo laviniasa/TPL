@@ -465,34 +465,6 @@
 
 
 
-            <!-- PROGRAMAÇÃO -->
-
-            <a
-                href="{{ url_for('routes.admin_programacao') }}"
-                class="card-admin"
-            >
-
-                <div class="icone-admin">
-                    📅
-                </div>
-
-                <div>
-
-                    <h2>
-                        Programação
-                    </h2>
-
-                    <p>
-                        Gerenciar horários
-                        e dias.
-                    </p>
-
-                </div>
-
-            </a>
-
-
-
             <!-- CARRINHOS -->
 
             <a
@@ -511,8 +483,8 @@
                     </h2>
 
                     <p>
-                        Gerenciar os
-                        carrinhos.
+                        Carrinhos, dias
+                        e horários.
                     </p>
 
                 </div>
@@ -569,6 +541,64 @@
                     <p>
                         Consultar e gerenciar
                         reservas.
+                    </p>
+
+                </div>
+
+            </a>
+
+
+
+            <!-- CAMPANHAS -->
+
+
+            <a
+                href="{{ url_for('routes.admin_campanhas') }}"
+                class="card-admin"
+            >
+
+                <div class="card-icon">
+                    📣
+                </div>
+
+                <div class="card-content">
+
+                    <h2>
+                        Campanhas
+                    </h2>
+
+                    <p>
+                        Dias com horários
+                        diferentes, como Finados.
+                    </p>
+
+                </div>
+
+            </a>
+
+
+
+            <!-- AVISOS -->
+
+
+            <a
+                href="{{ url_for('routes.admin_avisos') }}"
+                class="card-admin"
+            >
+
+                <div class="card-icon">
+                    📢
+                </div>
+
+                <div class="card-content">
+
+                    <h2>
+                        Avisos
+                    </h2>
+
+                    <p>
+                        Mandar recados para
+                        o sininho dos irmãos.
                     </p>
 
                 </div>

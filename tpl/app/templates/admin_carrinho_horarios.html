@@ -1,0 +1,729 @@
+{% extends "admin_base.html" %}
+
+{% block title %}{{ carrinho.nome }}{% endblock %}
+{% block heading %}🛒 {{ carrinho.nome }}{% endblock %}
+{% block subheading %}Escolha o dia para ver os horários.{% endblock %}
+
+{% block back %}
+<div class="topo-acoes">
+
+    <a class="back-link" href="{{ url_for('routes.admin_carrinhos') }}">← Carrinhos</a>
+
+    <details class="menu">
+        <summary aria-label="Mais opções">⋯</summary>
+
+        <div class="menu-corpo">
+
+            <form
+                class="renomear"
+                method="POST"
+                action="{{ url_for('routes.editar_carrinho', carrinho_id=carrinho.id) }}"
+            >
+                <input type="hidden" name="next" value="carrinho">
+                <input
+                    class="input"
+                    type="text"
+                    name="nome"
+                    value="{{ carrinho.nome }}"
+                    maxlength="50"
+                    required
+                    aria-label="Novo nome"
+                >
+                <button type="submit" class="btn btn-soft">Renomear</button>
+            </form>
+
+            <form
+                method="POST"
+                action="{{ url_for('routes.alternar_carrinho', carrinho_id=carrinho.id) }}"
+                {% if carrinho.ativo %}
+                onsubmit="return confirm('Desativar este carrinho? Ele some da agenda até ser ativado de novo.');"
+                {% endif %}
+            >
+                <input type="hidden" name="next" value="carrinho">
+                {% if carrinho.ativo %}
+                    <button type="submit" class="btn btn-danger btn-largo">Desativar carrinho</button>
+                {% else %}
+                    <button type="submit" class="btn btn-soft btn-largo">Ativar carrinho</button>
+                {% endif %}
+            </form>
+
+        </div>
+    </details>
+
+</div>
+{% endblock %}
+
+
+{% block extra_css %}
+<style>
+
+    /* ---------- Topo: voltar + menu ⋯ ---------- */
+
+    .topo-acoes {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 0 0 auto;
+    }
+
+    .menu { position: relative; }
+
+    .menu summary {
+        list-style: none;
+        cursor: pointer;
+        width: 38px;
+        height: 36px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: 900;
+        color: #fff;
+        background: rgba(255, 255, 255, .16);
+    }
+
+    .menu summary::-webkit-details-marker { display: none; }
+
+    .menu-corpo {
+        position: absolute;
+        right: 0;
+        top: 44px;
+        z-index: 60;
+        width: 270px;
+        padding: 12px;
+        background: #fff;
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .2);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .menu-corpo form { margin: 0; }
+    .menu-corpo .renomear { display: flex; gap: 6px; }
+    .menu-corpo .renomear .input { height: 40px; }
+    .menu-corpo .btn-largo { width: 100%; }
+
+    /* ---------- Avisos ---------- */
+
+    .aviso {
+        margin-bottom: 14px;
+        padding: 11px 13px;
+        border-radius: 14px;
+        background: var(--yellow-bg);
+        color: var(--yellow);
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.45;
+    }
+
+    .aviso.cinza { background: #eef1f5; color: #475467; }
+
+    /* ---------- Abas dos dias ---------- */
+
+    .abas {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+        margin-bottom: 14px;
+    }
+
+    .aba {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        height: 48px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+        color: #344054;
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 900;
+    }
+
+    .aba small {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--muted);
+    }
+
+    .aba.vazia small { color: #c0c7d1; }
+
+    .aba.sel {
+        background: var(--blue);
+        border-color: var(--blue);
+        color: #fff;
+    }
+
+    .aba.sel small { color: rgba(255, 255, 255, .8); }
+
+    /* ---------- Lista do dia ---------- */
+
+    .dia-titulo { margin: 0; font-size: 17px; font-weight: 900; }
+
+    .dia-local {
+        margin: 4px 0 6px;
+        color: var(--muted);
+        font-size: 13px;
+    }
+
+    .horario { border-top: 1px solid #edf2f7; }
+
+    .horario-linha {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 11px 2px;
+    }
+
+    .horario-hora { font-size: 16px; font-weight: 800; }
+
+    .horario-hora small {
+        margin-left: 8px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .icone {
+        width: 38px;
+        height: 38px;
+        border: 0;
+        border-radius: 10px;
+        background: #f2f5f9;
+        cursor: pointer;
+        font-size: 15px;
+    }
+
+    .horario.aberto .icone { background: var(--blue-light); }
+
+    .horario-edicao {
+        display: none;
+        margin: 0 0 12px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: #fafcff;
+    }
+
+    .horario.aberto .horario-edicao { display: block; }
+
+    .vazio {
+        padding: 18px 4px 8px;
+        color: var(--muted);
+        font-size: 14px;
+    }
+
+    /* ---------- Formulários ---------- */
+
+    .grade {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .acoes {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .acoes .btn { flex: 1; min-height: 44px; font-size: 14px; }
+
+    .btn-grande {
+        width: 100%;
+        min-height: 48px;
+        font-size: 15px;
+    }
+
+    .form-novo { display: none; }
+    .form-novo.aberto { display: block; }
+
+    .form-novo h2 { margin: 0 0 4px; font-size: 16px; }
+
+    .form-novo .hint { margin-bottom: 10px; }
+
+    .dias-escolha {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+
+    .dias-escolha label { cursor: pointer; }
+
+    .dias-escolha input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .dias-escolha span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 40px;
+        border: 1px solid #d5dde6;
+        border-radius: 10px;
+        background: #fff;
+        font-size: 12px;
+        font-weight: 900;
+        color: #344054;
+        user-select: none;
+    }
+
+    .dias-escolha input:checked + span {
+        background: var(--blue);
+        border-color: var(--blue);
+        color: #fff;
+    }
+
+    .dias-escolha input:focus-visible + span {
+        outline: 3px solid rgba(8, 117, 201, .35);
+        outline-offset: 2px;
+    }
+
+    /* Repetir: toda semana / só em uma data */
+
+    .repetir {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        margin-bottom: 12px;
+        padding: 4px;
+        border-radius: 12px;
+        background: #eef1f5;
+    }
+
+    .repetir label { cursor: pointer; }
+
+    .repetir input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .repetir span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 38px;
+        border-radius: 9px;
+        font-size: 13px;
+        font-weight: 800;
+        color: #475467;
+    }
+
+    .repetir input:checked + span {
+        background: #fff;
+        color: var(--blue);
+        box-shadow: 0 1px 4px rgba(16, 24, 40, .12);
+    }
+
+    .repetir input:focus-visible + span {
+        outline: 3px solid rgba(8, 117, 201, .35);
+    }
+
+    .so-data { display: none; margin-bottom: 12px; }
+
+    .form-novo.modo-data .so-data { display: block; }
+    .form-novo.modo-data .so-semana { display: none; }
+
+    /* Datas especiais */
+
+    .especiais h2 { margin: 0 0 4px; font-size: 16px; }
+
+    .especial {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 11px 2px;
+        border-top: 1px solid #edf2f7;
+    }
+
+    .especial-data { font-size: 15px; font-weight: 800; }
+
+    .especial-info {
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 12px;
+    }
+
+    .especial form { margin: 0; }
+
+    .link-local {
+        display: inline-block;
+        margin-top: 12px;
+        color: var(--blue);
+        font-size: 12px;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    @media (max-width: 420px) {
+        .aba { height: 44px; font-size: 11px; }
+        .dias-escolha span { font-size: 11px; }
+    }
+
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+    {% if not carrinho.ativo %}
+        <div class="aviso cinza">
+            Este carrinho está desativado e não aparece na agenda.
+            Para usar de novo, toque em ⋯ e em “Ativar carrinho”.
+        </div>
+    {% elif total == 0 and not avulsos %}
+        <div class="aviso">
+            ⚠️ Este carrinho ainda não tem horários, por isso não aparece
+            na agenda. Adicione o primeiro horário abaixo.
+        </div>
+    {% endif %}
+
+
+    <!-- ABAS DOS DIAS -->
+
+    <nav class="abas" aria-label="Dias da semana">
+        {% for numero in range(7) %}
+        {% set qtd = por_dia[numero]|length %}
+        <a
+            class="aba {% if numero == dia %}sel{% endif %} {% if not qtd %}vazia{% endif %}"
+            href="{{ url_for('routes.admin_carrinho_horarios', carrinho_id=carrinho.id, dia=numero) }}"
+        >
+            {{ dias_curtos[numero] }}
+            <small>{{ qtd if qtd else '–' }}</small>
+        </a>
+        {% endfor %}
+    </nav>
+
+
+    <!-- HORÁRIOS DO DIA -->
+
+    <section class="card">
+
+        <h2 class="dia-titulo">{{ dias[dia] }}</h2>
+
+        {% if horarios %}
+
+            <div class="dia-local">
+                📍 {{ locais_do_dia|join(' • ') }}
+                • {{ horarios|length }} horário{{ '' if horarios|length == 1 else 's' }}
+            </div>
+
+            {% for h in horarios %}
+            <div class="horario" id="horario-{{ h.id }}">
+
+                <div class="horario-linha">
+
+                    <span class="horario-hora">
+                        {{ h.hora_inicio.strftime('%H:%M') }} – {{ h.hora_fim.strftime('%H:%M') }}
+                        <small>{{ h.quantidade_maxima }} vagas</small>
+                    </span>
+
+                    <button
+                        type="button"
+                        class="icone"
+                        title="Editar"
+                        aria-label="Editar horário"
+                        onclick="alternarEdicao({{ h.id }})"
+                    >✏️</button>
+
+                </div>
+
+                <div class="horario-edicao">
+
+                    <form
+                        method="POST"
+                        action="{{ url_for('routes.editar_programacao', programacao_id=h.id) }}"
+                    >
+                        <input type="hidden" name="next" value="carrinho">
+                        <input type="hidden" name="carrinho_id" value="{{ carrinho.id }}">
+
+                        <div class="grade">
+
+                            <div class="field">
+                                <label>Início</label>
+                                <input type="time" name="hora_inicio" value="{{ h.hora_inicio.strftime('%H:%M') }}" required>
+                            </div>
+
+                            <div class="field">
+                                <label>Fim</label>
+                                <input type="time" name="hora_fim" value="{{ h.hora_fim.strftime('%H:%M') }}" required>
+                            </div>
+
+                            <div class="field">
+                                <label>Local</label>
+                                <select name="local_id" required>
+                                    {% for local in locais %}
+                                    <option value="{{ local.id }}" {% if local.id == h.local_id %}selected{% endif %}>{{ local.nome }}</option>
+                                    {% endfor %}
+                                    {% if not h.local.ativo %}
+                                    <option value="{{ h.local_id }}" selected>{{ h.local.nome }} (inativo)</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+
+                            <div class="field">
+                                <label>Vagas</label>
+                                <input type="number" name="quantidade_maxima" min="1" max="20" value="{{ h.quantidade_maxima }}" required>
+                            </div>
+
+                        </div>
+
+                        <div class="acoes">
+                            <button type="submit" class="btn btn-primary">Salvar</button>
+                            <button
+                                type="submit"
+                                class="btn btn-danger"
+                                form="remover-{{ h.id }}"
+                            >🗑️ Remover</button>
+                        </div>
+
+                    </form>
+
+                    <form
+                        id="remover-{{ h.id }}"
+                        method="POST"
+                        action="{{ url_for('routes.remover_programacao', programacao_id=h.id) }}"
+                        onsubmit="return confirm('Remover este horário? Ele deixa de aparecer na agenda de hoje em diante.');"
+                    >
+                        <input type="hidden" name="next" value="carrinho">
+                    </form>
+
+                </div>
+
+            </div>
+            {% endfor %}
+
+        {% else %}
+
+            <div class="vazio">
+                Nenhum horário na {{ dias[dia]|lower }}.
+                Neste dia o carrinho não aparece na agenda.
+            </div>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- DATAS ESPECIAIS -->
+
+    {% if avulsos %}
+    <section class="card especiais">
+
+        <h2>📅 Datas especiais</h2>
+        <p class="hint">Horários que valem só no dia marcado.</p>
+
+        {% for a in avulsos %}
+        <div class="especial">
+
+            <div>
+                <div class="especial-data">
+                    {{ dias_curtos[a.data.weekday()] }} {{ a.data.strftime('%d/%m/%Y') }}
+                    • {{ a.hora_inicio.strftime('%H:%M') }} – {{ a.hora_fim.strftime('%H:%M') }}
+                </div>
+                <div class="especial-info">
+                    📍 {{ a.local.nome }} • {{ a.quantidade_maxima }} vagas
+                </div>
+            </div>
+
+            <form
+                method="POST"
+                action="{{ url_for('routes.remover_horario_avulso', avulso_id=a.id) }}"
+                onsubmit="return confirm('Remover o horário desta data?');"
+            >
+                <input type="hidden" name="next" value="carrinho">
+                <input type="hidden" name="dia_atual" value="{{ dia }}">
+                <button type="submit" class="icone" title="Remover" aria-label="Remover">🗑️</button>
+            </form>
+
+        </div>
+        {% endfor %}
+
+    </section>
+    {% endif %}
+
+
+    <!-- ADICIONAR HORÁRIO -->
+
+    <button
+        type="button"
+        class="btn btn-primary btn-grande"
+        id="abrir-novo"
+        onclick="abrirNovo()"
+        {% if total == 0 %}style="display: none;"{% endif %}
+    >
+        + Adicionar horário
+    </button>
+
+    <section class="card form-novo {% if total == 0 %}aberto{% endif %}" id="form-novo">
+
+        {% if locais %}
+
+        <form
+            method="POST"
+            action="{{ url_for('routes.adicionar_programacao') }}"
+            id="form-adicionar"
+        >
+            <input type="hidden" name="next" value="carrinho">
+            <input type="hidden" name="carrinho_id" value="{{ carrinho.id }}">
+            <input type="hidden" name="dia_atual" value="{{ dia }}">
+
+            <h2>Novo horário</h2>
+
+            <div class="repetir" role="radiogroup" aria-label="Repetir">
+                <label>
+                    <input type="radio" name="repetir" value="semana" checked onchange="trocarModo()">
+                    <span>Toda semana</span>
+                </label>
+                <label>
+                    <input type="radio" name="repetir" value="data" onchange="trocarModo()">
+                    <span>Só em uma data</span>
+                </label>
+            </div>
+
+            <p class="hint so-semana">Marque um ou mais dias. O mesmo horário é criado em todos.</p>
+
+            <div class="field so-data">
+                <label for="data-especial">Data</label>
+                <input id="data-especial" type="date" name="data" min="{{ hoje.isoformat() }}">
+            </div>
+
+            <div class="dias-escolha so-semana">
+                {% for nome in dias_curtos %}
+                <label>
+                    <input type="checkbox" name="dias" value="{{ loop.index0 }}" {% if loop.index0 == dia %}checked{% endif %}>
+                    <span>{{ nome }}</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div class="grade">
+
+                <div class="field">
+                    <label>Início</label>
+                    <input type="time" name="hora_inicio" required>
+                </div>
+
+                <div class="field">
+                    <label>Fim</label>
+                    <input type="time" name="hora_fim" required>
+                </div>
+
+                <div class="field">
+                    <label>Local</label>
+                    <select name="local_id" required>
+                        {% for local in locais %}
+                        <option value="{{ local.id }}" {% if locais_do_dia and local.nome == locais_do_dia[0] %}selected{% endif %}>{{ local.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Vagas</label>
+                    <input type="number" name="quantidade_maxima" min="1" max="20" value="3" required>
+                </div>
+
+            </div>
+
+            <div class="acoes">
+                <button type="submit" class="btn btn-primary">Salvar horário</button>
+                {% if total %}
+                <button type="button" class="btn btn-neutral" onclick="fecharNovo()">Cancelar</button>
+                {% endif %}
+            </div>
+
+            <a class="link-local" href="{{ url_for('routes.admin_locais') }}">
+                O local não está na lista? Cadastre em Locais
+            </a>
+
+        </form>
+
+        {% else %}
+
+            <p>Cadastre um local antes de adicionar horários.</p>
+            <a class="link-local" href="{{ url_for('routes.admin_locais') }}">Ir para Locais</a>
+
+        {% endif %}
+
+    </section>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+
+    function alternarEdicao(id) {
+        const item = document.getElementById("horario-" + id);
+        if (!item) return;
+
+        const abrir = !item.classList.contains("aberto");
+
+        document.querySelectorAll(".horario.aberto").forEach(function (outro) {
+            outro.classList.remove("aberto");
+        });
+
+        if (abrir) item.classList.add("aberto");
+    }
+
+    function abrirNovo() {
+        document.getElementById("form-novo").classList.add("aberto");
+        document.getElementById("abrir-novo").style.display = "none";
+        document.getElementById("form-novo").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function fecharNovo() {
+        document.getElementById("form-novo").classList.remove("aberto");
+        document.getElementById("abrir-novo").style.display = "";
+    }
+
+    const formAdicionar = document.getElementById("form-adicionar");
+
+    // Troca entre "Toda semana" e "Só em uma data"
+    function trocarModo() {
+        if (!formAdicionar) return;
+
+        const modoData = formAdicionar.querySelector('input[name="repetir"]:checked').value === "data";
+        const campoData = document.getElementById("data-especial");
+
+        document.getElementById("form-novo").classList.toggle("modo-data", modoData);
+        campoData.required = modoData;
+
+        if (modoData) campoData.focus();
+    }
+
+    // Não deixa salvar sem escolher o dia ou a data
+    if (formAdicionar) {
+        formAdicionar.addEventListener("submit", function (evento) {
+            const modoData = formAdicionar.querySelector('input[name="repetir"]:checked').value === "data";
+
+            if (!modoData && !formAdicionar.querySelector('input[name="dias"]:checked')) {
+                evento.preventDefault();
+                alert("Marque pelo menos um dia da semana.");
+            }
+        });
+    }
+
+    // Fecha o menu ⋯ ao clicar fora
+    document.addEventListener("click", function (evento) {
+        document.querySelectorAll("details.menu[open]").forEach(function (menu) {
+            if (!menu.contains(evento.target)) menu.removeAttribute("open");
+        });
+    });
+
+</script>
+{% endblock %}

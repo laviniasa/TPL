@@ -1,968 +1,553 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Reservas - TPL</title>
-
-    <style>
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f5f6f8;
-            color: #222;
-        }
-
-        .topo {
-            background: #1f2937;
-            color: white;
-            padding: 18px;
-        }
-
-        .topo-conteudo {
-            max-width: 1000px;
-            margin: auto;
-
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            gap: 15px;
-        }
-
-        .topo h1 {
-            margin: 0;
-            font-size: 22px;
-        }
-
-        .voltar {
-            color: white;
-            text-decoration: none;
-            font-size: 14px;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 25px auto;
-            padding: 0 15px 40px;
-        }
-
-        .resumo {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .resumo-card {
-            background: white;
-            border-radius: 12px;
-            padding: 18px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .resumo-titulo {
-            font-size: 13px;
-            color: #666;
-            margin-bottom: 8px;
-        }
-
-        .resumo-numero {
-            font-size: 26px;
-            font-weight: bold;
-        }
-
-        .lista {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .reserva {
-            background: white;
-            border-radius: 12px;
-            padding: 18px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .reserva-cabecalho {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-
-            margin-bottom: 15px;
-        }
-
-        .data {
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .status {
-            padding: 6px 10px;
-            border-radius: 20px;
-
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .status-ativo {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .status-inativo {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .informacoes {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-
-            margin-bottom: 15px;
-        }
-
-        .informacao {
-            background: #f8fafc;
-            border-radius: 8px;
-            padding: 10px;
-        }
-
-        .rotulo {
-            display: block;
-            font-size: 11px;
-            color: #6b7280;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-        }
-
-        .valor {
-            font-size: 15px;
-            font-weight: 500;
-        }
-
-        .participantes {
-            border-top: 1px solid #eee;
-            padding-top: 14px;
-        }
-
-        .participantes-titulo {
-            font-size: 13px;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-
-        .pessoas {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .pessoa {
-            background: #eef2ff;
-            padding: 6px 9px;
-            border-radius: 15px;
-            font-size: 13px;
-        }
-
-        .vazio {
-            background: white;
-            border-radius: 12px;
-            padding: 40px 20px;
-
-            text-align: center;
-            color: #666;
-
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-        .tipo-fixa {
-            display: inline-block;
-            margin-top: 6px;
-            padding: 5px 9px;
-            border-radius: 15px;
-            background: #dbeafe;
-            color: #1d4ed8;
-            font-size: 11px;
-            font-weight: bold;
-        }
-
-        .tipo-unica {
-            display: inline-block;
-            margin-top: 6px;
-            padding: 5px 9px;
-            border-radius: 15px;
-            background: #f3f4f6;
-            color: #6b7280;
-            font-size: 11px;
-            font-weight: bold;
-        }
-
-        .titulo-reservas {
-            background: white;
-            border-radius: 12px;
-            padding: 18px;
-            margin-bottom: 20px;
-
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .titulo-reservas h2 {
-            margin: 0 0 5px;
-            font-size: 20px;
-        }
-
-        .titulo-reservas p {
-            margin: 0;
-            color: #666;
-            font-size: 13px;
-        }
-
-        .contador-fixas {
-            min-width: 45px;
-            height: 45px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            border-radius: 50%;
-            background: #dbeafe;
-            color: #1d4ed8;
-
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        @media (max-width: 600px) {
-
-            .topo-conteudo {
-                align-items: flex-start;
-            }
-
-            .container {
-                margin-top: 15px;
-            }
-
-            .resumo {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-
-            .resumo-card {
-                padding: 14px;
-            }
-
-            .reserva {
-                padding: 15px;
-            }
-
-            .informacoes {
-                grid-template-columns: 1fr;
-            }
-
-            .reserva-cabecalho {
-                align-items: flex-start;
-            }
-
-        }
-
-        .acoes-reserva {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-        }
-
-        .btn-cancelar-fixa {
-            border: none;
-            border-radius: 8px;
-            padding: 10px 14px;
-            background: #fee2e2;
-            color: #991b1b;
-            font-size: 13px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .btn-cancelar-fixa:hover {
-            background: #fecaca;
-        }
-        
-        .alternar-visualizacao {
-            margin-bottom: 20px;
-        }
-
-        .btn-calendario {
-            width: 100%;
-            border: none;
-            border-radius: 10px;
-            padding: 13px 16px;
-
-            background: white;
-            color: #1f2937;
-
-            font-size: 14px;
-            font-weight: bold;
-
-            cursor: pointer;
-
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .btn-calendario:hover {
-            background: #f8fafc;
-        }
-
-        .calendario {
-            background: white;
-            border-radius: 12px;
-            padding: 18px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .calendario-cabecalho {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-
-        .calendario-cabecalho h2 {
-            margin: 0;
-            font-size: 18px;
-        }
-
-        .calendario-cabecalho button {
-            border: none;
-            background: #f3f4f6;
-            border-radius: 8px;
-            width: 40px;
-            height: 40px;
-            font-size: 25px;
-            cursor: pointer;
-        }
-
-        .calendario-semana {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 5px;
-            margin-bottom: 5px;
-            text-align: center;
-        }
-
-        .calendario-semana span {
-            font-size: 11px;
-            font-weight: bold;
-            color: #6b7280;
-        }
-
-        .dias-calendario {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 5px;
-        }
-
-        .dia-calendario {
-            min-height: 55px;
-            padding: 8px;
-            border-radius: 8px;
-            background: #f8fafc;
-            cursor: pointer;
-        }
-
-        .dia-calendario:hover {
-            background: #e5e7eb;
-        }
-
-        .dia-numero {
-            font-size: 13px;
-            font-weight: bold;
-        }
-
-        .evento-fixa,
-        .evento-unica {
-            margin-top: 5px;
-            padding: 4px;
-            border-radius: 6px;
-            font-size: 9px;
-            line-height: 1.2;
-        }
-
-        .evento-fixa {
-            background: #dbeafe;
-            color: #1d4ed8;
-        }
-
-        .evento-unica {
-            background: #f3f4f6;
-            color: #4b5563;
-        }
-
-        .btn-voltar-fixas {
-            width: 100%;
-            margin-top: 18px;
-            border: none;
-            border-radius: 10px;
-            padding: 13px;
-            background: #1f2937;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-    </style>
-
-</head>
-
-
-<body>
-
-
-<header class="topo">
-
-    <div class="topo-conteudo">
-
-        <h1>📋 Reservas</h1>
-
-        <a
-            href="{{ url_for('routes.admin') }}"
-            class="voltar"
-        >
-            ← Administração
-        </a>
-
-    </div>
-
-</header>
-
-
-
-<main class="container">
-
-
-<section class="titulo-reservas">
+{% extends "admin_base.html" %}
+
+{% block title %}Reservas{% endblock %}
+{% block heading %}📋 Reservas{% endblock %}
+
+{% block extra_css %}
+<style>
+
+    /* Abas */
+
+    .abas {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 4px;
+        padding: 4px;
+        margin-bottom: 12px;
+        border-radius: 12px;
+        background: #e7ecf2;
+    }
+
+    .aba {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 40px;
+        border-radius: 9px;
+        color: #475467;
+        font-size: 13px;
+        font-weight: 800;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .aba.sel {
+        background: #fff;
+        color: var(--blue);
+        box-shadow: 0 1px 4px rgba(16, 24, 40, .12);
+    }
+
+    /* Busca */
+
+    .busca { margin-bottom: 14px; }
+
+    /* Grupos por dia */
+
+    .grupo-titulo {
+        margin: 14px 4px 8px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: .4px;
+        text-transform: uppercase;
+    }
+
+    .grupo:first-child .grupo-titulo { margin-top: 4px; }
+
+    .lista {
+        padding: 0;
+        overflow: visible;
+        margin-bottom: 0;
+    }
+
+    .reserva {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 13px 16px;
+        border-top: 1px solid #edf2f7;
+    }
+
+    .reserva:first-child { border-top: 0; }
+
+    .reserva-hora { font-size: 15px; font-weight: 800; }
+
+    .reserva-local {
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 12px;
+    }
+
+    .reserva-pessoas {
+        margin-top: 3px;
+        color: #344054;
+        font-size: 13px;
+        line-height: 1.4;
+    }
+
+    .vazio {
+        padding: 24px 16px;
+        color: var(--muted);
+        font-size: 14px;
+        text-align: center;
+    }
+
+    /* ---------- Resumo ---------- */
+
+    .numeros {
+        display: grid;
+        grid-template-columns: 1fr 1.4fr;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .numero {
+        padding: 14px 12px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+    }
+
+    .numero-valor {
+        font-size: 26px;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .numero-valor small {
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .numero-texto {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.3;
+    }
+
+    .progresso {
+        height: 8px;
+        margin-top: 10px;
+        border-radius: 4px;
+        background: #e4ebf2;
+        overflow: hidden;
+    }
+
+    .progresso div {
+        height: 100%;
+        border-radius: 4px;
+        background: var(--blue);
+    }
+
+    .grafico-titulo { margin: 0; font-size: 15px; font-weight: 900; }
+
+    .grafico-sub {
+        margin: 3px 0 10px;
+        color: var(--muted);
+        font-size: 12px;
+    }
+
+    .grafico-vazio { color: var(--muted); font-size: 13px; }
+
+    .barra-linha {
+        display: grid;
+        grid-template-columns: 110px minmax(0, 1fr) 26px;
+        gap: 8px;
+        align-items: center;
+        padding: 4px 0;
+        border-radius: 6px;
+    }
+
+    .barras.pessoa .barra-linha { grid-template-columns: 90px minmax(0, 1fr) 26px; }
+
+    .barra-linha:hover { background: #f5f8fc; }
+
+    .barra-nome {
+        color: #344054;
+        font-size: 13px;
+        font-weight: 700;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .barra-trilho { height: 14px; }
+
+    .barra {
+        height: 14px;
+        min-width: 4px;
+        border-radius: 0 4px 4px 0;
+        background: var(--blue);
+    }
+
+    .barra-valor {
+        color: #344054;
+        font-size: 12px;
+        font-weight: 800;
+        text-align: right;
+    }
+
+    .sub-titulo,
+    .sub-titulo-inline {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .sub-titulo {
+        display: block;
+        margin: 14px 0 8px;
+        padding-top: 12px;
+        border-top: 1px solid #edf2f7;
+    }
+
+    .etiquetas {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .etiqueta {
+        padding: 5px 9px;
+        border-radius: 8px;
+        background: #f2f5f9;
+        color: #475467;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .nao-participaram {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid #edf2f7;
+    }
+
+    .nao-participaram summary {
+        list-style: none;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .nao-participaram summary::-webkit-details-marker { display: none; }
+
+    .nao-participaram[open] .ver-quem { display: none; }
+
+    .nao-participaram .etiquetas { margin-top: 8px; }
+
+    .ver-quem { min-height: 36px; }
+
+    /* Menu ⋯ */
+
+    .menu { position: relative; flex: 0 0 auto; }
+
+    .menu summary {
+        list-style: none;
+        cursor: pointer;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: 900;
+        color: var(--muted);
+        background: #f2f5f9;
+    }
+
+    .menu summary::-webkit-details-marker { display: none; }
+
+    .menu-corpo {
+        position: absolute;
+        right: 0;
+        top: 42px;
+        z-index: 20;
+        width: 230px;
+        padding: 12px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .16);
+    }
+
+    .menu-corpo form { margin: 0; }
+
+    .menu-corpo .btn { width: 100%; }
+
+</style>
+{% endblock %}
+
+
+{% macro item(r, cancelar) %}
+<div
+    class="reserva"
+    data-busca="{{ ([r.nome_principal] + r.participantes|map(attribute='nome')|list + [r.carrinho.nome, r.local.nome])|join(' ')|lower }}"
+>
 
     <div>
-        <h2>🔄 Reservas Fixas</h2>
-        <p>Horários reservados semanalmente.</p>
+        <div class="reserva-hora">
+            {{ r.hora_inicio.strftime('%H:%M') }} – {{ r.hora_fim.strftime('%H:%M') }}
+            • {{ r.carrinho.nome }}
+        </div>
+
+        <div class="reserva-local">
+            📍 {{ r.local.nome }}
+            {% if r.tipo == "FIXA" and r.data_inicio > hoje %}
+                • a partir de {{ r.data_inicio.strftime('%d/%m/%Y') }}
+            {% endif %}
+        </div>
+
+        <div class="reserva-pessoas">
+            👤 {{ ([r.nome_principal] + r.participantes|map(attribute='nome')|list)|join(', ') }}
+        </div>
     </div>
 
-    <div class="contador-fixas">
-        {{ reservas|length }}
-    </div>
+    {% if cancelar %}
+    <details class="menu">
+        <summary aria-label="Opções da reserva">⋯</summary>
 
-</section>
-
-<div class="alternar-visualizacao">
-
-    <button
-        type="button"
-        class="btn-calendario"
-        onclick="mostrarCalendario()"
-    >
-        📅 Ver calendário
-    </button>
+        <div class="menu-corpo">
+            <form
+                method="POST"
+                action="{{ url_for('routes.excluir_reserva', reserva_id=r.id) }}"
+                onsubmit="return confirm('Cancelar esta reserva? As pessoas deixam de aparecer neste horário.');"
+            >
+                <input type="hidden" name="next" value="admin">
+                <input type="hidden" name="aba" value="{{ aba }}">
+                <button type="submit" class="btn btn-danger">Cancelar reserva</button>
+            </form>
+        </div>
+    </details>
+    {% endif %}
 
 </div>
+{% endmacro %}
 
-<section id="calendario" class="calendario" style="display: none;">
 
-    <div class="calendario-cabecalho">
-
-        <button type="button" onclick="mesAnterior()">
-            ‹
-        </button>
-
-        <div>
-            <h2 id="mes-ano"></h2>
-        </div>
-
-        <button type="button" onclick="mesSeguinte()">
-            ›
-        </button>
-
-    </div>
-
-    <div class="calendario-semana">
-        <span>Dom</span>
-        <span>Seg</span>
-        <span>Ter</span>
-        <span>Qua</span>
-        <span>Qui</span>
-        <span>Sex</span>
-        <span>Sáb</span>
-    </div>
-
-    <div id="dias-calendario" class="dias-calendario"></div>
-
-    <button
-        type="button"
-        class="btn-voltar-fixas"
-        onclick="mostrarFixas()"
+{% macro barras(dados, tipo) %}
+{% set maior = dados|map(attribute=1)|max %}
+<div class="barras {{ tipo }}">
+    {% for nome, valor in dados %}
+    <div
+        class="barra-linha"
+        title="{{ nome }}: {{ valor }} reserva{{ '' if valor == 1 else 's' }}"
     >
-        🔄 Ver reservas fixas
-    </button>
-
-</section>
-    <!-- LISTA -->
-
-    {% if reservas %}
-
-        <section class="lista">
-
-            {% for reserva in reservas %}
-
-                <article class="reserva">
-
-
-                    <div class="reserva-cabecalho">
-
-                        <div>
-                            <div class="data">
-                                {{ reserva.data_inicio.strftime('%d/%m/%Y') }}
-                            </div>
-
-                            {% if reserva.tipo == "FIXA" %}
-                                <span class="tipo-fixa">
-                                    🔄 RESERVA FIXA
-                                </span>
-                            {% else %}
-                                <span class="tipo-unica">
-                                    RESERVA ÚNICA
-                                </span>
-                            {% endif %}
-                        </div>
-
-
-                        {% if reserva.ativo %}
-                            <span class="status status-ativo">
-                                ATIVA
-                            </span>
-
-                        {% else %}
-
-                            <span class="status status-inativo">
-                                ENCERRADA
-                            </span>
-
-                        {% endif %}
-
-                    </div>
-
-
-
-                    <div class="informacoes">
-
-
-                        <div class="informacao">
-
-                            <span class="rotulo">
-                                Horário
-                            </span>
-
-                            <span class="valor">
-
-                                {{ reserva.hora_inicio.strftime('%H:%M') }}
-
-                                -
-
-                                {{ reserva.hora_fim.strftime('%H:%M') }}
-
-                            </span>
-
-                        </div>
-
-
-                        <div class="informacao">
-
-                            <span class="rotulo">
-                                Carrinho
-                            </span>
-
-                            <span class="valor">
-
-                                {{ reserva.carrinho.nome }}
-
-                            </span>
-
-                        </div>
-
-
-                        <div class="informacao">
-
-                            <span class="rotulo">
-                                Local
-                            </span>
-
-                            <span class="valor">
-
-                                {{ reserva.local.nome }}
-
-                            </span>
-
-                        </div>
-
-
-                        <div class="informacao">
-
-                            <span class="rotulo">
-                                Responsável
-                            </span>
-
-                            <span class="valor">
-
-                                {{ reserva.nome_principal }}
-
-                            </span>
-
-                        </div>
-
-
-                    </div>
-
-
-
-                    <!-- PARTICIPANTES -->
-
-                    <div class="participantes">
-
-                        <div class="participantes-titulo">
-
-                            Participantes
-
-                        </div>
-
-
-                        <div class="pessoas">
-
-
-                            <span class="pessoa">
-
-                                {{ reserva.nome_principal }}
-
-                            </span>
-
-
-                            {% for participante in reserva.participantes %}
-
-                                <span class="pessoa">
-
-                                    {{ participante.nome }}
-
-                                </span>
-
-                            {% endfor %}
-
-
-                        </div>
-
-                    </div>
-
-{% if reserva.tipo == "FIXA" and reserva.ativo %}
-
-    <div class="acoes-reserva">
-
-        <form
-            action="{{ url_for('routes.cancelar_reserva_fixa', reserva_id=reserva.id) }}"
-            method="POST"
-            onsubmit="return confirm('Tem certeza que deseja cancelar esta reserva fixa?')"
-        >
-
-            <button type="submit" class="btn-cancelar-fixa">
-                🛑 Cancelar reserva fixa
-            </button>
-
-        </form>
-
-    </div>
-
-{% endif %}
-                </article>
-
-            {% endfor %}
-
-        </section>
-
-
-    {% else %}
-
-        <div class="vazio">
-
-            Nenhuma reserva cadastrada.
-
+        <span class="barra-nome">{{ nome }}</span>
+        <div class="barra-trilho" role="img" aria-label="{{ nome }}: {{ valor }} reservas">
+            <div class="barra" style="width: {{ (valor / maior * 100) if maior else 0 }}%;"></div>
         </div>
+        <span class="barra-valor">{{ valor }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% endmacro %}
+
+
+{% block content %}
+
+    <!-- ABAS -->
+
+    <nav class="abas" aria-label="Tipo de reserva">
+        <a class="aba {% if aba == 'proximas' %}sel{% endif %}" href="{{ url_for('routes.admin_reservas', aba='proximas') }}">
+            Próximas ({{ proximas|length }})
+        </a>
+        <a class="aba {% if aba == 'fixas' %}sel{% endif %}" href="{{ url_for('routes.admin_reservas', aba='fixas') }}">
+            Fixas ({{ fixas|length }})
+        </a>
+        <a class="aba {% if aba == 'resumo' %}sel{% endif %}" href="{{ url_for('routes.admin_reservas', aba='resumo') }}">
+            Resumo
+        </a>
+    </nav>
+
+
+    {% if aba != 'resumo' %}
+
+    <!-- BUSCA -->
+
+    <input
+        class="input busca"
+        type="search"
+        id="busca"
+        placeholder="🔎 Buscar por nome, carrinho ou local"
+        autocomplete="off"
+        aria-label="Buscar reservas"
+    >
 
     {% endif %}
 
 
-</main>
+    <!-- LISTA -->
 
+    <div id="lista">
+
+    {% if aba == 'fixas' %}
+
+        {% for dia_numero, grupo in fixas|groupby('dia_semana') %}
+        <section class="grupo">
+            <div class="grupo-titulo">
+                {% if dia_numero is none %}Toda semana{% elif dia_numero in (5, 6) %}Todo {{ dias[dia_numero]|lower }}{% else %}Toda {{ dias[dia_numero]|lower }}{% endif %}
+            </div>
+            <div class="card lista">
+                {% for r in grupo %}{{ item(r, True) }}{% endfor %}
+            </div>
+        </section>
+        {% else %}
+            <div class="card vazio">Nenhuma reserva fixa.</div>
+        {% endfor %}
+
+    {% elif aba == 'proximas' %}
+
+        {% for data, grupo in proximas|groupby('data_inicio') %}
+        <section class="grupo">
+            <div class="grupo-titulo">
+                {% if data == hoje %}Hoje, {% endif %}{{ dias_curtos[data.weekday()]|capitalize }}, {{ data.strftime('%d/%m') }}{% if data.year != hoje.year %}/{{ data.year }}{% endif %}
+            </div>
+            <div class="card lista">
+                {% for r in grupo|sort(attribute='hora_inicio') %}{{ item(r, True) }}{% endfor %}
+            </div>
+        </section>
+        {% else %}
+            <div class="card vazio">Nenhuma reserva marcada de hoje em diante.</div>
+        {% endfor %}
+
+    {% else %}
+
+        <!-- RESUMO -->
+
+        <div class="numeros">
+
+            <div class="numero">
+                <div class="numero-valor">{{ resumo.total }}</div>
+                <div class="numero-texto">reserva{{ '' if resumo.total == 1 else 's' }} já realizada{{ '' if resumo.total == 1 else 's' }}</div>
+            </div>
+
+            <div class="numero">
+                <div class="numero-valor">
+                    {{ resumo.irmaos_participaram }}
+                    <small>de {{ resumo.irmaos_total }}</small>
+                </div>
+                <div class="numero-texto">irmãos já participaram</div>
+                {% set pct = (resumo.irmaos_participaram / resumo.irmaos_total * 100) if resumo.irmaos_total else 0 %}
+                <div
+                    class="progresso"
+                    role="img"
+                    aria-label="{{ resumo.irmaos_participaram }} de {{ resumo.irmaos_total }} irmãos"
+                    title="{{ pct|round|int }}% dos irmãos"
+                ><div style="width: {{ pct }}%;"></div></div>
+            </div>
+
+        </div>
+
+
+        <section class="card">
+
+            <h2 class="grafico-titulo">📍 Locais mais usados</h2>
+            <p class="grafico-sub">Número de reservas em cada local</p>
+
+            {% if resumo.locais_usados %}
+                {{ barras(resumo.locais_usados, 'local') }}
+            {% else %}
+                <p class="grafico-vazio">Nenhuma reserva realizada ainda.</p>
+            {% endif %}
+
+            {% if resumo.locais_sem_uso %}
+                <div class="sub-titulo">Sem nenhuma reserva ({{ resumo.locais_sem_uso|length }})</div>
+                <div class="etiquetas">
+                    {% for nome in resumo.locais_sem_uso %}<span class="etiqueta">{{ nome }}</span>{% endfor %}
+                </div>
+            {% endif %}
+
+        </section>
+
+
+        <section class="card">
+
+            <h2 class="grafico-titulo">👤 Quem mais participou</h2>
+            <p class="grafico-sub">Número de reservas (top 5)</p>
+
+            {% if resumo.top_pessoas %}
+                {{ barras(resumo.top_pessoas, 'pessoa') }}
+            {% else %}
+                <p class="grafico-vazio">Nenhuma reserva realizada ainda.</p>
+            {% endif %}
+
+            {% if resumo.irmaos_nao_participaram %}
+                {% set qtd = resumo.irmaos_nao_participaram|length %}
+                <details class="nao-participaram">
+                    <summary>
+                        <span class="sub-titulo-inline">
+                            {{ qtd }} irmão{{ '' if qtd == 1 else 's' }} ainda não participa{{ '' if qtd == 1 else 'ram' }}
+                        </span>
+                        <span class="btn btn-soft ver-quem">Ver quem são ›</span>
+                    </summary>
+                    <div class="etiquetas">
+                        {% for nome in resumo.irmaos_nao_participaram %}<span class="etiqueta">{{ nome }}</span>{% endfor %}
+                    </div>
+                </details>
+            {% endif %}
+
+        </section>
+
+    {% endif %}
+
+    </div>
+
+    <div class="card vazio" id="sem-resultado" style="display: none;">
+        Nada encontrado com essa busca.
+    </div>
+
+{% endblock %}
+
+
+{% block scripts %}
 <script>
 
-const reservasCalendario =
-    {{ reservas_calendario | tojson | safe }};
-
-let dataCalendario = new Date();
-
-
-function mostrarCalendario() {
-
-    document.querySelector(".titulo-reservas").style.display = "none";
-    document.querySelector(".alternar-visualizacao").style.display = "none";
-
-    document.querySelector(".lista").style.display = "none";
-
-    document.getElementById("calendario").style.display = "block";
-
-    gerarCalendario();
-
-}
-
-
-function mostrarFixas() {
-
-    document.querySelector(".titulo-reservas").style.display = "flex";
-    document.querySelector(".alternar-visualizacao").style.display = "block";
-
-    document.querySelector(".lista").style.display = "flex";
-
-    document.getElementById("calendario").style.display = "none";
-
-}
-
-
-function gerarCalendario() {
-
-    const ano = dataCalendario.getFullYear();
-    const mes = dataCalendario.getMonth();
-
-
-    const nomesMeses = [
-        "Janeiro",
-        "Fevereiro",
-        "Março",
-        "Abril",
-        "Maio",
-        "Junho",
-        "Julho",
-        "Agosto",
-        "Setembro",
-        "Outubro",
-        "Novembro",
-        "Dezembro"
-    ];
-
-
-    document.getElementById("mes-ano").textContent =
-        nomesMeses[mes] + " " + ano;
-
-
-    const primeiroDia =
-        new Date(ano, mes, 1).getDay();
-
-
-    const quantidadeDias =
-        new Date(ano, mes + 1, 0).getDate();
-
-
-    const container =
-        document.getElementById("dias-calendario");
-
-
-    container.innerHTML = "";
-
-
-    // Espaços antes do primeiro dia do mês
-    for (let i = 0; i < primeiroDia; i++) {
-
-        const vazio =
-            document.createElement("div");
-
-        container.appendChild(vazio);
-
+    // Busca: filtra a lista na hora (ignora acentos e maiúsculas)
+    function normalizar(texto) {
+        return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
     }
 
+    document.querySelectorAll(".reserva").forEach(function (item) {
+        item.dataset.busca = normalizar(item.dataset.busca || "");
+    });
 
-    // Criar cada dia do mês
-    for (
-        let dia = 1;
-        dia <= quantidadeDias;
-        dia++
-    ) {
+    const campoBusca = document.getElementById("busca");
 
-        const elemento =
-            document.createElement("div");
+    if (campoBusca) campoBusca.addEventListener("input", function () {
+        const termo = normalizar(this.value);
+        let algum = false;
 
+        document.querySelectorAll(".grupo").forEach(function (grupo) {
+            let visiveis = 0;
 
-        elemento.className =
-            "dia-calendario";
+            grupo.querySelectorAll(".reserva").forEach(function (item) {
+                const mostra = !termo || item.dataset.busca.includes(termo);
+                item.style.display = mostra ? "" : "none";
+                if (mostra) visiveis++;
+            });
 
+            grupo.style.display = visiveis ? "" : "none";
+            if (visiveis) algum = true;
+        });
 
-        const dataDia =
-            new Date(
-                ano,
-                mes,
-                dia
-            );
+        const temGrupos = document.querySelectorAll(".grupo").length > 0;
+        document.getElementById("sem-resultado").style.display =
+            (temGrupos && !algum) ? "" : "none";
+    });
 
-
-        const dataISO =
-            dataDia.getFullYear() +
-            "-" +
-            String(
-                dataDia.getMonth() + 1
-            ).padStart(2, "0") +
-            "-" +
-            String(
-                dataDia.getDate()
-            ).padStart(2, "0");
-
-
-        // Número do dia
-        elemento.innerHTML =
-            `<div class="dia-numero">${dia}</div>`;
-
-
-        // Procurar reservas deste dia
-        const reservasDoDia =
-            reservasCalendario.filter(
-                reserva => {
-
-
-                    // Reserva única
-                    if (
-                        reserva.tipo === "UNICA"
-                    ) {
-
-                        return (
-                            reserva.data_inicio ===
-                            dataISO
-                        );
-
-                    }
-
-
-                    // Reserva fixa
-                    if (
-                        reserva.tipo === "FIXA"
-                    ) {
-
-                        return (
-                            reserva.dia_semana ===
-                            dataDia.getDay() &&
-                            reserva.data_inicio <=
-                            dataISO
-                        );
-
-                    }
-
-
-                    return false;
-
-                }
-            );
-
-
-        // Mostrar as reservas encontradas
-        reservasDoDia.forEach(
-            reserva => {
-
-                const reservaElemento =
-                    document.createElement("div");
-
-
-                reservaElemento.className =
-                    reserva.tipo === "FIXA"
-                        ? "evento-fixa"
-                        : "evento-unica";
-
-
-                const icone =
-                    reserva.tipo === "FIXA"
-                        ? "🔄"
-                        : "🔵";
-
-
-                const numeroCarrinho =
-                    reserva.carrinho.replace(
-                        "Carrinho ",
-                        ""
-                    );
-
-
-                reservaElemento.innerHTML = `
-                    <strong>
-                        ${icone}
-                        ${reserva.hora_inicio}
-                    </strong>
-                    <br>
-                    C${numeroCarrinho}
-                    <br>
-                    ${reserva.responsavel}
-                `;
-
-
-                elemento.appendChild(
-                    reservaElemento
-                );
-
-            }
-        );
-
-
-        container.appendChild(
-            elemento
-        );
-
-    }
-
-}
-
-
-function mesAnterior() {
-
-    dataCalendario.setMonth(
-        dataCalendario.getMonth() - 1
-    );
-
-
-    gerarCalendario();
-
-}
-
-
-function mesSeguinte() {
-
-    dataCalendario.setMonth(
-        dataCalendario.getMonth() + 1
-    );
-
-
-    gerarCalendario();
-
-}
+    // Fecha o menu ⋯ ao clicar fora
+    document.addEventListener("click", function (evento) {
+        document.querySelectorAll("details.menu[open]").forEach(function (menu) {
+            if (!menu.contains(evento.target)) menu.removeAttribute("open");
+        });
+    });
 
 </script>
-
-</body>
-
-</html>
+{% endblock %}

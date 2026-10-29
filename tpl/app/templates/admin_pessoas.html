@@ -1,913 +1,501 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pessoas - TPL</title>
+{% extends "admin_base.html" %}
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% block title %}Pessoas{% endblock %}
+{% block heading %}👥 Pessoas{% endblock %}
 
-    <style>
-        .pessoas-page {
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 24px 16px 40px;
-            min-height: 100vh;
-        }
+{% block extra_css %}
+<style>
 
-        .pessoas-topo {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            margin-bottom: 20px;
-        }
+    /* Novo irmão */
 
-        .pessoas-topo h1 {
-            margin: 0;
-            font-size: 25px;
-            letter-spacing: -.3px;
-        }
+    .nova-pessoa { display: flex; gap: 8px; }
+    .nova-pessoa .input { flex: 1; }
+    .nova-pessoa .btn { min-height: 44px; font-size: 14px; }
 
-        .pessoas-topo p {
-            margin: 5px 0 0;
-            color: #6b7280;
-            font-size: 13px;
-        }
+    .busca { margin-bottom: 10px; }
 
-        .btn-voltar {
-            color: #1769c2;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .box {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 16px;
-            padding: 18px;
-            margin-bottom: 14px;
-            box-shadow: 0 4px 18px rgba(15, 23, 42, .04);
-        }
-
-        .box h2 {
-            margin: 0 0 15px;
-            font-size: 17px;
-        }
-
-        .campo {
-            margin-bottom: 12px;
-        }
-
-        .campo label {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 12px;
-            font-weight: 700;
-            color: #374151;
-        }
-
-        .campo input,
-        .campo select {
-            width: 100%;
-            padding: 11px 12px;
-            border: 1px solid #d8dde3;
-            border-radius: 10px;
-            font-size: 14px;
-            box-sizing: border-box;
-            background: #fff;
-        }
-
-        .campo input:focus,
-        .campo select:focus,
-        .busca-pessoas input:focus {
-            outline: none;
-            border-color: #087ff5;
-            box-shadow: 0 0 0 3px rgba(8,127,245,.09);
-        }
-
-        .login-opcao {
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            margin: 13px 0;
-            padding: 12px;
-            background: #f6f9fd;
-            border: 1px solid #e7edf5;
-            border-radius: 10px;
-        }
-
-        .login-opcao input {
-            width: 17px;
-            height: 17px;
-            margin: 0;
-            accent-color: #087ff5;
-        }
-
-        .login-opcao label {
-            margin: 0;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .dados-login {
-            display: none;
-            padding: 14px;
-            margin: 8px 0 13px;
-            background: #fafcff;
-            border: 1px solid #e3e9f0;
-            border-radius: 11px;
-        }
-
-        .dados-login.visivel {
-            display: block !important;
-        }
-
-        .dados-login-titulo {
-            margin: 0 0 12px;
-            font-size: 13px;
-            font-weight: 800;
-            color: #374151;
-        }
-
-        .btn {
-            border: 0;
-            border-radius: 9px;
-            padding: 10px 13px;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: .15s ease;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-        }
-
-        .btn-primary {
-            background: #087ff5;
-            color: #fff;
-        }
-
-        .btn-primary:hover {
-            background: #066fd8;
-        }
-
-        .btn-editar {
-            background: #eef6ff;
-            color: #087ff5;
-        }
-
-        .btn-desativar {
-            background: #fff0f0;
-            color: #c62828;
-        }
-
-        .btn-ativar {
-            background: #e3f8eb;
-            color: #16834b;
-        }
-
-        .busca-pessoas {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 14px;
-            padding: 12px;
-            margin-bottom: 14px;
-            box-shadow: 0 4px 18px rgba(15, 23, 42, .03);
-        }
-
-        .busca-pessoas input {
-            width: 100%;
-            padding: 11px 13px;
-            border: 1px solid #d8dde3;
-            border-radius: 10px;
-            font-size: 14px;
-            outline: none;
-            box-sizing: border-box;
-        }
-
-        .lista-pessoas {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 16px;
-            overflow: visible;
-            box-shadow: 0 4px 18px rgba(15, 23, 42, .04);
-        }
-
-        .pessoa {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 15px;
-            padding: 16px;
-            border-bottom: 1px solid #eef0f2;
-            flex-wrap: wrap;
-        }
-
-        .pessoa:last-child {
-            border-bottom: 0;
-        }
-
-        .pessoa.oculta {
-            display: none;
-        }
-
-        .pessoa-info {
-            flex: 1;
-            min-width: 210px;
-        }
-
-        .pessoa-nome {
-            font-size: 15px;
-            font-weight: 800;
-            color: #111827;
-        }
-
-        .pessoa-meta {
-            margin-top: 5px;
-            font-size: 11px;
-            color: #6b7280;
-            line-height: 1.55;
-        }
-
-        .pessoa-acoes {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 7px;
-            flex-wrap: wrap;
-        }
-
-        .badge {
-            padding: 5px 8px;
-            border-radius: 999px;
-            font-size: 10px;
-            font-weight: 800;
-            white-space: nowrap;
-        }
-
-        .badge-ativo {
-            background: #e3f8eb;
-            color: #16834b;
-        }
-
-        .badge-inativo {
-            background: #f1f3f5;
-            color: #6b7280;
-        }
-
-        .badge-login {
-            background: #eaf3ff;
-            color: #1769c2;
-        }
-
-        .badge-admin {
-            background: #fff3cd;
-            color: #8a6500;
-        }
-
-        .badge-sem-login {
-            background: #f1f3f5;
-            color: #6b7280;
-        }
-
-      .editar-form {
-        display: none;
-        width: 100%;
-        margin-top: 12px;
-        padding: 16px;
-        background: #f8fafc;
-        border: 1px solid #dfe5ec;
-        border-radius: 12px;
-        box-sizing: border-box;
-
-        /* tamanho máximo da área de edição */
-        max-height: 380px;
-
-        /* cria o scroll */
-        overflow-y: auto;
-        overflow-x: hidden;
-
-        scrollbar-width: thin;
-        scrollbar-color: #b8c2cc transparent;
+    .contagem {
+        margin: 0 4px 8px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
     }
 
-    .pessoa.editando .editar-form {
-        display: block;
-    }
+    /* Lista */
 
-    /* Scroll Chrome / Edge */
-    .editar-form::-webkit-scrollbar {
-        width: 7px;
-    }
+    .lista { padding: 0; overflow: hidden; }
 
-    .editar-form::-webkit-scrollbar-track {
-        background: transparent;
-    }
+    .pessoa { border-top: 1px solid #edf2f7; }
+    .pessoa:first-child { border-top: 0; }
 
-    .editar-form::-webkit-scrollbar-thumb {
-        background: #c4ccd5;
-        border-radius: 10px;
-    }
-
-    .editar-form::-webkit-scrollbar-thumb:hover {
-        background: #9da8b4;
-    }
-
-       @media (max-width: 600px) {
-
-            .editar-form {
-                max-height: 60vh;
-                overflow-y: auto;
-                padding: 14px;
-            }
-
-            .pessoa {
-                overflow: visible !important;
-            }
-
-            .editar-acoes {
-                flex-wrap: wrap;
-            }
-
-            .editar-acoes .btn {
-                flex: 1;
-                min-width: 105px;
-            }
-        }
-
-.pessoa {
-    overflow: visible !important;
-    height: auto !important;
-    max-height: none !important;
-}
-
-
-/* Evita que elementos internos sejam cortados */
-.pessoa-card,
-.pessoa-edicao,
-.dados-acesso {
-    contain: none !important;
-}
-
-/* Mobile */
-@media (max-width: 700px) {
-
-    .pessoa-edicao {
-        padding: 14px;
-    }
-
-    .pessoa-edicao .dados-acesso {
-        padding: 14px;
-    }
-
-    .pessoa-edicao .acoes-form {
-        flex-direction: column;
-    }
-
-    .pessoa-edicao .acoes-form button {
-        width: 100%;
-    }
-}
-
-@media (max-width: 600px) {
-
-    .lista-pessoas {
-        overflow: visible !important;
-    }
-
-    .pessoa {
-        overflow: visible !important;
-    }
-
-    .editar-form {
-        max-height: 55vh;
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding: 14px;
-    }
-
-    .editar-acoes {
+    .pessoa-linha {
         display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 16px;
+    }
+
+    .pessoa.inativa .pessoa-linha { background: #f7f8fa; }
+    .pessoa.inativa .pessoa-nome { color: #98a2b3; }
+
+    .pessoa-nome {
+        font-size: 15px;
+        font-weight: 800;
+        word-break: break-word;
+    }
+
+    .pessoa-info {
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 12px;
+        word-break: break-all;
+    }
+
+    .selo {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 3px 7px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 800;
+        vertical-align: 2px;
+    }
+
+    .selo.login { background: var(--blue-light); color: var(--blue); }
+    .selo.admin { background: #efe9ff; color: #5b3cc4; }
+    .selo.voce { background: #eef1f5; color: #475467; }
+
+    .botao-menu {
+        flex: 0 0 auto;
+        width: 36px;
+        height: 36px;
+        border: 0;
+        border-radius: 10px;
+        background: #f2f5f9;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 20px;
+        font-weight: 900;
+    }
+
+    .pessoa.aberta .botao-menu { background: var(--blue-light); color: var(--blue); }
+
+    /* Edição */
+
+    .edicao {
+        display: none;
+        padding: 4px 16px 16px;
+        background: #fafcff;
+    }
+
+    .pessoa.aberta .edicao { display: block; }
+
+    .edicao .field { margin-top: 10px; }
+
+    .chave {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 10px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .chave input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .chave-trilho {
+        position: relative;
+        flex: 0 0 auto;
+        width: 44px;
+        height: 26px;
+        border-radius: 13px;
+        background: #d0d5dd;
+        transition: background .15s ease;
+    }
+
+    .chave-trilho::after {
+        content: "";
+        position: absolute;
+        left: 3px;
+        top: 3px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #fff;
+        transition: left .15s ease;
+    }
+
+    .chave input:checked + .chave-trilho { background: var(--blue); }
+    .chave input:checked + .chave-trilho::after { left: 21px; }
+
+    .chave input:focus-visible + .chave-trilho {
+        outline: 3px solid rgba(8, 117, 201, .35);
+        outline-offset: 2px;
+    }
+
+    .chave.travada { opacity: .6; cursor: not-allowed; }
+
+    .campos-login { display: none; }
+    .campos-login.visivel { display: block; }
+
+    .tipo {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        padding: 4px;
+        border-radius: 12px;
+        background: #eef1f5;
+    }
+
+    .tipo label { cursor: pointer; }
+
+    .tipo input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .tipo span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 38px;
+        border-radius: 9px;
+        color: #475467;
+        font-size: 13px;
+        font-weight: 800;
+    }
+
+    .tipo input:checked + span {
+        background: #fff;
+        color: var(--blue);
+        box-shadow: 0 1px 4px rgba(16, 24, 40, .12);
+    }
+
+    .tipo input:focus-visible + span { outline: 3px solid rgba(8, 117, 201, .35); }
+
+    .tipo.travado { opacity: .6; }
+
+    .aviso-eu {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    .acoes {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 8px;
-        flex-wrap: wrap;
-        position: sticky;
-        bottom: 0;
-        background: #f8fafc;
-        padding-top: 10px;
-        padding-bottom: 2px;
+        margin-top: 12px;
     }
 
-    .editar-acoes .btn {
-        flex: 1;
-        min-width: 105px;
+    .acoes form { margin: 0; }
+
+    .acoes .btn { width: 100%; min-height: 44px; font-size: 14px; }
+
+    .vazio-busca {
+        display: none;
+        padding: 22px 16px;
+        color: var(--muted);
+        font-size: 14px;
+        text-align: center;
     }
-}
 
-/* =========================================
-   CORREÇÃO DEFINITIVA DA LISTA DE PESSOAS
-   ========================================= */
+</style>
+{% endblock %}
 
-.lista-pessoas {
-    width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    overflow: visible !important;
-    box-sizing: border-box;
-}
 
-/* Cada pessoa pode crescer quando o formulário abrir */
-.lista-pessoas .pessoa {
-    width: 100%;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    overflow: visible !important;
-    box-sizing: border-box;
-}
+{% block content %}
 
-/* Formulário de edição com scroll próprio */
-.lista-pessoas .editar-form {
-    width: 100%;
-    max-height: 380px !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    box-sizing: border-box;
-}
+    <!-- NOVO IRMÃO -->
 
-/* Scroll */
-.lista-pessoas .editar-form::-webkit-scrollbar {
-    width: 7px;
-}
+    <section class="card">
+        <form
+            class="nova-pessoa"
+            method="POST"
+            action="{{ url_for('routes.adicionar_pessoa') }}"
+        >
+            <input
+                class="input"
+                type="text"
+                name="nome"
+                placeholder="Nome do novo irmão"
+                maxlength="100"
+                required
+                autocomplete="off"
+                aria-label="Nome do novo irmão"
+            >
+            <button type="submit" class="btn btn-primary">+ Adicionar</button>
+        </form>
+    </section>
 
-.lista-pessoas .editar-form::-webkit-scrollbar-track {
-    background: transparent;
-}
 
-.lista-pessoas .editar-form::-webkit-scrollbar-thumb {
-    background: #c4ccd5;
-    border-radius: 10px;
-}
+    <!-- BUSCA -->
 
-.lista-pessoas .editar-form::-webkit-scrollbar-thumb:hover {
-    background: #9da8b4;
-}
-    </style>
-</head>
+    <input
+        class="input busca"
+        type="search"
+        id="busca"
+        placeholder="🔎 Buscar pessoa"
+        autocomplete="off"
+        aria-label="Buscar pessoa"
+    >
 
-<body>
+    <div class="contagem">
+        {{ pessoas|length }} pessoa{{ '' if pessoas|length == 1 else 's' }}
+        • {{ com_login }} com login
+    </div>
 
-<div class="app">
-    <main class="pessoas-page">
 
-        <div class="pessoas-topo">
-            <div>
-                <h1>👥 Pessoas</h1>
-                <p>Cadastre e gerencie os irmãos que participam das reservas.</p>
+    <!-- LISTA -->
+
+    <section class="card lista" id="lista">
+
+        {% for pessoa in pessoas %}
+        {% set u = pessoa.usuario %}
+        {% set tem_login = u and u.ativo %}
+        {% set eh_eu = u and u.id == meu_usuario_id %}
+
+        <div
+            class="pessoa {% if not pessoa.ativo %}inativa{% endif %}"
+            id="pessoa-{{ pessoa.id }}"
+            data-busca="{{ pessoa.nome|lower }} {{ (u.email if u else '')|lower }}"
+        >
+
+            <div class="pessoa-linha">
+
+                <div>
+                    <div class="pessoa-nome">
+                        {{ pessoa.nome }}
+                        {% if tem_login and u.tipo == "ADMIN" %}
+                            <span class="selo admin">ADMIN</span>
+                        {% elif tem_login %}
+                            <span class="selo login">LOGIN</span>
+                        {% endif %}
+                        {% if eh_eu %}<span class="selo voce">VOCÊ</span>{% endif %}
+                    </div>
+
+                    {% if not pessoa.ativo %}
+                        <div class="pessoa-info">Desativado</div>
+                    {% elif tem_login %}
+                        <div class="pessoa-info">{{ u.email }}</div>
+                    {% endif %}
+                </div>
+
+                <button
+                    type="button"
+                    class="botao-menu"
+                    aria-label="Editar {{ pessoa.nome }}"
+                    aria-expanded="false"
+                    onclick="alternarEdicao({{ pessoa.id }}, this)"
+                >⋯</button>
+
             </div>
 
-            <a class="btn-voltar" href="{{ url_for('routes.admin') }}">
-                ← Voltar
-            </a>
-        </div>
 
-        {% with mensagens = get_flashed_messages(with_categories=true) %}
-            {% if mensagens %}
-                <div class="flash-area">
-                    {% for categoria, mensagem in mensagens %}
-                        <div class="flash {{ categoria }}">{{ mensagem }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
+            <div class="edicao">
 
-        <!-- ADICIONAR -->
-        <div class="box">
-            <h2>Adicionar pessoa</h2>
-
-            <form method="POST"
-                  action="{{ url_for('routes.adicionar_pessoa') }}"
-                  id="formAdicionarPessoa">
-
-                <div class="campo">
-                    <label for="nome">Nome</label>
-                    <input
-                        type="text"
-                        id="nome"
-                        name="nome"
-                        placeholder="Nome do irmão"
-                        required
-                        autocomplete="off"
-                    >
-                </div>
-
-                <div class="login-opcao">
-                    <input
-                        type="checkbox"
-                        id="acesso_login"
-                        name="permitir_acesso"
-                        value="sim"
-                        onchange="mostrarCamposLoginAdicionar()"
-                    >
-
-                    <label for="acesso_login">
-                        Permitir acesso ao TPL
-                    </label>
-                </div>
-
-                <div id="dados-login-adicionar" class="dados-login">
-
-                    <div class="dados-login-titulo">
-                        Dados de acesso
-                    </div>
-
-                    <div class="campo">
-                        <label for="email-adicionar">E-mail</label>
-                        <input
-                            type="email"
-                            id="email-adicionar"
-                            name="email"
-                            placeholder="exemplo@email.com"
-                            autocomplete="email"
-                        >
-                    </div>
-
-                    <div class="campo">
-                        <label for="senha-adicionar">Senha inicial</label>
-                        <input
-                            type="password"
-                            id="senha-adicionar"
-                            name="senha"
-                            placeholder="Senha inicial"
-                            autocomplete="new-password"
-                        >
-                    </div>
-
-                    <div class="campo">
-                        <label for="tipo-adicionar">Tipo de acesso</label>
-                        <select id="tipo-adicionar" name="tipo">
-                            <option value="IRMAO">Irmão</option>
-                            <option value="ADMIN">Administrador</option>
-                        </select>
-                    </div>
-                </div>
-
-                <button class="btn btn-primary" type="submit">
-                    + Adicionar pessoa
-                </button>
-            </form>
-        </div>
-
-        <!-- BUSCA -->
-        <div class="busca-pessoas">
-            <input
-                type="search"
-                id="buscaPessoa"
-                placeholder="🔎 Pesquisar por nome ou e-mail..."
-                autocomplete="off"
-            >
-        </div>
-
-        <!-- LISTA -->
-        <div class="lista-pessoas">
-
-            {% for pessoa in pessoas %}
-
-                <div
-                    class="pessoa"
-                    data-search="{{ pessoa.nome|lower }} {% if pessoa.usuario %}{{ pessoa.usuario.email|lower }}{% endif %}"
+                <form
+                    method="POST"
+                    action="{{ url_for('routes.editar_pessoa', pessoa_id=pessoa.id) }}"
+                    class="form-editar"
                 >
 
-                    <div class="pessoa-info">
-
-                        <div class="pessoa-nome">
-                            {{ pessoa.nome }}
-                        </div>
-
-                        <div class="pessoa-meta">
-                            ID {{ pessoa.id }}
-
-                            {% if pessoa.usuario %}
-                                <br>
-                                Login: {{ pessoa.usuario.email }}
-
-                                <br>
-                                Tipo:
-                                {% if pessoa.usuario.tipo == "ADMIN" %}
-                                    Administrador
-                                {% else %}
-                                    Irmão
-                                {% endif %}
-                            {% else %}
-                                <br>
-                                Sem acesso ao TPL
-                            {% endif %}
-                        </div>
-
+                    <div class="field">
+                        <label>Nome</label>
+                        <input type="text" name="nome" value="{{ pessoa.nome }}" maxlength="100" required>
                     </div>
 
-                    <div class="pessoa-acoes">
-
-                        {% if pessoa.ativo %}
-                            <span class="badge badge-ativo">ATIVA</span>
-                        {% else %}
-                            <span class="badge badge-inativo">INATIVA</span>
-                        {% endif %}
-
-                        {% if pessoa.usuario %}
-                            {% if pessoa.usuario.ativo %}
-
-                                {% if pessoa.usuario.tipo == "ADMIN" %}
-                                    <span class="badge badge-admin">ADMIN</span>
-                                {% else %}
-                                    <span class="badge badge-login">LOGIN ATIVO</span>
-                                {% endif %}
-
-                            {% else %}
-                                <span class="badge badge-sem-login">LOGIN INATIVO</span>
-                            {% endif %}
-                        {% else %}
-                            <span class="badge badge-sem-login">SEM LOGIN</span>
-                        {% endif %}
-
-                        <button
-                            type="button"
-                            class="btn btn-editar"
-                            onclick="editarPessoa({{ pessoa.id }})"
+                    <label class="chave {% if eh_eu %}travada{% endif %}">
+                        <span>Pode entrar no app</span>
+                        <input
+                            type="checkbox"
+                            name="permitir_acesso"
+                            value="sim"
+                            {% if tem_login %}checked{% endif %}
+                            {% if eh_eu %}onclick="return false;"{% endif %}
+                            onchange="mostrarLogin(this)"
                         >
-                            Editar
-                        </button>
+                        <span class="chave-trilho"></span>
+                    </label>
 
-                        <form
-                            method="POST"
-                            action="{{ url_for('routes.excluir_pessoa', pessoa_id=pessoa.id) }}"
-                        >
-                            <button
-                                class="btn btn-desativar"
-                                type="submit"
-                                onclick="return confirm('Tem certeza que deseja excluir esta pessoa?');"
-                            >
-                                Excluir
-                            </button>
-                        </form>
+                    <div class="campos-login {% if tem_login %}visivel{% endif %}">
 
-                    </div>
-
-                    <!-- EDITAR -->
-                    <form
-                        id="editar-{{ pessoa.id }}"
-                        class="editar-form"
-                        method="POST"
-                        action="{{ url_for('routes.editar_pessoa', pessoa_id=pessoa.id) }}"
-                    >
-
-                        <div class="campo">
-                            <label>Nome</label>
+                        <div class="field">
+                            <label>E-mail</label>
                             <input
-                                type="text"
-                                name="nome"
-                                value="{{ pessoa.nome }}"
-                                required
+                                type="email"
+                                name="email"
+                                value="{{ u.email if u else '' }}"
                                 autocomplete="off"
+                                {% if tem_login %}required{% endif %}
                             >
                         </div>
 
-                        <div class="login-opcao">
-
+                        <div class="field">
+                            <label>{{ 'Nova senha' if u else 'Senha' }}</label>
                             <input
-                                type="checkbox"
-                                id="acesso-{{ pessoa.id }}"
-                                name="permitir_acesso"
-                                value="sim"
-                                {% if pessoa.usuario and pessoa.usuario.ativo %}
-                                    checked
-                                {% endif %}
-                                onchange="mostrarCamposLoginEditar({{ pessoa.id }})"
+                                type="password"
+                                name="senha"
+                                autocomplete="new-password"
+                                placeholder="{{ 'Deixe em branco para manter' if u else 'Senha para entrar no app' }}"
+                                {% if not u %}data-obrigatoria="sim"{% endif %}
                             >
-
-                            <label for="acesso-{{ pessoa.id }}">
-                                Permitir acesso ao TPL
-                            </label>
-
                         </div>
 
-                        <div
-                            id="dados-login-{{ pessoa.id }}"
-                            class="dados-login {% if pessoa.usuario and pessoa.usuario.ativo %}visivel{% endif %}"
-                        >
-
-                            <div class="dados-login-titulo">
-                                Dados de acesso
-                            </div>
-
-                            <div class="campo">
-                                <label>E-mail</label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value="{% if pessoa.usuario %}{{ pessoa.usuario.email }}{% endif %}"
-                                    placeholder="exemplo@email.com"
-                                    autocomplete="email"
-                                >
-                            </div>
-
-                            <div class="campo">
-                                <label>Nova senha</label>
-                                <input
-                                    type="password"
-                                    name="senha"
-                                    placeholder="Deixe vazio para manter a atual"
-                                    autocomplete="new-password"
-                                >
-                            </div>
-
-                            <div class="campo">
-                                <label>Tipo de acesso</label>
-
-                                <select name="tipo">
-                                    <option
+                        <div class="field">
+                            <label>Tipo</label>
+                            <div class="tipo {% if eh_eu %}travado{% endif %}">
+                                <label>
+                                    <input
+                                        type="radio"
+                                        name="tipo"
                                         value="IRMAO"
-                                        {% if pessoa.usuario and pessoa.usuario.tipo == "IRMAO" %}
-                                            selected
-                                        {% endif %}
+                                        {% if not u or u.tipo != 'ADMIN' %}checked{% endif %}
+                                        {% if eh_eu %}disabled{% endif %}
                                     >
-                                        Irmão
-                                    </option>
-
-                                    <option
+                                    <span>Irmão</span>
+                                </label>
+                                <label>
+                                    <input
+                                        type="radio"
+                                        name="tipo"
                                         value="ADMIN"
-                                        {% if pessoa.usuario and pessoa.usuario.tipo == "ADMIN" %}
-                                            selected
-                                        {% endif %}
+                                        {% if u and u.tipo == 'ADMIN' %}checked{% endif %}
                                     >
-                                        Administrador
-                                    </option>
-                                </select>
+                                    <span>Administrador</span>
+                                </label>
                             </div>
-
                         </div>
 
-                        <div class="editar-acoes">
+                    </div>
 
-                            <button class="btn btn-primary" type="submit">
-                                Salvar
-                            </button>
-
-                            <button
-                                class="btn btn-editar"
-                                type="button"
-                                onclick="editarPessoa({{ pessoa.id }})"
-                            >
-                                Cancelar
-                            </button>
-
+                    {% if eh_eu %}
+                        <div class="aviso-eu">
+                            Este é o seu cadastro: você não pode tirar o próprio
+                            acesso, deixar de ser administrador, se desativar
+                            ou se excluir.
                         </div>
+                    {% endif %}
 
+                    <div class="acoes">
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                        <button type="button" class="btn btn-neutral" onclick="alternarEdicao({{ pessoa.id }})">Fechar</button>
+                    </div>
+
+                </form>
+
+                {% if not eh_eu %}
+                <div class="acoes">
+
+                    <form
+                        method="POST"
+                        action="{{ url_for('routes.alternar_pessoa', pessoa_id=pessoa.id) }}"
+                    >
+                        {% if pessoa.ativo %}
+                            <button type="submit" class="btn btn-neutral">Desativar</button>
+                        {% else %}
+                            <button type="submit" class="btn btn-soft">Ativar</button>
+                        {% endif %}
+                    </form>
+
+                    <form
+                        method="POST"
+                        action="{{ url_for('routes.excluir_pessoa', pessoa_id=pessoa.id) }}"
+                        onsubmit="return confirm('Excluir esta pessoa? Isso não pode ser desfeito.');"
+                    >
+                        <button type="submit" class="btn btn-danger">🗑️ Excluir</button>
                     </form>
 
                 </div>
+                {% endif %}
 
-            {% else %}
-
-                <div style="padding:30px;text-align:center;color:#6b7280;">
-                    Nenhuma pessoa cadastrada.
-                </div>
-
-            {% endfor %}
-
-            <div id="nenhumResultado" class="nenhum-resultado">
-                Nenhuma pessoa encontrada.
             </div>
 
         </div>
+        {% endfor %}
 
-    </main>
-</div>
+        <div class="vazio-busca" id="sem-resultado">Ninguém encontrado com esse nome.</div>
 
+        {% if not pessoas %}
+            <div class="vazio-busca" style="display: block;">Nenhuma pessoa cadastrada ainda.</div>
+        {% endif %}
+
+    </section>
+
+{% endblock %}
+
+
+{% block scripts %}
 <script>
-function mostrarCamposLoginAdicionar() {
-    const checkbox = document.getElementById("acesso_login");
-    const campos = document.getElementById("dados-login-adicionar");
 
-    if (!checkbox || !campos) return;
+    // Abre/fecha a edição de uma pessoa (uma de cada vez)
+    function alternarEdicao(id) {
+        const item = document.getElementById("pessoa-" + id);
+        if (!item) return;
 
-    campos.classList.toggle("visivel", checkbox.checked);
+        const abrir = !item.classList.contains("aberta");
 
-    const email = document.getElementById("email-adicionar");
-    const senha = document.getElementById("senha-adicionar");
-
-    if (email) email.required = checkbox.checked;
-    if (senha) senha.required = checkbox.checked;
-}
-
-function editarPessoa(id) {
-    const formulario = document.getElementById("editar-" + id);
-
-    if (!formulario) return;
-
-    const linha = formulario.closest(".pessoa");
-
-    if (!linha) return;
-
-    linha.classList.toggle("editando");
-}
-
-function mostrarCamposLoginEditar(id) {
-    const checkbox = document.getElementById("acesso-" + id);
-    const campos = document.getElementById("dados-login-" + id);
-
-    if (!checkbox || !campos) return;
-
-    campos.classList.toggle("visivel", checkbox.checked);
-
-    const email = campos.querySelector('input[name="email"]');
-    const senha = campos.querySelector('input[name="senha"]');
-
-    if (email) email.required = checkbox.checked;
-
-    // A senha só é obrigatória quando ainda não existe usuário.
-    // Para usuário existente, pode ficar vazia para manter a senha.
-    if (senha) {
-        const temLogin = email && email.value.trim() !== "";
-        senha.required = checkbox.checked && !temLogin;
-    }
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-
-    mostrarCamposLoginAdicionar();
-
-    document.querySelectorAll(".login-opcao input[type='checkbox']").forEach(function (checkbox) {
-
-        if (checkbox.id === "acesso_login") {
-            mostrarCamposLoginAdicionar();
-            return;
-        }
-
-        const id = checkbox.id.replace("acesso-", "");
-        mostrarCamposLoginEditar(id);
-    });
-
-    const campoBusca = document.getElementById("buscaPessoa");
-    const pessoas = document.querySelectorAll(".pessoa");
-    const nenhumResultado = document.getElementById("nenhumResultado");
-
-    if (campoBusca) {
-
-        campoBusca.addEventListener("input", function () {
-
-            const termo = this.value
-                .toLowerCase()
-                .trim();
-
-            let encontradas = 0;
-
-            pessoas.forEach(function (pessoa) {
-
-                const texto = (
-                    pessoa.dataset.search || ""
-                ).toLowerCase();
-
-                const encontrou = texto.includes(termo);
-
-                pessoa.classList.toggle(
-                    "oculta",
-                    !encontrou
-                );
-
-                if (encontrou) {
-                    encontradas++;
-                }
-            });
-
-            if (nenhumResultado) {
-                nenhumResultado.style.display =
-                    encontradas === 0 ? "block" : "none";
-            }
+        document.querySelectorAll(".pessoa.aberta").forEach(function (outra) {
+            outra.classList.remove("aberta");
+            const b = outra.querySelector(".botao-menu");
+            if (b) b.setAttribute("aria-expanded", "false");
         });
+
+        if (abrir) {
+            item.classList.add("aberta");
+            item.querySelector(".botao-menu").setAttribute("aria-expanded", "true");
+        }
     }
 
-    // Remove mensagens flash discretamente depois de alguns segundos.
-    document.querySelectorAll(".flash").forEach(function (flash) {
-        setTimeout(function () {
-            flash.style.opacity = "0";
-            flash.style.transition = "opacity .25s ease";
+    // Mostra e-mail/senha/tipo quando "Pode entrar no app" está ligado
+    function mostrarLogin(chave) {
+        const form = chave.closest("form");
+        const campos = form.querySelector(".campos-login");
+        const email = form.querySelector('input[name="email"]');
+        const senha = form.querySelector('input[name="senha"]');
 
-            setTimeout(function () {
-                flash.remove();
-            }, 250);
-        }, 4000);
+        campos.classList.toggle("visivel", chave.checked);
+        email.required = chave.checked;
+        senha.required = chave.checked && senha.dataset.obrigatoria === "sim";
+    }
+
+    // Busca (ignora acentos e maiúsculas)
+    function normalizar(texto) {
+        return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+    }
+
+    const pessoas = document.querySelectorAll(".pessoa");
+
+    pessoas.forEach(function (p) {
+        p.dataset.busca = normalizar(p.dataset.busca || "");
     });
-});
-</script>
 
-</body>
-</html>
+    document.getElementById("busca").addEventListener("input", function () {
+        const termo = normalizar(this.value);
+        let algum = false;
+
+        pessoas.forEach(function (p) {
+            const mostra = !termo || p.dataset.busca.includes(termo);
+            p.style.display = mostra ? "" : "none";
+            if (mostra) algum = true;
+        });
+
+        document.getElementById("sem-resultado").style.display =
+            (pessoas.length && !algum) ? "block" : "none";
+    });
+
+</script>
+{% endblock %}

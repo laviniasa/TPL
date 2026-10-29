@@ -537,3 +537,155 @@ class Notificacao(db.Model):
     reserva = db.relationship(
         "Reserva"
     )
+
+# =========================================================
+# HORÁRIO AVULSO
+# Horário extra que vale só para uma data específica
+# (não se repete toda semana).
+# =========================================================
+
+class HorarioAvulso(db.Model):
+
+    __tablename__ = "horario_avulso"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    data = db.Column(
+        db.Date,
+        nullable=False
+    )
+
+    hora_inicio = db.Column(
+        db.Time,
+        nullable=False
+    )
+
+    hora_fim = db.Column(
+        db.Time,
+        nullable=False
+    )
+
+    carrinho_id = db.Column(
+        db.Integer,
+        db.ForeignKey("carrinho.id"),
+        nullable=False
+    )
+
+    local_id = db.Column(
+        db.Integer,
+        db.ForeignKey("local.id"),
+        nullable=False
+    )
+
+    quantidade_maxima = db.Column(
+        db.Integer,
+        default=3
+    )
+
+    carrinho = db.relationship(
+        "Carrinho"
+    )
+
+    local = db.relationship(
+        "Local"
+    )
+
+
+# =========================================================
+# CAMPANHA
+# Dia com programação própria (ex.: Finados).
+# Nesse dia, a agenda mostra só os horários da campanha;
+# a programação semanal normal não vale.
+# =========================================================
+
+class Campanha(db.Model):
+
+    __tablename__ = "campanha"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    nome = db.Column(
+        db.String(100),
+        nullable=False
+    )
+
+    data = db.Column(
+        db.Date,
+        nullable=False,
+        unique=True
+    )
+
+    # Local da campanha: todos os carrinhos ficam nele
+    local_id = db.Column(
+        db.Integer,
+        db.ForeignKey("local.id"),
+        nullable=True
+    )
+
+    local = db.relationship(
+        "Local"
+    )
+
+    horarios = db.relationship(
+        "CampanhaHorario",
+        backref="campanha",
+        cascade="all, delete-orphan",
+        order_by="CampanhaHorario.hora_inicio"
+    )
+
+
+class CampanhaHorario(db.Model):
+
+    __tablename__ = "campanha_horario"
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    campanha_id = db.Column(
+        db.Integer,
+        db.ForeignKey("campanha.id"),
+        nullable=False
+    )
+
+    carrinho_id = db.Column(
+        db.Integer,
+        db.ForeignKey("carrinho.id"),
+        nullable=False
+    )
+
+    local_id = db.Column(
+        db.Integer,
+        db.ForeignKey("local.id"),
+        nullable=False
+    )
+
+    hora_inicio = db.Column(
+        db.Time,
+        nullable=False
+    )
+
+    hora_fim = db.Column(
+        db.Time,
+        nullable=False
+    )
+
+    quantidade_maxima = db.Column(
+        db.Integer,
+        default=3
+    )
+
+    carrinho = db.relationship(
+        "Carrinho"
+    )
+
+    local = db.relationship(
+        "Local"
+    )

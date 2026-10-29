@@ -35,13 +35,17 @@ from app.models import (
     Programacao,
     ProgramacaoSemanal,
     Inscricao,
+    Participante,
     Reserva,
     ReservaParticipante,
     UsoCarrinho,
     Carrinho,
     Local,
     Pessoa,
-    Notificacao
+    Notificacao,
+    HorarioAvulso,
+    Campanha,
+    CampanhaHorario
 )
 
 
@@ -116,6 +120,23 @@ def voltar_admin_com_flash(endpoint, mensagem, categoria="warning"):
     return redirect(url_for(endpoint))
 
 
+def voltar_horarios(mensagem, categoria="warning", carrinho_id=None, dia=None):
+    """
+    Depois de mexer num horário, volta para a tela de onde veio:
+    a tela de horários do carrinho (next=carrinho) ou a Programação.
+    """
+    flash(mensagem, categoria)
+
+    if request.form.get("next") == "carrinho" and carrinho_id:
+        return redirect(url_for(
+            "routes.admin_carrinho_horarios",
+            carrinho_id=carrinho_id,
+            dia=dia
+        ))
+
+    return redirect(url_for("routes.admin_programacao"))
+
+
 def pessoas_da_reserva(reserva):
 
     nomes = [reserva.nome_principal]
@@ -124,6 +145,11 @@ def pessoas_da_reserva(reserva):
         nomes.append(participante.nome)
 
     return nomes
+
+
+def campanha_do_dia(data):
+    """Campanha marcada para esta data (ou None)."""
+    return Campanha.query.filter_by(data=data).first()
 
 
 def reservas_no_horario(data, hora_inicio, hora_fim, carrinho_id=None):
@@ -135,11 +161,15 @@ def reservas_no_horario(data, hora_inicio, hora_fim, carrinho_id=None):
       - reservas fixas (semanais) que já começaram.
     """
 
-    filtros = [
-        Reserva.ativo == True,
-        Reserva.hora_inicio < hora_fim,
-        Reserva.hora_fim > hora_inicio,
-        db.or_(
+    if campanha_do_dia(data):
+        # Dia de campanha: só valem as reservas feitas para este dia.
+        # As reservas fixas (semanais) não acontecem neste dia.
+        filtro_data = db.and_(
+            Reserva.tipo != "FIXA",
+            Reserva.data_inicio == data
+        )
+    else:
+        filtro_data = db.or_(
             Reserva.data_inicio == data,
             db.and_(
                 Reserva.tipo == "FIXA",
@@ -147,6 +177,12 @@ def reservas_no_horario(data, hora_inicio, hora_fim, carrinho_id=None):
                 Reserva.data_inicio <= data
             )
         )
+
+    filtros = [
+        Reserva.ativo == True,
+        Reserva.hora_inicio < hora_fim,
+        Reserva.hora_fim > hora_inicio,
+        filtro_data
     ]
 
     if carrinho_id is not None:
@@ -183,6 +219,16 @@ def garantir_programacao_do_dia(data):
         )
         .all()
     )
+
+    campanha = campanha_do_dia(data)
+
+    if campanha:
+        # Dia de campanha: vale SÓ a programação da campanha
+        semanais = list(campanha.horarios)
+    else:
+        # Horários avulsos (só desta data) entram junto com os semanais
+        avulsos = HorarioAvulso.query.filter_by(data=data).all()
+        semanais = list(semanais) + list(avulsos)
 
     existentes = Programacao.query.filter_by(data=data).all()
 
@@ -466,6 +512,10 @@ def agenda():
 
     for programacao in programacoes:
 
+        # Carrinho desativado não aparece na agenda
+        if not programacao.carrinho.ativo:
+            continue
+
         numero = programacao.carrinho_id
 
         if numero not in carrinhos:
@@ -512,7 +562,9 @@ def agenda():
         segunda=segunda,
         timedelta=timedelta,
         reservas_calendario=dados_do_calendario(),
-        pessoa_menu=pessoa_menu
+        pessoa_menu=pessoa_menu,
+        campanha=campanha_do_dia(data_selecionada),
+        lembretes=proximas_reservas_da_hora(current_user)
     )
 
 
@@ -609,10 +661,10 @@ def perfil(pessoa_id):
         .all()
     )
 
-    # Reservas fixas que já começaram
+    # Reservas fixas (inclusive as que ainda vão começar)
     fixas = [
         r for r in reservas
-        if r.tipo == "FIXA" and r.data_inicio <= hoje
+        if r.tipo == "FIXA"
     ]
 
     # Reservas únicas de hoje em diante
@@ -627,7 +679,8 @@ def perfil(pessoa_id):
         fixas=fixas,
         proximas=proximas,
         pode_editar=pode_editar_perfil(pessoa),
-        dias=DIAS_SEMANA
+        dias=DIAS_SEMANA,
+        hoje=hoje
     )
 
 
@@ -722,6 +775,8 @@ def excluir_reserva_perfil(reserva_id):
 @login_required
 def notificacoes():
 
+    criar_lembretes(current_user)
+
     lista = (
         Notificacao.query
         .filter_by(usuario_id=current_user.id)
@@ -736,21 +791,213 @@ def notificacoes():
 
     return jsonify({
         "quantidade": quantidade_nao_lidas,
-        "notificacoes": [
-            {
-                "id": notificacao.id,
-                "titulo": notificacao.titulo,
-                "mensagem": notificacao.mensagem,
-                "lida": notificacao.lida,
-                "criado_em": (
-                    notificacao.criado_em.strftime("%d/%m/%Y %H:%M")
-                    if notificacao.criado_em
-                    else ""
-                )
-            }
-            for notificacao in lista
-        ]
+        "notificacoes": [dados_notificacao(n) for n in lista]
     })
+
+
+def toda_semana(dia_semana):
+    """'Toda segunda-feira', mas 'Todo sábado' / 'Todo domingo'."""
+    nome = DIAS_SEMANA[dia_semana].lower()
+    return f"{'Todo' if dia_semana in (5, 6) else 'Toda'} {nome}"
+
+
+# Lembrete de 1 hora antes: notificação com título "LEMBRETE|reserva|data"
+PREFIXO_LEMBRETE = "LEMBRETE|"
+
+MINUTOS_LEMBRETE = 60
+
+
+def reservas_de_hoje_da_pessoa(nome, data):
+    """Reservas ativas de uma pessoa (responsável ou acompanhante) numa data."""
+
+    ids_como_participante = (
+        db.session.query(ReservaParticipante.reserva_id)
+        .filter(ReservaParticipante.nome == nome)
+    )
+
+    candidatas = (
+        Reserva.query
+        .filter(
+            Reserva.ativo == True,
+            db.or_(
+                Reserva.nome_principal == nome,
+                Reserva.id.in_(ids_como_participante)
+            )
+        )
+        .all()
+    )
+
+    dia_de_campanha = campanha_do_dia(data) is not None
+
+    resultado = []
+
+    for r in candidatas:
+        if r.tipo == "FIXA":
+            # Reserva fixa não vale em dia de campanha
+            if (
+                not dia_de_campanha
+                and r.dia_semana == data.weekday()
+                and r.data_inicio <= data
+            ):
+                resultado.append(r)
+        elif r.data_inicio == data:
+            resultado.append(r)
+
+    return sorted(resultado, key=lambda r: r.hora_inicio)
+
+
+def proximas_reservas_da_hora(usuario):
+    """
+    Reservas do usuário que começam daqui a no máximo 1 hora.
+    Devolve lista de (reserva, minutos_que_faltam).
+    """
+    pessoa = Pessoa.query.filter_by(usuario_id=usuario.id).first()
+
+    if not pessoa:
+        return []
+
+    agora = agora_sao_paulo().replace(tzinfo=None)
+    hoje = agora.date()
+
+    proximas = []
+
+    for r in reservas_de_hoje_da_pessoa(pessoa.nome, hoje):
+        inicio = datetime.combine(hoje, r.hora_inicio)
+        faltam = (inicio - agora).total_seconds() / 60
+
+        if 0 <= faltam <= MINUTOS_LEMBRETE:
+            proximas.append((r, int(faltam)))
+
+    return proximas
+
+
+def criar_lembretes(usuario):
+    """Cria (uma vez só) o lembrete de cada reserva que começa em até 1 hora."""
+
+    hoje = hoje_sao_paulo().isoformat()
+    criou = False
+
+    for r, _ in proximas_reservas_da_hora(usuario):
+        titulo = f"{PREFIXO_LEMBRETE}{r.id}|{hoje}"
+
+        ja_existe = Notificacao.query.filter_by(
+            usuario_id=usuario.id,
+            titulo=titulo
+        ).first()
+
+        if ja_existe:
+            continue
+
+        db.session.add(Notificacao(
+            usuario_id=usuario.id,
+            reserva_id=r.id,
+            titulo=titulo,
+            mensagem=(
+                f"Você tem carrinho hoje às {r.hora_inicio.strftime('%H:%M')}: "
+                f"{r.carrinho.nome} ({r.local.nome})."
+            ),
+            lida=False,
+            criado_em=agora_sao_paulo().replace(tzinfo=None)
+        ))
+
+        criou = True
+
+    if criou:
+        db.session.commit()
+
+
+# Avisos do admin são gravados como notificação comum,
+# com o título no formato "AVISO|remetente|título".
+PREFIXO_AVISO = "AVISO|"
+
+
+def ler_aviso(titulo):
+    """Devolve (remetente, título) se for aviso do admin, senão None."""
+    if not titulo or not titulo.startswith(PREFIXO_AVISO):
+        return None
+
+    partes = titulo.split("|", 2)
+
+    if len(partes) < 3:
+        return None
+
+    return partes[1], partes[2]
+
+
+def dados_notificacao(notificacao):
+
+    criado = (
+        notificacao.criado_em.strftime("%d/%m %H:%M")
+        if notificacao.criado_em
+        else ""
+    )
+
+    dados = {
+        "id": notificacao.id,
+        "lida": notificacao.lida,
+        "criado_em": criado,
+        "tipo": "outro",
+        "titulo": notificacao.titulo,
+        "mensagem": notificacao.mensagem,
+        "detalhes": None,
+        "rodape": f"Enviado em {criado}" if criado else ""
+    }
+
+    # Lembrete de 1 hora antes
+    if notificacao.titulo and notificacao.titulo.startswith(PREFIXO_LEMBRETE) and notificacao.reserva:
+        r = notificacao.reserva
+        dados["tipo"] = "lembrete"
+        dados["titulo"] = f"Você tem carrinho hoje às {r.hora_inicio.strftime('%H:%M')}!"
+        dados["mensagem"] = ""
+        dados["detalhes"] = {
+            "quando": "Hoje",
+            "horario": f"{r.hora_inicio.strftime('%H:%M')} às {r.hora_fim.strftime('%H:%M')}",
+            "carrinho": r.carrinho.nome,
+            "local": r.local.nome,
+            "cancelada": not r.ativo
+        }
+        dados["rodape"] = f"Lembrete • {criado}"
+        return dados
+
+    aviso = ler_aviso(notificacao.titulo)
+
+    if aviso:
+        remetente, titulo = aviso
+        dados["tipo"] = "aviso"
+        dados["titulo"] = titulo
+        dados["rodape"] = f"Enviado por {remetente} • {criado}"
+        return dados
+
+    reserva = notificacao.reserva
+
+    if reserva:
+        # Convite: mostra os detalhes da própria reserva
+        dados["tipo"] = "convite"
+        dados["titulo"] = f"{reserva.nome_principal} te chamou para o carrinho!"
+        dados["mensagem"] = ""
+
+        if reserva.tipo == "FIXA" and reserva.dia_semana is not None:
+            quando = toda_semana(reserva.dia_semana)
+            if reserva.data_inicio > hoje_sao_paulo():
+                quando += f" (a partir de {reserva.data_inicio.strftime('%d/%m')})"
+        else:
+            quando = (
+                f"{DIAS_SEMANA[reserva.data_inicio.weekday()]}, "
+                f"{reserva.data_inicio.strftime('%d/%m')}"
+            )
+
+        dados["detalhes"] = {
+            "quando": quando,
+            "horario": (
+                f"{reserva.hora_inicio.strftime('%H:%M')} às "
+                f"{reserva.hora_fim.strftime('%H:%M')}"
+            ),
+            "carrinho": reserva.carrinho.nome,
+            "local": reserva.local.nome,
+            "cancelada": not reserva.ativo
+        }
+
+    return dados
 
 
 @routes.route("/notificacoes/<int:notificacao_id>", methods=["DELETE"])
@@ -790,6 +1037,14 @@ def participar(programacao_id):
     )
 
     hoje = hoje_sao_paulo()
+
+    # Impede reserva em carrinho desativado
+    if not programacao.carrinho.ativo:
+        return voltar_agenda_com_flash(
+            programacao.data,
+            "Este carrinho está desativado e não aceita reservas.",
+            "warning"
+        )
 
     # Impede reserva para data que já passou
     if programacao.data < hoje:
@@ -884,6 +1139,15 @@ def participar(programacao_id):
                 "danger"
             )
 
+        # Em dia de campanha não dá para criar reserva semanal
+        if reserva_fixa and campanha_do_dia(programacao.data):
+            return voltar_agenda_com_flash(
+                programacao.data,
+                "Este é um dia de campanha: a reserva vale só para este dia. "
+                "Desmarque a opção de reserva fixa.",
+                "warning"
+            )
+
         # Criar reserva
         if reserva_fixa:
             tipo_reserva = "FIXA"
@@ -927,9 +1191,15 @@ def participar(programacao_id):
                     reserva_id=reserva.id,
                     titulo="Você recebeu um convite!",
                     mensagem=(
-                        f"Oii! Você recebeu um convite de "
-                        f"{current_user.nome} para trabalharem juntos!"
+                        f"{nome_principal} te chamou para o carrinho: "
+                        f"{DIAS_SEMANA[programacao.data.weekday()]}, "
+                        f"{programacao.data.strftime('%d/%m')}, "
+                        f"{programacao.hora_inicio.strftime('%H:%M')} às "
+                        f"{programacao.hora_fim.strftime('%H:%M')}, "
+                        f"{programacao.carrinho.nome} ({programacao.local.nome})."
                     ),
+                    # Hora de Brasília (o padrão do banco grava em UTC)
+                    criado_em=agora_sao_paulo().replace(tzinfo=None),
                     lida=False
                 ))
 
@@ -984,6 +1254,14 @@ def excluir_reserva(reserva_id):
     reserva.ativo = False
 
     db.session.commit()
+
+    # Cancelada pela tela de Reservas do admin: volta para ela
+    if request.form.get("next") == "admin":
+        flash("Reserva cancelada.", "success")
+        return redirect(url_for(
+            "routes.admin_reservas",
+            aba=request.form.get("aba", "proximas")
+        ))
 
     flash("Reserva excluída com sucesso.", "success")
 
@@ -1078,13 +1356,98 @@ def admin_carrinhos():
 
     carrinhos = (
         Carrinho.query
-        .order_by(Carrinho.id)
+        .order_by(Carrinho.ativo.desc(), Carrinho.id)
+        .all()
+    )
+
+    # Resumo de cada carrinho: quantos horários e em quantos dias
+    resumo = {}
+
+    for semanal in ProgramacaoSemanal.query.all():
+        item = resumo.setdefault(
+            semanal.carrinho_id,
+            {"horarios": 0, "dias": set()}
+        )
+        item["horarios"] += 1
+        item["dias"].add(semanal.dia_semana)
+
+    return render_template(
+        "admin_carrinhos.html",
+        carrinhos=carrinhos,
+        resumo=resumo
+    )
+
+
+DIAS_CURTOS = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"]
+
+
+@routes.route("/admin/carrinhos/<int:carrinho_id>")
+@admin_required
+def admin_carrinho_horarios(carrinho_id):
+
+    carrinho = Carrinho.query.get_or_404(carrinho_id)
+
+    todos = (
+        ProgramacaoSemanal.query
+        .filter_by(carrinho_id=carrinho.id)
+        .order_by(
+            ProgramacaoSemanal.dia_semana,
+            ProgramacaoSemanal.hora_inicio
+        )
+        .all()
+    )
+
+    # Horários separados por dia (para as abas SEG, TER...)
+    por_dia = {numero: [] for numero in range(7)}
+
+    for semanal in todos:
+        por_dia[semanal.dia_semana].append(semanal)
+
+    # Dia escolhido: o da URL, ou hoje
+    dia = request.args.get("dia", type=int)
+
+    if dia not in range(7):
+        dia = hoje_sao_paulo().weekday()
+
+    horarios_do_dia = por_dia[dia]
+
+    locais_do_dia = []
+
+    for semanal in horarios_do_dia:
+        if semanal.local.nome not in locais_do_dia:
+            locais_do_dia.append(semanal.local.nome)
+
+    locais = (
+        Local.query
+        .filter_by(ativo=True)
+        .order_by(Local.nome)
+        .all()
+    )
+
+    # Datas especiais (horários avulsos) de hoje em diante
+    avulsos = (
+        HorarioAvulso.query
+        .filter(
+            HorarioAvulso.carrinho_id == carrinho.id,
+            HorarioAvulso.data >= hoje_sao_paulo()
+        )
+        .order_by(HorarioAvulso.data, HorarioAvulso.hora_inicio)
         .all()
     )
 
     return render_template(
-        "admin_carrinhos.html",
-        carrinhos=carrinhos
+        "admin_carrinho_horarios.html",
+        avulsos=avulsos,
+        hoje=hoje_sao_paulo(),
+        carrinho=carrinho,
+        dia=dia,
+        por_dia=por_dia,
+        horarios=horarios_do_dia,
+        locais_do_dia=locais_do_dia,
+        locais=locais,
+        dias=DIAS_SEMANA,
+        dias_curtos=DIAS_CURTOS,
+        total=len(todos)
     )
 
 
@@ -1098,15 +1461,25 @@ def adicionar_carrinho():
     nome = request.form.get("nome", "").strip()
 
     if not nome:
-        return "Informe o nome do carrinho.", 400
+        return voltar_admin_com_flash(
+            "routes.admin_carrinhos",
+            "Informe o nome do carrinho."
+        )
 
     if Carrinho.query.filter_by(nome=nome).first():
-        return "Já existe um carrinho com esse nome.", 400
+        return voltar_admin_com_flash(
+            "routes.admin_carrinhos",
+            "Já existe um carrinho com esse nome."
+        )
 
     db.session.add(Carrinho(nome=nome, ativo=True))
     db.session.commit()
 
-    return redirect(url_for("routes.admin_carrinhos"))
+    return voltar_admin_com_flash(
+        "routes.admin_carrinhos",
+        f"Carrinho “{nome}” criado! Agora adicione os horários dele.",
+        "success"
+    )
 
 
 @routes.route(
@@ -1121,7 +1494,10 @@ def editar_carrinho(carrinho_id):
     nome = request.form.get("nome", "").strip()
 
     if not nome:
-        return "Informe o nome do carrinho.", 400
+        return voltar_admin_com_flash(
+            "routes.admin_carrinhos",
+            "Informe o nome do carrinho."
+        )
 
     outro_carrinho = (
         Carrinho.query
@@ -1133,13 +1509,27 @@ def editar_carrinho(carrinho_id):
     )
 
     if outro_carrinho:
-        return "Já existe um carrinho com esse nome.", 400
+        return voltar_admin_com_flash(
+            "routes.admin_carrinhos",
+            "Já existe um carrinho com esse nome."
+        )
 
     carrinho.nome = nome
 
     db.session.commit()
 
-    return redirect(url_for("routes.admin_carrinhos"))
+    if request.form.get("next") == "carrinho":
+        flash("Nome atualizado.", "success")
+        return redirect(url_for(
+            "routes.admin_carrinho_horarios",
+            carrinho_id=carrinho.id
+        ))
+
+    return voltar_admin_com_flash(
+        "routes.admin_carrinhos",
+        "Nome atualizado.",
+        "success"
+    )
 
 
 @routes.route(
@@ -1155,7 +1545,24 @@ def alternar_carrinho(carrinho_id):
 
     db.session.commit()
 
-    return redirect(url_for("routes.admin_carrinhos"))
+    mensagem = (
+        f"{carrinho.nome} ativado."
+        if carrinho.ativo
+        else f"{carrinho.nome} desativado. Ele não aparece mais na agenda."
+    )
+
+    if request.form.get("next") == "carrinho":
+        flash(mensagem, "success")
+        return redirect(url_for(
+            "routes.admin_carrinho_horarios",
+            carrinho_id=carrinho.id
+        ))
+
+    return voltar_admin_com_flash(
+        "routes.admin_carrinhos",
+        mensagem,
+        "success"
+    )
 
 
 # =========================================================
@@ -1166,11 +1573,22 @@ def alternar_carrinho(carrinho_id):
 @admin_required
 def admin_pessoas():
 
-    pessoas = Pessoa.query.order_by(Pessoa.nome).all()
+    pessoas = (
+        Pessoa.query
+        .order_by(Pessoa.ativo.desc(), Pessoa.nome)
+        .all()
+    )
+
+    com_login = sum(
+        1 for p in pessoas
+        if p.usuario and p.usuario.ativo
+    )
 
     return render_template(
         "admin_pessoas.html",
-        pessoas=pessoas
+        pessoas=pessoas,
+        com_login=com_login,
+        meu_usuario_id=current_user.id
     )
 
 
@@ -1185,6 +1603,8 @@ def _marcado(valor):
 @admin_required
 def adicionar_pessoa():
 
+    destino = "routes.admin_pessoas"
+
     nome = request.form.get("nome", "").strip()
 
     permitir_acesso = _marcado(
@@ -1192,28 +1612,36 @@ def adicionar_pessoa():
     )
 
     email = request.form.get("email", "").strip().lower()
-
     senha = request.form.get("senha", "")
+    tipo = request.form.get("tipo", "IRMAO").strip().upper()
+
+    if tipo not in ["IRMAO", "ADMIN"]:
+        tipo = "IRMAO"
 
     if not nome:
-        return "Informe o nome do irmão.", 400
+        return voltar_admin_com_flash(destino, "Informe o nome do irmão.")
 
-    if Pessoa.query.filter_by(nome=nome).first():
-        return "Esta pessoa já está cadastrada.", 400
+    if Pessoa.query.filter(db.func.lower(Pessoa.nome) == nome.lower()).first():
+        return voltar_admin_com_flash(destino, f"{nome} já está cadastrado.")
 
     if permitir_acesso:
 
         if not email:
-            return "Informe o e-mail para criar o acesso ao TPL.", 400
+            return voltar_admin_com_flash(
+                destino, "Informe o e-mail para criar o acesso ao TPL."
+            )
 
         if not senha:
-            return "Informe uma senha inicial para criar o acesso.", 400
+            return voltar_admin_com_flash(
+                destino, "Informe uma senha inicial para criar o acesso."
+            )
 
         if Usuario.query.filter_by(email=email).first():
-            return "Este e-mail já está cadastrado.", 400
+            return voltar_admin_com_flash(
+                destino, "Este e-mail já está cadastrado."
+            )
 
     pessoa = Pessoa(nome=nome, ativo=True)
-
     db.session.add(pessoa)
 
     if permitir_acesso:
@@ -1222,7 +1650,7 @@ def adicionar_pessoa():
             nome=nome,
             email=email,
             senha=generate_password_hash(senha),
-            tipo="IRMAO",
+            tipo=tipo,
             ativo=True
         )
 
@@ -1235,7 +1663,11 @@ def adicionar_pessoa():
 
     db.session.commit()
 
-    return redirect(url_for("routes.admin_pessoas"))
+    return voltar_admin_com_flash(
+        destino,
+        f"{nome} foi adicionado. Para dar acesso ao app, toque em ⋯ ao lado do nome.",
+        "success"
+    )
 
 
 @routes.route(
@@ -1279,6 +1711,22 @@ def editar_pessoa(pessoa_id):
             "routes.admin_pessoas",
             "Já existe uma pessoa com esse nome."
         )
+
+    # Trava: o admin não pode tirar o próprio acesso
+    eh_eu = pessoa.usuario_id is not None and pessoa.usuario_id == current_user.id
+
+    if eh_eu:
+        if not permitir_acesso:
+            return voltar_admin_com_flash(
+                "routes.admin_pessoas",
+                "Você não pode tirar o seu próprio acesso ao app."
+            )
+
+        if tipo != "ADMIN":
+            return voltar_admin_com_flash(
+                "routes.admin_pessoas",
+                "Você não pode tirar o seu próprio acesso de administrador."
+            )
 
     pessoa.nome = nome
 
@@ -1370,11 +1818,23 @@ def alternar_pessoa(pessoa_id):
 
     pessoa = Pessoa.query.get_or_404(pessoa_id)
 
+    if pessoa.ativo and pessoa.usuario_id == current_user.id:
+        return voltar_admin_com_flash(
+            "routes.admin_pessoas",
+            "Você não pode desativar o seu próprio cadastro."
+        )
+
     pessoa.ativo = not pessoa.ativo
 
     db.session.commit()
 
-    return redirect(url_for("routes.admin_pessoas"))
+    return voltar_admin_com_flash(
+        "routes.admin_pessoas",
+        f"{pessoa.nome} ativado."
+        if pessoa.ativo
+        else f"{pessoa.nome} desativado. Não aparece mais para escolher nas reservas.",
+        "success"
+    )
 
 
 @routes.route(
@@ -1385,6 +1845,12 @@ def alternar_pessoa(pessoa_id):
 def excluir_pessoa(pessoa_id):
 
     pessoa = Pessoa.query.get_or_404(pessoa_id)
+
+    if pessoa.usuario_id == current_user.id:
+        return voltar_admin_com_flash(
+            "routes.admin_pessoas",
+            "Você não pode excluir o seu próprio cadastro."
+        )
 
     nome = pessoa.nome
 
@@ -1449,13 +1915,53 @@ def admin_locais():
 
     locais = (
         Local.query
-        .order_by(Local.nome)
+        .order_by(Local.ativo.desc(), Local.nome)
         .all()
     )
 
+    hoje = hoje_sao_paulo()
+
+    # Quais carrinhos usam cada local hoje em dia
+    # (horários semanais + datas especiais que ainda vão acontecer)
+    carrinhos_por_local = {}
+
+    for semanal in ProgramacaoSemanal.query.all():
+        carrinhos_por_local.setdefault(semanal.local_id, set()).add(semanal.carrinho_id)
+
+    for avulso in HorarioAvulso.query.filter(HorarioAvulso.data >= hoje).all():
+        carrinhos_por_local.setdefault(avulso.local_id, set()).add(avulso.carrinho_id)
+
+    # Quantos horários e reservas cada local tem
+    # (para avisar na confirmação de exclusão)
+    def contar(modelo):
+        return dict(
+            db.session.query(modelo.local_id, db.func.count(modelo.id))
+            .group_by(modelo.local_id)
+            .all()
+        )
+
+    semanais_por_local = contar(ProgramacaoSemanal)
+    avulsos_por_local = contar(HorarioAvulso)
+    campanha_por_local = contar(CampanhaHorario)
+    reservas_por_local = contar(Reserva)
+
+    resumo = {
+        local.id: {
+            "carrinhos": len(carrinhos_por_local.get(local.id, ())),
+            "horarios": (
+                semanais_por_local.get(local.id, 0)
+                + avulsos_por_local.get(local.id, 0)
+                + campanha_por_local.get(local.id, 0)
+            ),
+            "reservas": reservas_por_local.get(local.id, 0)
+        }
+        for local in locais
+    }
+
     return render_template(
         "admin_locais.html",
-        locais=locais
+        locais=locais,
+        resumo=resumo
     )
 
 
@@ -1576,27 +2082,79 @@ def alternar_local(local_id):
 def excluir_local(local_id):
 
     local = Local.query.get_or_404(local_id)
+    nome = local.nome
 
-    em_uso = (
-        ProgramacaoSemanal.query.filter_by(local_id=local.id).first()
-        or Programacao.query.filter_by(local_id=local.id).first()
-        or Reserva.query.filter_by(local_id=local.id).first()
-    )
+    # Excluir o local apaga TUDO o que está nele:
+    # horários semanais, datas especiais, horários da agenda
+    # e reservas (com participantes, check-ins e notificações).
 
-    if em_uso:
-        return voltar_admin_com_flash(
-            "routes.admin_locais",
-            "Este local já foi usado em uma programação ou reserva e "
-            "não pode ser excluído. Use “Desativar” para escondê-lo.",
-            "warning"
-        )
+    reserva_ids = [
+        r.id for r in Reserva.query.filter_by(local_id=local.id).all()
+    ]
+
+    if reserva_ids:
+        ReservaParticipante.query.filter(
+            ReservaParticipante.reserva_id.in_(reserva_ids)
+        ).delete(synchronize_session=False)
+
+        UsoCarrinho.query.filter(
+            UsoCarrinho.reserva_id.in_(reserva_ids)
+        ).delete(synchronize_session=False)
+
+        Notificacao.query.filter(
+            Notificacao.reserva_id.in_(reserva_ids)
+        ).delete(synchronize_session=False)
+
+        Reserva.query.filter(
+            Reserva.id.in_(reserva_ids)
+        ).delete(synchronize_session=False)
+
+    programacao_ids = [
+        p.id for p in Programacao.query.filter_by(local_id=local.id).all()
+    ]
+
+    if programacao_ids:
+        inscricao_ids = [
+            i.id for i in Inscricao.query.filter(
+                Inscricao.programacao_id.in_(programacao_ids)
+            ).all()
+        ]
+
+        if inscricao_ids:
+            Participante.query.filter(
+                Participante.inscricao_id.in_(inscricao_ids)
+            ).delete(synchronize_session=False)
+
+            Inscricao.query.filter(
+                Inscricao.id.in_(inscricao_ids)
+            ).delete(synchronize_session=False)
+
+        Programacao.query.filter(
+            Programacao.id.in_(programacao_ids)
+        ).delete(synchronize_session=False)
+
+    ProgramacaoSemanal.query.filter_by(
+        local_id=local.id
+    ).delete(synchronize_session=False)
+
+    HorarioAvulso.query.filter_by(
+        local_id=local.id
+    ).delete(synchronize_session=False)
+
+    CampanhaHorario.query.filter_by(
+        local_id=local.id
+    ).delete(synchronize_session=False)
+
+    Campanha.query.filter_by(
+        local_id=local.id
+    ).update({"local_id": None}, synchronize_session=False)
 
     db.session.delete(local)
     db.session.commit()
 
     return voltar_admin_com_flash(
         "routes.admin_locais",
-        "Local excluído.",
+        f"Local “{nome}” excluído, junto com os horários e reservas dele.",
         "success"
     )
 
@@ -1916,35 +2474,48 @@ def editar_programacao(programacao_id):
 
     semanal = ProgramacaoSemanal.query.get_or_404(programacao_id)
 
-    carrinho_id = request.form.get("carrinho_id", "")
+    carrinho_id = request.form.get("carrinho_id", "") or str(semanal.carrinho_id)
     local_id = request.form.get("local_id", "")
     hora_inicio = request.form.get("hora_inicio", "")
     hora_fim = request.form.get("hora_fim", "")
+    quantidade_maxima = request.form.get("quantidade_maxima", "")
 
-    destino = "routes.admin_programacao"
+    cid = semanal.carrinho_id
+    dia = semanal.dia_semana
 
-    if not (carrinho_id and local_id and hora_inicio and hora_fim):
-        return voltar_admin_com_flash(destino, "Preencha todos os campos.")
+    if not (local_id and hora_inicio and hora_fim):
+        return voltar_horarios("Preencha todos os campos.", carrinho_id=cid, dia=dia)
 
     try:
         inicio = datetime.strptime(hora_inicio, "%H:%M").time()
         fim = datetime.strptime(hora_fim, "%H:%M").time()
         carrinho_id = int(carrinho_id)
         local_id = int(local_id)
+        quantidade_maxima = (
+            int(quantidade_maxima)
+            if quantidade_maxima
+            else semanal.quantidade_maxima
+        )
     except ValueError:
-        return voltar_admin_com_flash(destino, "Dados inválidos.")
+        return voltar_horarios("Dados inválidos.", carrinho_id=cid, dia=dia)
+
+    if quantidade_maxima < 1:
+        return voltar_horarios(
+            "O número de vagas deve ser pelo menos 1.",
+            carrinho_id=cid, dia=dia
+        )
 
     if inicio >= fim:
-        return voltar_admin_com_flash(
-            destino,
-            "O horário de início deve ser antes do horário de fim."
+        return voltar_horarios(
+            "O horário de início deve ser antes do horário de fim.",
+            carrinho_id=cid, dia=dia
         )
 
     if not db.session.get(Carrinho, carrinho_id):
-        return voltar_admin_com_flash(destino, "Carrinho não encontrado.")
+        return voltar_horarios("Carrinho não encontrado.", carrinho_id=cid, dia=dia)
 
     if not db.session.get(Local, local_id):
-        return voltar_admin_com_flash(destino, "Local não encontrado.")
+        return voltar_horarios("Local não encontrado.", carrinho_id=cid, dia=dia)
 
     # O mesmo carrinho não pode ter dois horários que se sobrepõem no dia
     conflito = (
@@ -1960,12 +2531,12 @@ def editar_programacao(programacao_id):
     )
 
     if conflito:
-        return voltar_admin_com_flash(
-            destino,
+        return voltar_horarios(
             "Esse carrinho já tem outro horário que se sobrepõe a este "
             f"na {DIAS_SEMANA[semanal.dia_semana].lower()}: "
             f"{conflito.hora_inicio.strftime('%H:%M')} às "
-            f"{conflito.hora_fim.strftime('%H:%M')}."
+            f"{conflito.hora_fim.strftime('%H:%M')}.",
+            carrinho_id=cid, dia=dia
         )
 
     # Guarda como era antes para encontrar o que já foi gerado
@@ -1979,17 +2550,389 @@ def editar_programacao(programacao_id):
     semanal.local_id = local_id
     semanal.hora_inicio = inicio
     semanal.hora_fim = fim
+    semanal.quantidade_maxima = quantidade_maxima
 
     propagar_mudanca_programacao(semanal, antigo)
 
     db.session.commit()
 
-    return voltar_admin_com_flash(
-        destino,
-        "Programação atualizada. A agenda de hoje em diante já mostra "
-        "o novo local e horário.",
-        "success"
+    return voltar_horarios(
+        "Horário atualizado. A agenda de hoje em diante já mostra "
+        "a mudança.",
+        "success",
+        carrinho_id, dia
     )
+
+
+@routes.route(
+    "/admin/programacao/adicionar",
+    methods=["POST"]
+)
+@admin_required
+def adicionar_programacao():
+
+    # "Só em uma data": cria um horário avulso
+    if request.form.get("repetir") == "data":
+        return adicionar_horario_avulso()
+
+    # Aceita vários dias de uma vez (caixinhas "dias")
+    # ou um dia só (campo "dia_semana", da tela de Programação).
+    dias_escolhidos = request.form.getlist("dias")
+
+    if not dias_escolhidos and request.form.get("dia_semana"):
+        dias_escolhidos = [request.form.get("dia_semana")]
+
+    carrinho_id = request.form.get("carrinho_id", "")
+    local_id = request.form.get("local_id", "")
+    hora_inicio = request.form.get("hora_inicio", "")
+    hora_fim = request.form.get("hora_fim", "")
+    quantidade_maxima = request.form.get("quantidade_maxima", "3")
+
+    try:
+        cid = int(carrinho_id)
+    except ValueError:
+        cid = None
+
+    dia_volta = request.form.get("dia_atual", type=int)
+
+    if not dias_escolhidos:
+        return voltar_horarios(
+            "Escolha pelo menos um dia da semana.",
+            carrinho_id=cid, dia=dia_volta
+        )
+
+    if not (carrinho_id and local_id and hora_inicio and hora_fim):
+        return voltar_horarios(
+            "Preencha todos os campos.",
+            carrinho_id=cid, dia=dia_volta
+        )
+
+    try:
+        dias = sorted({int(d) for d in dias_escolhidos})
+        inicio = datetime.strptime(hora_inicio, "%H:%M").time()
+        fim = datetime.strptime(hora_fim, "%H:%M").time()
+        carrinho_id = int(carrinho_id)
+        local_id = int(local_id)
+        quantidade_maxima = int(quantidade_maxima or 3)
+    except ValueError:
+        return voltar_horarios("Dados inválidos.", carrinho_id=cid, dia=dia_volta)
+
+    if any(d not in range(7) for d in dias):
+        return voltar_horarios(
+            "Dia da semana inválido.",
+            carrinho_id=cid, dia=dia_volta
+        )
+
+    if quantidade_maxima < 1:
+        return voltar_horarios(
+            "O número de vagas deve ser pelo menos 1.",
+            carrinho_id=cid, dia=dia_volta
+        )
+
+    if inicio >= fim:
+        return voltar_horarios(
+            "O horário de início deve ser antes do horário de fim.",
+            carrinho_id=cid, dia=dia_volta
+        )
+
+    carrinho = db.session.get(Carrinho, carrinho_id)
+
+    if not carrinho:
+        return voltar_horarios("Carrinho não encontrado.")
+
+    if not db.session.get(Local, local_id):
+        return voltar_horarios(
+            "Local não encontrado.",
+            carrinho_id=cid, dia=dia_volta
+        )
+
+    # Confere todos os dias antes de gravar qualquer um
+    for dia in dias:
+
+        conflito = (
+            ProgramacaoSemanal.query
+            .filter(
+                ProgramacaoSemanal.dia_semana == dia,
+                ProgramacaoSemanal.carrinho_id == carrinho_id,
+                ProgramacaoSemanal.hora_inicio < fim,
+                ProgramacaoSemanal.hora_fim > inicio
+            )
+            .first()
+        )
+
+        if conflito:
+            return voltar_horarios(
+                "Nada foi salvo: esse carrinho já tem um horário que se "
+                f"sobrepõe na {DIAS_SEMANA[dia].lower()} "
+                f"({conflito.hora_inicio.strftime('%H:%M')} às "
+                f"{conflito.hora_fim.strftime('%H:%M')}).",
+                carrinho_id=cid, dia=dia_volta
+            )
+
+    for dia in dias:
+        db.session.add(ProgramacaoSemanal(
+            dia_semana=dia,
+            hora_inicio=inicio,
+            hora_fim=fim,
+            carrinho_id=carrinho_id,
+            local_id=local_id,
+            quantidade_maxima=quantidade_maxima
+        ))
+
+    db.session.commit()
+
+    nomes_dias = ", ".join(DIAS_SEMANA[d].lower() for d in dias)
+
+    # Volta para o dia que estava aberto, se ele recebeu o horário;
+    # senão, para o primeiro dia adicionado.
+    dia_destino = dia_volta if dia_volta in dias else dias[0]
+
+    return voltar_horarios(
+        f"Horário adicionado: {nomes_dias}, das "
+        f"{inicio.strftime('%H:%M')} às {fim.strftime('%H:%M')}. "
+        "Já aparece na agenda.",
+        "success",
+        carrinho_id, dia_destino
+    )
+
+
+@routes.route(
+    "/admin/programacao/remover/<int:programacao_id>",
+    methods=["POST"]
+)
+@admin_required
+def remover_programacao(programacao_id):
+
+    semanal = ProgramacaoSemanal.query.get_or_404(programacao_id)
+
+    cid = semanal.carrinho_id
+    dia = semanal.dia_semana
+    hoje = hoje_sao_paulo()
+
+    # Não deixa remover se houver reserva ativa nesse horário
+    # (fixas, ou únicas de hoje em diante, no mesmo dia da semana)
+    reservas = (
+        Reserva.query
+        .filter(
+            Reserva.ativo == True,
+            Reserva.carrinho_id == semanal.carrinho_id,
+            Reserva.hora_inicio < semanal.hora_fim,
+            Reserva.hora_fim > semanal.hora_inicio
+        )
+        .all()
+    )
+
+    for reserva in reservas:
+
+        if reserva.tipo == "FIXA":
+            afetada = reserva.dia_semana == semanal.dia_semana
+        else:
+            afetada = (
+                reserva.data_inicio >= hoje
+                and reserva.data_inicio.weekday() == semanal.dia_semana
+            )
+
+        if afetada:
+            return voltar_horarios(
+                "Não é possível remover este horário porque ele tem "
+                "reservas ativas. Cancele as reservas primeiro.",
+                "danger",
+                cid, dia
+            )
+
+    chave = (semanal.carrinho_id, semanal.hora_inicio, semanal.hora_fim)
+
+    db.session.delete(semanal)
+
+    # Remove da agenda os horários já gerados de hoje em diante
+    geradas = (
+        Programacao.query
+        .filter(
+            Programacao.data >= hoje,
+            Programacao.carrinho_id == chave[0],
+            Programacao.hora_inicio == chave[1],
+            Programacao.hora_fim == chave[2]
+        )
+        .all()
+    )
+
+    for programacao in geradas:
+
+        if programacao.data.weekday() != dia:
+            continue
+
+        if Inscricao.query.filter_by(programacao_id=programacao.id).first():
+            continue
+
+        db.session.delete(programacao)
+
+    db.session.commit()
+
+    return voltar_horarios("Horário removido.", "success", cid, dia)
+
+
+def adicionar_horario_avulso():
+    """Cria um horário que vale só para uma data (chamada por adicionar_programacao)."""
+
+    carrinho_id = request.form.get("carrinho_id", "")
+    local_id = request.form.get("local_id", "")
+    data_texto = request.form.get("data", "")
+    hora_inicio = request.form.get("hora_inicio", "")
+    hora_fim = request.form.get("hora_fim", "")
+    quantidade_maxima = request.form.get("quantidade_maxima", "3")
+
+    dia_volta = request.form.get("dia_atual", type=int)
+
+    try:
+        cid = int(carrinho_id)
+    except ValueError:
+        cid = None
+
+    if not (carrinho_id and local_id and data_texto and hora_inicio and hora_fim):
+        return voltar_horarios(
+            "Escolha a data e preencha todos os campos.",
+            carrinho_id=cid, dia=dia_volta
+        )
+
+    try:
+        data = date.fromisoformat(data_texto)
+        inicio = datetime.strptime(hora_inicio, "%H:%M").time()
+        fim = datetime.strptime(hora_fim, "%H:%M").time()
+        carrinho_id = int(carrinho_id)
+        local_id = int(local_id)
+        quantidade_maxima = int(quantidade_maxima or 3)
+    except ValueError:
+        return voltar_horarios("Dados inválidos.", carrinho_id=cid, dia=dia_volta)
+
+    if data < hoje_sao_paulo():
+        return voltar_horarios(
+            "Escolha uma data de hoje em diante.",
+            carrinho_id=cid, dia=dia_volta
+        )
+
+    if quantidade_maxima < 1:
+        return voltar_horarios(
+            "O número de vagas deve ser pelo menos 1.",
+            carrinho_id=cid, dia=dia_volta
+        )
+
+    if inicio >= fim:
+        return voltar_horarios(
+            "O horário de início deve ser antes do horário de fim.",
+            carrinho_id=cid, dia=dia_volta
+        )
+
+    carrinho = db.session.get(Carrinho, carrinho_id)
+
+    if not carrinho:
+        return voltar_horarios("Carrinho não encontrado.")
+
+    if not db.session.get(Local, local_id):
+        return voltar_horarios(
+            "Local não encontrado.",
+            carrinho_id=cid, dia=dia_volta
+        )
+
+    data_br = data.strftime("%d/%m/%Y")
+
+    # Não pode bater com um horário semanal desse carrinho nesse dia
+    conflito = (
+        ProgramacaoSemanal.query
+        .filter(
+            ProgramacaoSemanal.dia_semana == data.weekday(),
+            ProgramacaoSemanal.carrinho_id == carrinho_id,
+            ProgramacaoSemanal.hora_inicio < fim,
+            ProgramacaoSemanal.hora_fim > inicio
+        )
+        .first()
+    )
+
+    # Nem com outro horário avulso desse carrinho na mesma data
+    if not conflito:
+        conflito = (
+            HorarioAvulso.query
+            .filter(
+                HorarioAvulso.data == data,
+                HorarioAvulso.carrinho_id == carrinho_id,
+                HorarioAvulso.hora_inicio < fim,
+                HorarioAvulso.hora_fim > inicio
+            )
+            .first()
+        )
+
+    if conflito:
+        return voltar_horarios(
+            f"Nada foi salvo: em {data_br} esse carrinho já tem um horário "
+            f"que se sobrepõe ({conflito.hora_inicio.strftime('%H:%M')} às "
+            f"{conflito.hora_fim.strftime('%H:%M')}).",
+            carrinho_id=cid, dia=dia_volta
+        )
+
+    db.session.add(HorarioAvulso(
+        data=data,
+        hora_inicio=inicio,
+        hora_fim=fim,
+        carrinho_id=carrinho_id,
+        local_id=local_id,
+        quantidade_maxima=quantidade_maxima
+    ))
+
+    db.session.commit()
+
+    return voltar_horarios(
+        f"Horário adicionado só em {data_br}, das "
+        f"{inicio.strftime('%H:%M')} às {fim.strftime('%H:%M')}. "
+        "Já aparece na agenda nesse dia.",
+        "success",
+        carrinho_id, dia_volta
+    )
+
+
+@routes.route(
+    "/admin/horario-avulso/remover/<int:avulso_id>",
+    methods=["POST"]
+)
+@admin_required
+def remover_horario_avulso(avulso_id):
+
+    avulso = HorarioAvulso.query.get_or_404(avulso_id)
+
+    cid = avulso.carrinho_id
+    dia_volta = request.form.get("dia_atual", type=int)
+
+    # Não deixa remover se já houver reserva nesse horário
+    if reservas_no_horario(
+        avulso.data,
+        avulso.hora_inicio,
+        avulso.hora_fim,
+        avulso.carrinho_id
+    ):
+        return voltar_horarios(
+            "Não é possível remover este horário porque ele tem "
+            "reservas ativas. Cancele as reservas primeiro.",
+            "danger",
+            cid, dia_volta
+        )
+
+    # Remove também o horário que já tinha sido gerado na agenda
+    gerada = (
+        Programacao.query
+        .filter_by(
+            data=avulso.data,
+            carrinho_id=avulso.carrinho_id,
+            hora_inicio=avulso.hora_inicio,
+            hora_fim=avulso.hora_fim
+        )
+        .first()
+    )
+
+    if gerada and not Inscricao.query.filter_by(programacao_id=gerada.id).first():
+        db.session.delete(gerada)
+
+    db.session.delete(avulso)
+    db.session.commit()
+
+    return voltar_horarios("Horário da data especial removido.", "success", cid, dia_volta)
 
 
 # =========================================================
@@ -2000,17 +2943,627 @@ def editar_programacao(programacao_id):
 @admin_required
 def admin_reservas():
 
-    # Reservas fixas que aparecem na tela principal
-    reservas = Reserva.query.filter(
-        Reserva.tipo == "FIXA",
-        Reserva.ativo == True
-    ).order_by(
-        Reserva.dia_semana,
-        Reserva.hora_inicio
-    ).all()
+    hoje = hoje_sao_paulo()
+
+    ativas = (
+        Reserva.query
+        .filter(Reserva.ativo == True)
+        .all()
+    )
+
+    # Próximas: reservas únicas de hoje em diante (mais perto primeiro)
+    proximas = sorted(
+        (r for r in ativas if r.tipo != "FIXA" and r.data_inicio >= hoje),
+        key=lambda r: (r.data_inicio, r.hora_inicio)
+    )
+
+    # Fixas: semanais, por dia da semana
+    fixas = sorted(
+        (r for r in ativas if r.tipo == "FIXA"),
+        key=lambda r: (
+            r.dia_semana if r.dia_semana is not None else 9,
+            r.hora_inicio
+        )
+    )
+
+    # Realizadas: únicas que já passaram e não foram canceladas
+    realizadas = [
+        r for r in ativas
+        if r.tipo != "FIXA" and r.data_inicio < hoje
+    ]
+
+    # ----- Resumo -----
+
+    # Reservas por local
+    por_local = {}
+
+    for r in realizadas:
+        por_local[r.local.nome] = por_local.get(r.local.nome, 0) + 1
+
+    locais_usados = sorted(por_local.items(), key=lambda item: (-item[1], item[0]))
+
+    locais_sem_uso = [
+        local.nome
+        for local in Local.query.filter_by(ativo=True).order_by(Local.nome)
+        if local.nome not in por_local
+    ]
+
+    # Participação de cada irmão (responsável ou acompanhante)
+    por_pessoa = {}
+
+    for r in realizadas:
+        for nome in pessoas_da_reserva(r):
+            por_pessoa[nome] = por_pessoa.get(nome, 0) + 1
+
+    top_pessoas = sorted(por_pessoa.items(), key=lambda item: (-item[1], item[0]))[:5]
+
+    irmaos = [p.nome for p in Pessoa.query.filter_by(ativo=True).order_by(Pessoa.nome)]
+
+    irmaos_participaram = [nome for nome in irmaos if nome in por_pessoa]
+    irmaos_nao_participaram = [nome for nome in irmaos if nome not in por_pessoa]
+
+    resumo = {
+        "total": len(realizadas),
+        "irmaos_total": len(irmaos),
+        "irmaos_participaram": len(irmaos_participaram),
+        "irmaos_nao_participaram": irmaos_nao_participaram,
+        "locais_usados": locais_usados,
+        "locais_sem_uso": locais_sem_uso,
+        "top_pessoas": top_pessoas,
+    }
+
+    aba = request.args.get("aba", "proximas")
+
+    if aba == "antigas":
+        aba = "resumo"
+
+    if aba not in ("proximas", "fixas", "resumo"):
+        aba = "proximas"
 
     return render_template(
         "admin_reservas.html",
-        reservas=reservas,
-        reservas_calendario=dados_do_calendario()
+        proximas=proximas,
+        fixas=fixas,
+        resumo=resumo,
+        aba=aba,
+        hoje=hoje,
+        dias=DIAS_SEMANA,
+        dias_curtos=DIAS_CURTOS
+    )
+
+
+# =========================================================
+# ADMIN - CAMPANHAS
+# Dias com programação própria (ex.: Finados)
+# =========================================================
+
+def _ler_hora(texto):
+    return datetime.strptime(texto, "%H:%M").time()
+
+
+def _reservas_fora_da_campanha(campanha):
+    """
+    Reservas únicas deste dia que estão em horários que NÃO são
+    da campanha (foram feitas antes da campanha existir).
+    """
+    reservas = (
+        Reserva.query
+        .filter(
+            Reserva.ativo == True,
+            Reserva.tipo != "FIXA",
+            Reserva.data_inicio == campanha.data
+        )
+        .all()
+    )
+
+    chaves = {
+        (h.carrinho_id, h.hora_inicio, h.hora_fim)
+        for h in campanha.horarios
+    }
+
+    return [
+        r for r in reservas
+        if (r.carrinho_id, r.hora_inicio, r.hora_fim) not in chaves
+    ]
+
+
+def _reservas_do_horario_campanha(horario):
+    return reservas_no_horario(
+        horario.campanha.data,
+        horario.hora_inicio,
+        horario.hora_fim,
+        horario.carrinho_id
+    )
+
+
+def _voltar_campanha(campanha_id, mensagem, categoria="warning"):
+    flash(mensagem, categoria)
+    return redirect(url_for("routes.admin_campanha", campanha_id=campanha_id))
+
+
+@routes.route("/admin/campanhas")
+@admin_required
+def admin_campanhas():
+
+    hoje = hoje_sao_paulo()
+
+    campanhas = Campanha.query.order_by(Campanha.data).all()
+
+    proximas = [c for c in campanhas if c.data >= hoje]
+    passadas = [c for c in campanhas if c.data < hoje][::-1]
+
+    return render_template(
+        "admin_campanhas.html",
+        locais=Local.query.filter_by(ativo=True).order_by(Local.nome).all(),
+        proximas=proximas,
+        passadas=passadas,
+        hoje=hoje,
+        dias_curtos=DIAS_CURTOS
+    )
+
+
+@routes.route("/admin/campanhas/criar", methods=["POST"])
+@admin_required
+def criar_campanha():
+
+    destino = "routes.admin_campanhas"
+
+    nome = request.form.get("nome", "").strip()
+    data_texto = request.form.get("data", "")
+    local_id = request.form.get("local_id", type=int)
+
+    if not nome or not data_texto:
+        return voltar_admin_com_flash(destino, "Informe o nome e a data da campanha.")
+
+    if not local_id or not db.session.get(Local, local_id):
+        return voltar_admin_com_flash(destino, "Escolha o local da campanha.")
+
+    try:
+        data = date.fromisoformat(data_texto)
+    except ValueError:
+        return voltar_admin_com_flash(destino, "Data inválida.")
+
+    if data < hoje_sao_paulo():
+        return voltar_admin_com_flash(destino, "Escolha uma data de hoje em diante.")
+
+    existente = Campanha.query.filter_by(data=data).first()
+
+    if existente:
+        return voltar_admin_com_flash(
+            destino,
+            f"Já existe a campanha “{existente.nome}” em {data.strftime('%d/%m/%Y')}."
+        )
+
+    campanha = Campanha(nome=nome, data=data, local_id=local_id)
+    db.session.add(campanha)
+    db.session.commit()
+
+    return _voltar_campanha(
+        campanha.id,
+        f"Campanha “{nome}” criada! Agora monte os horários dela "
+        "(ou copie a programação normal do dia).",
+        "success"
+    )
+
+
+@routes.route("/admin/campanhas/<int:campanha_id>")
+@admin_required
+def admin_campanha(campanha_id):
+
+    campanha = Campanha.query.get_or_404(campanha_id)
+
+    carrinhos = (
+        Carrinho.query
+        .filter_by(ativo=True)
+        .order_by(Carrinho.id)
+        .all()
+    )
+
+    por_carrinho = {c.id: [] for c in carrinhos}
+
+    for horario in campanha.horarios:
+        por_carrinho.setdefault(horario.carrinho_id, []).append(horario)
+
+    # Carrinho desativado que tenha horário na campanha também aparece
+    extras = [
+        db.session.get(Carrinho, cid)
+        for cid in por_carrinho
+        if cid not in {c.id for c in carrinhos}
+    ]
+
+    locais = (
+        Local.query
+        .filter_by(ativo=True)
+        .order_by(Local.nome)
+        .all()
+    )
+
+    return render_template(
+        "admin_campanha.html",
+        campanha=campanha,
+        carrinhos=carrinhos + extras,
+        por_carrinho=por_carrinho,
+        locais=locais,
+        dias=DIAS_SEMANA,
+        dias_curtos=DIAS_CURTOS,
+        hoje=hoje_sao_paulo(),
+        reservas_fora=_reservas_fora_da_campanha(campanha)
+    )
+
+
+@routes.route("/admin/campanhas/<int:campanha_id>/editar", methods=["POST"])
+@admin_required
+def editar_campanha(campanha_id):
+
+    campanha = Campanha.query.get_or_404(campanha_id)
+
+    nome = request.form.get("nome", "").strip()
+    data_texto = request.form.get("data", "")
+    local_id = request.form.get("local_id", type=int) or campanha.local_id
+
+    if not nome or not data_texto:
+        return _voltar_campanha(campanha.id, "Informe o nome e a data da campanha.")
+
+    if not local_id or not db.session.get(Local, local_id):
+        return _voltar_campanha(campanha.id, "Escolha o local da campanha.")
+
+    try:
+        data = date.fromisoformat(data_texto)
+    except ValueError:
+        return _voltar_campanha(campanha.id, "Data inválida.")
+
+    if data != campanha.data:
+
+        if data < hoje_sao_paulo():
+            return _voltar_campanha(campanha.id, "Escolha uma data de hoje em diante.")
+
+        if Campanha.query.filter(Campanha.data == data, Campanha.id != campanha.id).first():
+            return _voltar_campanha(campanha.id, "Já existe outra campanha nessa data.")
+
+        # Não muda a data se já tem gente reservada nos horários da campanha
+        if any(_reservas_do_horario_campanha(h) for h in campanha.horarios):
+            return _voltar_campanha(
+                campanha.id,
+                "Não é possível mudar a data: já existem reservas nos "
+                "horários desta campanha. Cancele as reservas primeiro."
+            )
+
+    campanha.nome = nome
+    campanha.data = data
+
+    # Todos os carrinhos ficam no local da campanha
+    campanha.local_id = local_id
+
+    for horario in campanha.horarios:
+        horario.local_id = local_id
+
+    db.session.commit()
+
+    return _voltar_campanha(campanha.id, "Campanha atualizada.", "success")
+
+
+@routes.route("/admin/campanhas/<int:campanha_id>/excluir", methods=["POST"])
+@admin_required
+def excluir_campanha(campanha_id):
+
+    campanha = Campanha.query.get_or_404(campanha_id)
+
+    if any(_reservas_do_horario_campanha(h) for h in campanha.horarios):
+        return _voltar_campanha(
+            campanha.id,
+            "Não é possível excluir: já existem reservas nos horários "
+            "desta campanha. Cancele as reservas primeiro.",
+            "danger"
+        )
+
+    nome = campanha.nome
+
+    db.session.delete(campanha)
+    db.session.commit()
+
+    return voltar_admin_com_flash(
+        "routes.admin_campanhas",
+        f"Campanha “{nome}” excluída. A programação normal do dia volta a valer.",
+        "success"
+    )
+
+
+@routes.route("/admin/campanhas/<int:campanha_id>/copiar", methods=["POST"])
+@admin_required
+def copiar_programacao_campanha(campanha_id):
+
+    campanha = Campanha.query.get_or_404(campanha_id)
+
+    semanais = (
+        ProgramacaoSemanal.query
+        .filter_by(dia_semana=campanha.data.weekday())
+        .order_by(ProgramacaoSemanal.carrinho_id, ProgramacaoSemanal.hora_inicio)
+        .all()
+    )
+
+    copiados = 0
+
+    for s in semanais:
+
+        if not s.carrinho.ativo:
+            continue
+
+        # Pula se já tem um horário que se sobrepõe nesse carrinho
+        sobrepoe = any(
+            h.carrinho_id == s.carrinho_id
+            and h.hora_inicio < s.hora_fim
+            and h.hora_fim > s.hora_inicio
+            for h in campanha.horarios
+        )
+
+        if sobrepoe:
+            continue
+
+        campanha.horarios.append(CampanhaHorario(
+            carrinho_id=s.carrinho_id,
+            local_id=campanha.local_id or s.local_id,
+            hora_inicio=s.hora_inicio,
+            hora_fim=s.hora_fim,
+            quantidade_maxima=s.quantidade_maxima
+        ))
+
+        copiados += 1
+
+    db.session.commit()
+
+    dia = DIAS_SEMANA[campanha.data.weekday()].lower()
+
+    if not copiados:
+        return _voltar_campanha(
+            campanha.id,
+            f"Nada para copiar: a programação normal de {dia} já está na campanha."
+        )
+
+    return _voltar_campanha(
+        campanha.id,
+        f"{copiados} horário{'' if copiados == 1 else 's'} copiado{'' if copiados == 1 else 's'} "
+        f"da programação normal de {dia}. Agora é só ajustar o que muda.",
+        "success"
+    )
+
+
+def _validar_horario_campanha(campanha, form, ignorar_id=None):
+    """Lê e confere os campos de um horário. Devolve (dados, erro)."""
+
+    try:
+        carrinho_id = int(form.get("carrinho_id", ""))
+        # Todos os horários usam o local da campanha
+        local_id = campanha.local_id or int(form.get("local_id", ""))
+        inicio = _ler_hora(form.get("hora_inicio", ""))
+        fim = _ler_hora(form.get("hora_fim", ""))
+        vagas = int(form.get("quantidade_maxima", "") or 3)
+    except ValueError:
+        return None, "Preencha carrinho, início e fim."
+
+    if vagas < 1:
+        return None, "O número de vagas deve ser pelo menos 1."
+
+    if inicio >= fim:
+        return None, "O horário de início deve ser antes do horário de fim."
+
+    if not db.session.get(Carrinho, carrinho_id):
+        return None, "Carrinho não encontrado."
+
+    if not db.session.get(Local, local_id):
+        return None, "Local não encontrado."
+
+    for h in campanha.horarios:
+        if (
+            h.id != ignorar_id
+            and h.carrinho_id == carrinho_id
+            and h.hora_inicio < fim
+            and h.hora_fim > inicio
+        ):
+            return None, (
+                "Esse carrinho já tem um horário que se sobrepõe na campanha "
+                f"({h.hora_inicio.strftime('%H:%M')} às {h.hora_fim.strftime('%H:%M')})."
+            )
+
+    return dict(
+        carrinho_id=carrinho_id,
+        local_id=local_id,
+        hora_inicio=inicio,
+        hora_fim=fim,
+        quantidade_maxima=vagas
+    ), None
+
+
+@routes.route("/admin/campanhas/<int:campanha_id>/horario/adicionar", methods=["POST"])
+@admin_required
+def adicionar_horario_campanha(campanha_id):
+
+    campanha = Campanha.query.get_or_404(campanha_id)
+
+    dados, erro = _validar_horario_campanha(campanha, request.form)
+
+    if erro:
+        return _voltar_campanha(campanha.id, erro)
+
+    campanha.horarios.append(CampanhaHorario(**dados))
+    db.session.commit()
+
+    return _voltar_campanha(
+        campanha.id,
+        f"Horário adicionado: {dados['hora_inicio'].strftime('%H:%M')} às "
+        f"{dados['hora_fim'].strftime('%H:%M')}.",
+        "success"
+    )
+
+
+@routes.route("/admin/campanhas/horario/<int:horario_id>/editar", methods=["POST"])
+@admin_required
+def editar_horario_campanha(horario_id):
+
+    horario = CampanhaHorario.query.get_or_404(horario_id)
+    campanha = horario.campanha
+
+    form = request.form.to_dict()
+    form["carrinho_id"] = str(horario.carrinho_id)
+
+    dados, erro = _validar_horario_campanha(campanha, form, ignorar_id=horario.id)
+
+    if erro:
+        return _voltar_campanha(campanha.id, erro)
+
+    mudou_hora = (
+        dados["hora_inicio"] != horario.hora_inicio
+        or dados["hora_fim"] != horario.hora_fim
+    )
+
+    if mudou_hora and _reservas_do_horario_campanha(horario):
+        return _voltar_campanha(
+            campanha.id,
+            "Este horário já tem reservas: dá para mudar o local e as vagas, "
+            "mas não o horário. Cancele as reservas para mudar o horário."
+        )
+
+    horario.local_id = dados["local_id"]
+    horario.hora_inicio = dados["hora_inicio"]
+    horario.hora_fim = dados["hora_fim"]
+    horario.quantidade_maxima = dados["quantidade_maxima"]
+
+    db.session.commit()
+
+    return _voltar_campanha(campanha.id, "Horário atualizado.", "success")
+
+
+@routes.route("/admin/campanhas/horario/<int:horario_id>/remover", methods=["POST"])
+@admin_required
+def remover_horario_campanha(horario_id):
+
+    horario = CampanhaHorario.query.get_or_404(horario_id)
+    campanha = horario.campanha
+
+    if _reservas_do_horario_campanha(horario):
+        return _voltar_campanha(
+            campanha.id,
+            "Não é possível remover este horário porque ele tem reservas. "
+            "Cancele as reservas primeiro.",
+            "danger"
+        )
+
+    db.session.delete(horario)
+    db.session.commit()
+
+    return _voltar_campanha(campanha.id, "Horário removido.", "success")
+
+
+# =========================================================
+# ADMIN - AVISOS
+# O admin manda um recado para o sininho dos irmãos
+# =========================================================
+
+def _usuarios_que_recebem():
+    """Usuários com login ativo, com o nome da pessoa quando houver."""
+    usuarios = Usuario.query.filter_by(ativo=True).all()
+
+    nomes = {
+        p.usuario_id: p.nome
+        for p in Pessoa.query.filter(Pessoa.usuario_id.isnot(None)).all()
+    }
+
+    lista = [
+        {"id": u.id, "nome": nomes.get(u.id, u.nome)}
+        for u in usuarios
+    ]
+
+    return sorted(lista, key=lambda item: item["nome"].lower())
+
+
+@routes.route("/admin/avisos")
+@admin_required
+def admin_avisos():
+
+    # Agrupa os avisos já enviados (mesmo título, mensagem e minuto)
+    enviados = {}
+
+    avisos = (
+        Notificacao.query
+        .filter(Notificacao.titulo.startswith(PREFIXO_AVISO))
+        .order_by(Notificacao.criado_em.desc())
+        .all()
+    )
+
+    for n in avisos:
+        remetente, titulo = ler_aviso(n.titulo) or ("", n.titulo)
+        minuto = n.criado_em.strftime("%Y-%m-%d %H:%M") if n.criado_em else ""
+        chave = (titulo, n.mensagem, minuto)
+
+        if chave not in enviados:
+            enviados[chave] = {
+                "titulo": titulo,
+                "mensagem": n.mensagem,
+                "quando": n.criado_em.strftime("%d/%m %H:%M") if n.criado_em else "",
+                "remetente": remetente,
+                "pessoas": 0
+            }
+
+        enviados[chave]["pessoas"] += 1
+
+    return render_template(
+        "admin_avisos.html",
+        usuarios=_usuarios_que_recebem(),
+        enviados=list(enviados.values())[:20]
+    )
+
+
+@routes.route("/admin/avisos/enviar", methods=["POST"])
+@admin_required
+def enviar_aviso():
+
+    destino = "routes.admin_avisos"
+
+    titulo = request.form.get("titulo", "").strip()
+    mensagem = request.form.get("mensagem", "").strip()
+    para = request.form.get("para", "todos")
+
+    if not titulo or not mensagem:
+        return voltar_admin_com_flash(destino, "Escreva o título e a mensagem do aviso.")
+
+    if len(titulo) > 100:
+        return voltar_admin_com_flash(destino, "O título pode ter no máximo 100 letras.")
+
+    if len(mensagem) > 500:
+        return voltar_admin_com_flash(destino, "A mensagem pode ter no máximo 500 letras.")
+
+    possiveis = {u["id"] for u in _usuarios_que_recebem()}
+
+    if para == "escolher":
+        escolhidos = {
+            int(x) for x in request.form.getlist("usuarios")
+            if x.isdigit()
+        } & possiveis
+    else:
+        escolhidos = possiveis
+
+    if not escolhidos:
+        return voltar_admin_com_flash(destino, "Escolha pelo menos uma pessoa.")
+
+    pessoa = Pessoa.query.filter_by(usuario_id=current_user.id).first()
+    remetente = (pessoa.nome if pessoa else current_user.nome).replace("|", " ")
+
+    agora = agora_sao_paulo().replace(tzinfo=None)
+
+    for usuario_id in escolhidos:
+        db.session.add(Notificacao(
+            usuario_id=usuario_id,
+            titulo=f"{PREFIXO_AVISO}{remetente}|{titulo}"[:150],
+            mensagem=mensagem,
+            lida=False,
+            criado_em=agora
+        ))
+
+    db.session.commit()
+
+    total = len(escolhidos)
+
+    return voltar_admin_com_flash(
+        destino,
+        f"Aviso enviado para {total} pessoa{'' if total == 1 else 's'}.",
+        "success"
     )

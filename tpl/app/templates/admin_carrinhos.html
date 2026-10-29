@@ -1,481 +1,182 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+{% extends "admin_base.html" %}
 
-<head>
+{% block title %}Carrinhos{% endblock %}
+{% block heading %}🛒 Carrinhos{% endblock %}
+{% block subheading %}Toque num carrinho para ver e mudar os horários.{% endblock %}
 
-    <meta charset="UTF-8">
+{% block extra_css %}
+<style>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    .carrinho { overflow: visible; }
 
-    <title>Carrinhos - TPL</title>
+    .carrinho.inativo { opacity: .75; }
 
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', filename='css/style.css') }}"
-    >
-
-    <style>
-
-        html,
-        body {
-            min-height: 100%;
-            height: auto;
-            overflow-y: auto;
-        }
-
-        .carrinhos-page {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 24px 16px;
-        }
-
-        .carrinhos-topo {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 15px;
-            margin-bottom: 18px;
-        }
-
-        .carrinhos-topo h1 {
-            margin: 0;
-            font-size: 25px;
-        }
-
-        .carrinhos-topo p {
-            margin: 5px 0 0;
-            color: #6b7280;
-            font-size: 13px;
-        }
-
-        .btn-voltar {
-            color: #1769c2;
-            text-decoration: none;
-            font-size: 13px;
-        }
-
-        .lista-carrinhos {
-            background: #fff;
-            border: 1px solid #e1e5ea;
-            border-radius: 12px;
-            overflow: visible;
-        }
-
-        .carrinho {
-            padding: 14px;
-            border-bottom: 1px solid #eef0f2;
-        }
-
-        .carrinho:last-child {
-            border-bottom: 0;
-        }
-
-        .carrinho-topo {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        }
-
-        .carrinho-nome {
-            font-size: 15px;
-            font-weight: 700;
-        }
-
-        .carrinho-id {
-            margin-top: 3px;
-            color: #6b7280;
-            font-size: 11px;
-        }
-
-        .carrinho-acoes {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-
-        .badge {
-            padding: 5px 8px;
-            border-radius: 7px;
-            font-size: 10px;
-            font-weight: 700;
-        }
-
-        .badge-ativo {
-            background: #e3f8eb;
-            color: #16834b;
-        }
-
-        .badge-inativo {
-            background: #f1f3f5;
-            color: #6b7280;
-        }
-
-        .btn {
-            border: 0;
-            border-radius: 8px;
-            padding: 8px 11px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .btn-editar {
-            background: #eef6ff;
-            color: #087ff5;
-        }
-
-        .btn-desativar {
-            background: #fff0f0;
-            color: #c62828;
-        }
-
-        .btn-ativar {
-            background: #e3f8eb;
-            color: #16834b;
-        }
-
-        .editar-carrinho {
-            display: none;
-            margin-top: 10px;
-        }
-
-        .carrinho.editando .editar-carrinho {
-            display: block;
-        }
-
-        .form-edicao {
-            display: flex;
-            gap: 8px;
-        }
-
-        .form-edicao input {
-            flex: 1;
-            min-width: 0;
-            padding: 9px 10px;
-            border: 1px solid #d8dde3;
-            border-radius: 8px;
-            font-size: 13px;
-            box-sizing: border-box;
-        }
-
-        .btn-salvar {
-            background: #087ff5;
-            color: #fff;
-        }
-
-        .btn-cancelar {
-            background: #f1f3f5;
-            color: #555;
-        }
-
-        @media(max-width:600px) {
-
-            .carrinhos-page {
-                padding: 18px 12px;
-            }
-
-            .carrinhos-topo {
-                align-items: flex-start;
-            }
-
-            .carrinhos-topo h1 {
-                font-size: 22px;
-            }
-
-            .carrinho-topo {
-                align-items: flex-start;
-                flex-direction: column;
-            }
-
-            .carrinho-acoes {
-                width: 100%;
-                justify-content: flex-start;
-            }
-
-            .form-edicao {
-                flex-direction: column;
-            }
-
-            .form-edicao .btn {
-                width: 100%;
-            }
-
-        }
-
-
-        .adicionar-box {
-    background: #fff;
-    border: 1px solid #e1e5ea;
-    border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 14px;
-}
-
-.adicionar-form {
-    display: flex;
-    gap: 8px;
-}
-
-.adicionar-form input {
-    flex: 1;
-    min-width: 0;
-    padding: 10px 12px;
-    border: 1px solid #d8dde3;
-    border-radius: 8px;
-    font-size: 14px;
-    box-sizing: border-box;
-}
-
-.btn-primary {
-    background: #087ff5;
-    color: #fff;
-}
-
-@media(max-width:600px) {
-
-    .adicionar-form {
-        flex-direction: column;
+    .carrinho-topo {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
     }
 
-    .adicionar-form input,
-    .adicionar-form .btn {
+    .carrinho-nome {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 900;
+    }
+
+    .carrinho-topo-dir {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .chip.off { background: #eef1f5; color: #667085; }
+
+    .resumo {
+        margin: 6px 0 12px;
+        color: var(--muted);
+        font-size: 13px;
+    }
+
+    .aviso {
+        margin: 10px 0 12px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: var(--yellow-bg);
+        color: var(--yellow);
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.45;
+    }
+
+    .aviso.cinza {
+        background: #eef1f5;
+        color: #475467;
+    }
+
+    .carrinho-acao {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    /* Novo carrinho */
+
+    .novo-carrinho .btn {
         width: 100%;
+        margin-top: 10px;
+        min-height: 44px;
+        font-size: 14px;
     }
 
-}
-    </style>
-
-</head>
+</style>
+{% endblock %}
 
 
-<body>
+{% block content %}
 
-<div class="app">
+    {% for carrinho in carrinhos %}
+    {% set info = resumo.get(carrinho.id) %}
 
-    <main class="carrinhos-page">
+    <section class="card carrinho {% if not carrinho.ativo %}inativo{% endif %}">
 
-        <div class="carrinhos-topo">
+        <div class="carrinho-topo">
 
-            <div>
+            <h2 class="carrinho-nome">🛒 {{ carrinho.nome }}</h2>
 
-                <h1>
-                    🚚 Carrinhos
-                </h1>
+            <div class="carrinho-topo-dir">
 
-                <p>
-                    Gerencie os carrinhos utilizados
-                    no testemunho público.
-                </p>
+                {% if carrinho.ativo %}
+                    <span class="chip on">ATIVO</span>
+                {% else %}
+                    <span class="chip off">DESATIVADO</span>
+                {% endif %}
+
 
             </div>
 
-            <a
-                class="btn-voltar"
-                href="{{ url_for('routes.admin') }}"
-            >
-                ← Voltar
-            </a>
-
         </div>
 
 
-<div class="adicionar-box">
+        {% if not carrinho.ativo %}
 
-    <form
-        class="adicionar-form"
-        method="POST"
-        action="{{ url_for('routes.adicionar_carrinho') }}"
-    >
+            <div class="aviso cinza">
+                Desativado: não aparece na agenda.
+                Para usar de novo, abra o carrinho e toque em ⋯.
+            </div>
 
-        <input
-            type="text"
-            name="nome"
-            placeholder="Nome do novo carrinho"
-            required
-            autocomplete="off"
-        >
+            <div class="carrinho-acao">
+                <a class="btn btn-neutral" href="{{ url_for('routes.admin_carrinho_horarios', carrinho_id=carrinho.id) }}">
+                    Abrir ›
+                </a>
+            </div>
 
-        <button
-            type="submit"
-            class="btn btn-primary"
-        >
-            + Adicionar
-        </button>
+        {% elif info %}
 
-    </form>
+            <div class="resumo">
+                {{ info.dias|length }} dia{{ '' if info.dias|length == 1 else 's' }} por semana
+                • {{ info.horarios }} horário{{ '' if info.horarios == 1 else 's' }}
+            </div>
 
-</div>
+            <div class="carrinho-acao">
+                <a class="btn btn-soft" href="{{ url_for('routes.admin_carrinho_horarios', carrinho_id=carrinho.id) }}">
+                    Ver horários ›
+                </a>
+            </div>
+
+        {% else %}
+
+            <div class="aviso">
+                ⚠️ Sem horários — ainda não aparece na agenda.
+            </div>
+
+            <div class="carrinho-acao">
+                <a class="btn btn-primary" href="{{ url_for('routes.admin_carrinho_horarios', carrinho_id=carrinho.id) }}">
+                    Adicionar horário ›
+                </a>
+            </div>
+
+        {% endif %}
+
+    </section>
+
+    {% else %}
+
+    <div class="card">Nenhum carrinho cadastrado ainda.</div>
+
+    {% endfor %}
 
 
-        <div class="lista-carrinhos">
+    <!-- NOVO CARRINHO -->
 
-            {% for carrinho in carrinhos %}
+    <section class="card novo-carrinho">
 
-                <div
-                    class="carrinho"
-                    id="carrinho-{{ carrinho.id }}"
+        <form method="POST" action="{{ url_for('routes.adicionar_carrinho') }}">
+
+            <div class="field">
+                <label for="novo-nome">Novo carrinho</label>
+                <input
+                    id="novo-nome"
+                    type="text"
+                    name="nome"
+                    placeholder="Nome do carrinho"
+                    maxlength="50"
+                    required
+                    autocomplete="off"
                 >
+            </div>
 
-                    <div class="carrinho-topo">
+            <button type="submit" class="btn btn-primary">+ Criar carrinho</button>
 
-                        <div>
+        </form>
 
-                            <div class="carrinho-nome">
-                                🚚 {{ carrinho.nome }}
-                            </div>
+    </section>
 
-                            <div class="carrinho-id">
-                                ID {{ carrinho.id }}
-                            </div>
-
-                        </div>
+{% endblock %}
 
 
-                        <div class="carrinho-acoes">
-
-                            {% if carrinho.ativo %}
-
-                                <span class="badge badge-ativo">
-                                    ATIVO
-                                </span>
-
-                            {% else %}
-
-                                <span class="badge badge-inativo">
-                                    INATIVO
-                                </span>
-
-                            {% endif %}
-
-
-                            <button
-                                type="button"
-                                class="btn btn-editar"
-                                onclick="editarCarrinho({{ carrinho.id }})"
-                            >
-                                Editar
-                            </button>
-
-
-                            <form
-                                method="POST"
-                                action="{{ url_for(
-                                    'routes.alternar_carrinho',
-                                    carrinho_id=carrinho.id
-                                ) }}"
-                            >
-
-                                {% if carrinho.ativo %}
-
-                                    <button
-                                        type="submit"
-                                        class="btn btn-desativar"
-                                    >
-                                        Desativar
-                                    </button>
-
-                                {% else %}
-
-                                    <button
-                                        type="submit"
-                                        class="btn btn-ativar"
-                                    >
-                                        Ativar
-                                    </button>
-
-                                {% endif %}
-
-                            </form>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="editar-carrinho">
-
-                        <form
-                            class="form-edicao"
-                            method="POST"
-                            action="{{ url_for(
-                                'routes.editar_carrinho',
-                                carrinho_id=carrinho.id
-                            ) }}"
-                        >
-
-                            <input
-                                type="text"
-                                name="nome"
-                                value="{{ carrinho.nome }}"
-                                required
-                                autocomplete="off"
-                            >
-
-                            <button
-                                type="submit"
-                                class="btn btn-salvar"
-                            >
-                                Salvar
-                            </button>
-
-                            <button
-                                type="button"
-                                class="btn btn-cancelar"
-                                onclick="editarCarrinho({{ carrinho.id }})"
-                            >
-                                Cancelar
-                            </button>
-
-                        </form>
-
-                    </div>
-
-                </div>
-
-            {% else %}
-
-                <div
-                    style="
-                        padding:30px;
-                        text-align:center;
-                        color:#6b7280;
-                    "
-                >
-                    Nenhum carrinho cadastrado.
-                </div>
-
-            {% endfor %}
-
-        </div>
-
-    </main>
-
-</div>
-
-
+{% block scripts %}
 <script>
 
-function editarCarrinho(id) {
-
-    const linha =
-        document.getElementById('carrinho-' + id);
-
-    if (!linha) {
-        return;
-    }
-
-    linha.classList.toggle('editando');
-}
 
 </script>
-
-
-</body>
-
-</html>
+{% endblock %}

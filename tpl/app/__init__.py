@@ -73,6 +73,31 @@ def create_app():
     with app.app_context():
         db.create_all()
 
+        # Ajuste automático: acrescenta o campo "local_id" na tabela
+        # de campanhas, caso ela tenha sido criada antes desse campo.
+        from sqlalchemy import inspect, text
+
+        colunas = [c["name"] for c in inspect(db.engine).get_columns("campanha")]
+
+        if "local_id" not in colunas:
+            try:
+                with db.engine.begin() as conexao:
+                    conexao.execute(text(
+                        "ALTER TABLE campanha ADD COLUMN local_id INTEGER REFERENCES local(id)"
+                    ))
+            except Exception:
+                # Outro processo do servidor já fez o ajuste ao mesmo tempo
+                pass
+
+        # Campanhas antigas sem local: usa o local dos horários delas
+        from app.models import Campanha
+
+        for campanha in Campanha.query.filter(Campanha.local_id.is_(None)).all():
+            if campanha.horarios:
+                campanha.local_id = campanha.horarios[0].local_id
+
+        db.session.commit()
+
         # =========================
         # CRIAR CARRINHOS
         # =========================

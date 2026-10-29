@@ -1565,7 +1565,56 @@
             transform: scale(1) rotate(0deg);
         }
     }
-        </style>
+        
+        /* Lembrete de 1 hora antes */
+        .aviso-lembrete {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            margin-top: 12px;
+            padding: 13px 15px;
+            border-radius: 16px;
+            background: #eaf4fd;
+            border: 1px solid #b9dcf7;
+            color: #0b4f85;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .aviso-lembrete strong { font-size: 15px; }
+
+        /* Aviso de dia de campanha */
+        .aviso-campanha {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            margin-top: 12px;
+            padding: 13px 15px;
+            border-radius: 16px;
+            background: #fff6dc;
+            border: 1px solid #f5dc9b;
+            color: #8a5300;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .aviso-campanha strong { font-size: 15px; }
+
+    
+        /* Detalhes da reserva no convite */
+        .notification-detalhes {
+            margin: 6px 0 4px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: #f2f7fd;
+            color: #10233f;
+            font-size: 12.5px;
+            line-height: 1.6;
+        }
+
+        .notification-item p { white-space: pre-line; }
+
+    </style>
 
     </head>
 
@@ -1940,6 +1989,26 @@
                 </h1>
 
                 <p>Visualize os horários disponíveis e faça suas reservas.</p>
+
+                {% for r, faltam in lembretes %}
+                <div class="aviso-lembrete">
+                    <strong>
+                        ⏰ Você tem carrinho hoje às {{ r.hora_inicio.strftime('%H:%M') }}
+                        {% if faltam < 1 %}(agora!){% else %}(daqui a {{ faltam }} min){% endif %}
+                    </strong>
+                    <span>{{ r.carrinho.nome }} • 📍 {{ r.local.nome }} • {{ r.hora_inicio.strftime('%H:%M') }} às {{ r.hora_fim.strftime('%H:%M') }}</span>
+                </div>
+                {% endfor %}
+
+                {% if campanha %}
+                <div class="aviso-campanha">
+                    <strong>📣 Campanha de {{ campanha.nome }}: horários especiais</strong>
+                    <span>
+                        Hoje a programação é diferente da normal.
+                        {% if campanha.local %}Todos os carrinhos ficam em 📍 {{ campanha.local.nome }}.{% endif %}
+                    </span>
+                </div>
+                {% endif %}
 
             </section>
 
@@ -2997,26 +3066,53 @@
                     return;
                 }
 
+                // Protege o texto: nada do que vem do servidor vira código na página
+                const seguro = function (texto) {
+                    return String(texto == null ? "" : texto)
+                        .replace(/&/g, "&amp;")
+                        .replace(/</g, "&lt;")
+                        .replace(/>/g, "&gt;")
+                        .replace(/"/g, "&quot;")
+                        .replace(/'/g, "&#39;");
+                };
+
                 notificationPanel.innerHTML = dados.notificacoes.map(function (notificacao) {
 
+                    const id = Number(notificacao.id);
+                    const icone = { aviso: "📢", lembrete: "⏰" }[notificacao.tipo] || "🔔";
+                    const d = notificacao.detalhes;
+
+                    let detalhes = "";
+
+                    if (d) {
+                        detalhes = `
+                            <div class="notification-detalhes">
+                                <div>📅 <b>${seguro(d.quando)}</b> • ${seguro(d.horario)}</div>
+                                <div>🛒 ${seguro(d.carrinho)} • 📍 ${seguro(d.local)}</div>
+                            </div>
+                        `;
+                    }
+
                     return `
-                        <div class="notification-item" data-notificacao-id="${notificacao.id}">
+                        <div class="notification-item" data-notificacao-id="${id}">
 
                             <button
                                 type="button"
                                 class="notification-delete"
-                                data-id="${notificacao.id}"
+                                data-id="${id}"
                                 aria-label="Apagar notificação"
                                 title="Apagar notificação"
                             >
                                 ×
                             </button>
 
-                            <strong>🔔 ${notificacao.titulo}</strong>
+                            <strong>${icone} ${seguro(notificacao.titulo)}</strong>
 
-                            <p>${notificacao.mensagem}</p>
+                            ${notificacao.mensagem ? "<p>" + seguro(notificacao.mensagem) + "</p>" : ""}
 
-                            <small>${notificacao.criado_em}</small>
+                            ${detalhes}
+
+                            <small>${seguro(notificacao.rodape || notificacao.criado_em)}</small>
 
                         </div>
                     `;
