@@ -115,6 +115,18 @@ def create_app():
                     # Outro processo do servidor já fez o ajuste
                     pass
 
+        # Correção (uma vez só): um erro no cadastro salvava todo
+        # território como inativo. Reativa os que foram salvos assim.
+        from app.models import ConfigTerritorio, Territorio
+
+        if not db.session.get(ConfigTerritorio, "correcao_ativo_v1"):
+            try:
+                Territorio.query.update({"ativo": True})
+                db.session.add(ConfigTerritorio(chave="correcao_ativo_v1", valor="1"))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
         # Campanhas antigas sem local: usa o local dos horários delas
         from app.models import Campanha
 

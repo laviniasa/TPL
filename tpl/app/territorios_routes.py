@@ -722,7 +722,8 @@ def salvar(territorio):
         r.strip() for r in request.form.get("ruas", "").splitlines() if r.strip()
     ) or None
     territorio.area = ler_area(request.form.get("area"))
-    territorio.ativo = request.form.get("ativo", "1") == "1"
+    # O formulário manda "0" (campo escondido) e, se marcado, "1"
+    territorio.ativo = "1" in request.form.getlist("ativo")
 
     salvar_quadras(territorio)
 
