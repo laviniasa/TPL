@@ -237,8 +237,8 @@
     <section class="card perfil-topo">
 
         <div class="avatar" id="avatar">
-            {% if pessoa.foto %}
-                <img src="{{ url_for('static', filename=pessoa.foto) }}"
+            {% if pessoa.foto_url %}
+                <img src="{{ pessoa.foto_url }}"
                      alt="Foto de {{ pessoa.nome }}">
             {% else %}
                 {{ pessoa.nome[0]|upper }}

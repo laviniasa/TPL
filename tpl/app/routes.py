@@ -12,7 +12,9 @@ from flask import (
     redirect,
     url_for,
     flash,
-    jsonify
+    jsonify,
+    abort,
+    Response
 )
 
 from flask_login import (
@@ -45,7 +47,8 @@ from app.models import (
     Notificacao,
     HorarioAvulso,
     Campanha,
-    CampanhaHorario
+    CampanhaHorario,
+    FotoPessoa
 )
 
 
@@ -53,7 +56,14 @@ routes = Blueprint("routes", __name__)
 
 SAO_PAULO = ZoneInfo("America/Sao_Paulo")
 
-EXTENSOES_FOTO = {"png", "jpg", "jpeg", "webp"}
+TIPOS_FOTO = {
+    "png": "image/png",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "webp": "image/webp"
+}
+
+TAMANHO_MAXIMO_FOTO = 5 * 1024 * 1024  # 5 MB
 
 
 def agora_sao_paulo():
@@ -338,10 +348,7 @@ def buscar():
         resultados.append({
             "tipo": "pessoa",
             "icone": "👤",
-            "foto": (
-                url_for("static", filename=pessoa.foto)
-                if pessoa.foto else None
-            ),
+            "foto": pessoa.foto_url,
             "titulo": pessoa.nome,
             "subtitulo": "Irmão",
             "url": url_for("routes.perfil", pessoa_id=pessoa.id)
@@ -701,27 +708,55 @@ def alterar_foto(pessoa_id):
 
     extensao = secure_filename(arquivo.filename).rsplit(".", 1)[-1].lower()
 
-    if extensao not in EXTENSOES_FOTO:
+    if extensao not in TIPOS_FOTO:
         flash("Formato inválido. Use PNG, JPG ou WEBP.", "warning")
         return redirect(url_for("routes.perfil", pessoa_id=pessoa.id))
 
-    pasta = os.path.join(current_app.static_folder, "uploads", "fotos")
-    os.makedirs(pasta, exist_ok=True)
+    dados = arquivo.read()
 
-    nome_arquivo = f"{pessoa.id}_{uuid.uuid4().hex}.{extensao}"
-    arquivo.save(os.path.join(pasta, nome_arquivo))
+    if not dados:
+        flash("A imagem está vazia. Tente outra.", "warning")
+        return redirect(url_for("routes.perfil", pessoa_id=pessoa.id))
 
-    # Apaga a foto antiga
-    if pessoa.foto:
-        antiga = os.path.join(current_app.static_folder, pessoa.foto)
-        if os.path.isfile(antiga):
-            os.remove(antiga)
+    if len(dados) > TAMANHO_MAXIMO_FOTO:
+        flash("A imagem é muito grande. Use uma de até 5 MB.", "warning")
+        return redirect(url_for("routes.perfil", pessoa_id=pessoa.id))
 
-    pessoa.foto = f"uploads/fotos/{nome_arquivo}"
+    # Guarda a imagem no banco, que não se perde quando o
+    # servidor reinicia (o disco do Render é apagado).
+    registro = db.session.get(FotoPessoa, pessoa.id)
+
+    if registro:
+        registro.dados = dados
+        registro.tipo = TIPOS_FOTO[extensao]
+    else:
+        db.session.add(FotoPessoa(
+            pessoa_id=pessoa.id,
+            dados=dados,
+            tipo=TIPOS_FOTO[extensao]
+        ))
+
+    pessoa.foto = f"db:{uuid.uuid4().hex[:12]}"
     db.session.commit()
 
     flash("Foto atualizada!", "success")
     return redirect(url_for("routes.perfil", pessoa_id=pessoa.id))
+
+
+@routes.route("/foto/<int:pessoa_id>")
+@login_required
+def foto_pessoa(pessoa_id):
+    registro = db.session.get(FotoPessoa, pessoa_id)
+
+    if not registro:
+        abort(404)
+
+    resposta = Response(registro.dados, mimetype=registro.tipo)
+
+    # O endereço muda a cada foto nova (?v=...), então o
+    # navegador pode guardar esta imagem por bastante tempo.
+    resposta.headers["Cache-Control"] = "private, max-age=31536000"
+    return resposta
 
 
 @routes.route("/perfil/<int:pessoa_id>/foto/remover", methods=["POST"])
@@ -734,14 +769,13 @@ def remover_foto(pessoa_id):
         flash("Você só pode remover a foto do seu próprio perfil.", "danger")
         return redirect(url_for("routes.perfil", pessoa_id=pessoa.id))
 
-    if pessoa.foto:
-        caminho = os.path.join(current_app.static_folder, pessoa.foto)
+    registro = db.session.get(FotoPessoa, pessoa.id)
 
-        if os.path.isfile(caminho):
-            os.remove(caminho)
+    if registro:
+        db.session.delete(registro)
 
-        pessoa.foto = None
-        db.session.commit()
+    pessoa.foto = None
+    db.session.commit()
 
     flash("Foto removida com sucesso.", "success")
     return redirect(url_for("routes.perfil", pessoa_id=pessoa.id))

@@ -1,3 +1,4 @@
+from flask import url_for
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
@@ -87,8 +88,13 @@ class Pessoa(db.Model):
     # =====================================================
     # FOTO DE PERFIL
     #
-    # Guarda o caminho relativo dentro da pasta static,
-    # por exemplo: "uploads/fotos/3_ab12cd.jpg".
+    # A imagem fica guardada no banco (tabela foto_pessoa),
+    # porque o disco do Render apaga os arquivos enviados
+    # sempre que o servidor reinicia.
+    #
+    # Este campo guarda "db:<versão>". A versão muda a cada
+    # nova foto, para o celular não mostrar a antiga do cache.
+    # Valores antigos ("uploads/fotos/...") são ignorados.
     # Se for NULL, o perfil mostra a inicial do nome.
     # =====================================================
 
@@ -96,6 +102,16 @@ class Pessoa(db.Model):
         db.String(200),
         nullable=True
     )
+
+    @property
+    def foto_url(self):
+        if self.foto and self.foto.startswith("db:"):
+            return url_for(
+                "routes.foto_pessoa",
+                pessoa_id=self.id,
+                v=self.foto[3:]
+            )
+        return None
 
     # =====================================================
     # CONTA DE LOGIN
@@ -688,4 +704,28 @@ class CampanhaHorario(db.Model):
 
     local = db.relationship(
         "Local"
+    )
+
+
+
+# =========================================================
+# FOTO DE PERFIL (conteúdo da imagem)
+# =========================================================
+
+class FotoPessoa(db.Model):
+
+    pessoa_id = db.Column(
+        db.Integer,
+        db.ForeignKey("pessoa.id"),
+        primary_key=True
+    )
+
+    dados = db.Column(
+        db.LargeBinary,
+        nullable=False
+    )
+
+    tipo = db.Column(
+        db.String(50),
+        nullable=False
     )
