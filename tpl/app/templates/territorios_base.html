@@ -1,7 +1,11 @@
 {% extends "admin_base.html" %}
 
 {% block back %}
+{% if aba in ['cobertura', 'historico', 'ajustes'] %}
+<a class="back-link" href="{{ url_for('routes.admin') }}">← Administração</a>
+{% else %}
 <a class="back-link" href="{{ url_for('routes.agenda') }}">← Agenda</a>
+{% endif %}
 {% endblock %}
 
 {% block extra_css %}
@@ -303,14 +307,13 @@
 
 {% block content %}
 
+{% if aba not in ['cobertura', 'historico', 'ajustes'] %}
 <nav class="tabs" aria-label="Seções de territórios">
     <a class="tab {% if aba == 'painel' %}ativa{% endif %}" href="{{ url_for('territorios.painel') }}">Painel</a>
     <a class="tab {% if aba == 'lista' %}ativa{% endif %}" href="{{ url_for('territorios.lista') }}">Territórios</a>
-    <a class="tab {% if aba == 'cobertura' %}ativa{% endif %}" href="{{ url_for('territorios.cobertura') }}">Cobertura semanal</a>
     <a class="tab {% if aba == 'dirigentes' %}ativa{% endif %}" href="{{ url_for('territorios.dirigentes') }}">Dirigentes</a>
-    <a class="tab {% if aba == 'historico' %}ativa{% endif %}" href="{{ url_for('territorios.historico') }}">Histórico</a>
-    <a class="tab nova {% if aba == 'ajustes' %}ativa{% endif %}" href="{{ url_for('territorios.ajustes') }}">⚙️ Ajustes</a>
 </nav>
+{% endif %}
 
 {% block territorios_content %}{% endblock %}
 
