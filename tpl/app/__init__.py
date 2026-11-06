@@ -66,8 +66,9 @@ def create_app():
     from app.routes import routes
     app.register_blueprint(routes)
 
-    from app.territorios_routes import territorios
+    from app.territorios_routes import territorios, ficha
     app.register_blueprint(territorios)
+    app.register_blueprint(ficha)
 
     # =========================
     # CRIAÇÃO DOS DADOS INICIAIS
@@ -91,6 +92,28 @@ def create_app():
             except Exception:
                 # Outro processo do servidor já fez o ajuste ao mesmo tempo
                 pass
+
+        # Territórios: colunas que entraram depois da criação
+        # das tabelas (o create_all não altera tabelas existentes).
+        colunas_novas = [
+            ("territorio", "ruas", "TEXT"),
+            ("designacao_territorio", "codigo", "VARCHAR(40)"),
+            ("designacao_territorio", "mapa_enviado_em", "TIMESTAMP"),
+            ("dirigente_territorio", "whatsapp", "VARCHAR(20)"),
+        ]
+
+        for tabela, coluna, tipo in colunas_novas:
+            existentes = [c["name"] for c in inspect(db.engine).get_columns(tabela)]
+
+            if coluna not in existentes:
+                try:
+                    with db.engine.begin() as conexao:
+                        conexao.execute(text(
+                            f"ALTER TABLE {tabela} ADD COLUMN {coluna} {tipo}"
+                        ))
+                except Exception:
+                    # Outro processo do servidor já fez o ajuste
+                    pass
 
         # Campanhas antigas sem local: usa o local dos horários delas
         from app.models import Campanha

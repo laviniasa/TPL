@@ -3084,7 +3084,7 @@
                 notificationPanel.innerHTML = dados.notificacoes.map(function (notificacao) {
 
                     const id = Number(notificacao.id);
-                    const icone = { aviso: "📢", lembrete: "⏰" }[notificacao.tipo] || "🔔";
+                    const icone = { aviso: "📢", lembrete: "⏰", territorio: "🗺️" }[notificacao.tipo] || "🔔";
                     const d = notificacao.detalhes;
 
                     let detalhes = "";
@@ -3114,6 +3114,10 @@
                             <strong>${icone} ${seguro(notificacao.titulo)}</strong>
 
                             ${notificacao.mensagem ? "<p>" + seguro(notificacao.mensagem) + "</p>" : ""}
+
+                            ${notificacao.link && /^\/t\/[A-Za-z0-9_-]+$/.test(notificacao.link)
+                                ? `<a class="notification-link" href="${seguro(notificacao.link)}" style="display:inline-block;margin:4px 0 6px;font-weight:700;color:#0875c9;">Abrir mapa do território →</a>`
+                                : ""}
 
                             ${detalhes}
 

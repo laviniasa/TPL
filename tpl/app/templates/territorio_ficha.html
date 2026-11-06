@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0875c9">
+    <meta name="robots" content="noindex, nofollow">
+
+    <title>Território {{ '%02d' % territorio.numero }} - TPL</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+
+    <style>
+        :root {
+            --blue: #0875c9;
+            --blue-dark: #075da0;
+            --blue-light: #eaf5ff;
+            --text: #10233f;
+            --muted: #667085;
+            --border: #e4ebf2;
+            --green: #16a34a;
+            --green-bg: #eaf8ef;
+            --red: #dc2626;
+            --red-bg: #feecec;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: #f3f7fb;
+            color: var(--text);
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        header {
+            color: #fff;
+            background: linear-gradient(135deg, var(--blue-dark), var(--blue));
+            padding: calc(18px + env(safe-area-inset-top, 0px)) 16px 18px;
+        }
+
+        header small { opacity: .85; font-size: 12px; font-weight: 700; letter-spacing: .6px; }
+        header h1 { margin: 4px 0 0; font-size: 21px; line-height: 1.25; }
+
+        main {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 16px 14px calc(40px + env(safe-area-inset-bottom, 0px));
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            box-shadow: 0 4px 18px rgba(16, 24, 40, .06);
+            padding: 18px;
+            margin-bottom: 14px;
+        }
+
+        .card h2 { margin: 0 0 8px; font-size: 17px; }
+
+        .dados {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .dados div { padding: 10px 12px; border-radius: 12px; background: #f7f9fc; }
+        .dados small { display: block; color: var(--muted); font-size: 11px; font-weight: 700; }
+        .dados strong { font-size: 15px; }
+        .dados .vencido strong { color: var(--red); }
+
+        .mapa {
+            width: 100%;
+            height: 360px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .mapa-label {
+            background: #fff;
+            border: 1px solid #c9d6e3;
+            border-radius: 7px;
+            font: 800 13px/1 Inter, -apple-system, Roboto, Arial, sans-serif;
+            padding: 5px 7px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .15);
+            white-space: nowrap;
+            transform: translate(-50%, -50%);
+            display: inline-block;
+        }
+
+        .leaflet-div-icon.sem-fundo { background: transparent; border: 0; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 44px;
+            padding: 0 16px;
+            border: 0;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 800;
+            text-decoration: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-primary { background: var(--blue); color: #fff; }
+        .btn-soft { background: var(--blue-light); color: var(--blue); }
+
+        .acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+        .ruas { margin: 0; padding: 0; list-style: none; font-size: 15px; line-height: 1.8; }
+        .ruas li::before { content: "•"; margin-right: 8px; color: var(--muted); }
+
+        .observacoes { white-space: pre-line; font-size: 15px; line-height: 1.6; word-break: break-word; }
+        .observacoes a { color: var(--blue); }
+
+        .linha {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .linha:last-child { border-bottom: 0; }
+        .linha span { flex: 1; min-width: 0; }
+        .linha strong { display: block; }
+        .linha small { color: var(--muted); font-size: 13px; }
+
+        .quadra-num {
+            flex: 0 0 auto !important;
+            display: grid;
+            place-items: center;
+            min-width: 38px;
+            height: 38px;
+            padding: 0 8px;
+            border-radius: 11px;
+            background: #f2f4f7;
+            font-weight: 900;
+        }
+
+        .field { display: flex; flex-direction: column; gap: 5px; }
+        .field label { font-size: 12px; font-weight: 700; color: var(--muted); }
+
+        .field select, .field input {
+            width: 100%;
+            height: 46px;
+            padding: 0 12px;
+            border: 1px solid #d5dde6;
+            border-radius: 12px;
+            background: #fff;
+            font-size: 16px;
+            font-family: inherit;
+            color: var(--text);
+        }
+
+        .progresso { height: 10px; margin: 12px 0 2px; border-radius: 999px; background: #edf1f5; overflow: hidden; }
+        .progresso div { height: 100%; background: var(--blue); border-radius: 999px; }
+
+        .flash {
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            background: var(--green-bg);
+            color: #166534;
+        }
+
+        .flash.warning, .flash.danger { background: var(--red-bg); color: #991b1b; }
+
+        .aviso {
+            padding: 14px;
+            border-radius: 14px;
+            background: #f2f4f7;
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <small>TPL · TERRITÓRIO</small>
+    <h1>{{ '%02d' % territorio.numero }} — {{ territorio.nome }}</h1>
+</header>
+
+<main>
+
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+        {% for categoria, mensagem in mensagens %}
+        <div class="flash {{ categoria }}">{{ mensagem }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <section class="card">
+        <div class="dados">
+            <div>
+                <small>Dirigente</small>
+                <strong>{{ designacao.dirigente }}</strong>
+            </div>
+            <div class="{{ 'vencido' if vencido }}">
+                <small>{{ 'Devolvido em' if designacao.data_devolucao else 'Prazo para devolver' }}</small>
+                <strong>
+                    {% if designacao.data_devolucao %}
+                        {{ designacao.data_devolucao.strftime('%d/%m/%Y') }}
+                    {% else %}
+                        {{ designacao.prazo.strftime('%d/%m/%Y') if designacao.prazo else '—' }}
+                    {% endif %}
+                </strong>
+            </div>
+        </div>
+
+        <div class="progresso" aria-hidden="true"><div style="width: {{ designacao.cobertura }}%"></div></div>
+        <small style="color: var(--muted); font-size: 13px;">{{ designacao.cobertura }}% trabalhado</small>
+
+        {% if designacao.observacao %}
+        <p style="margin: 10px 0 0; font-size: 14px;">📝 {{ designacao.observacao }}</p>
+        {% endif %}
+    </section>
+
+    {% if area %}
+    <section class="card">
+        <div id="mapa" class="mapa"></div>
+        {% if rota %}
+        <div class="acoes">
+            <a class="btn btn-primary" href="{{ rota }}" target="_blank" rel="noopener">🧭 Como chegar</a>
+        </div>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    {% if territorio.lista_ruas %}
+    <section class="card">
+        <h2>Ruas</h2>
+        <ul class="ruas">
+            {% for rua in territorio.lista_ruas %}<li>{{ rua }}</li>{% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    {% if territorio.observacoes %}
+    <section class="card">
+        <h2>Instruções</h2>
+        <div class="observacoes">{{ territorio.observacoes|urlize(45, true) }}</div>
+    </section>
+    {% endif %}
+
+    {% if territorio.quadras %}
+    <section class="card">
+        <h2>Quadras</h2>
+        {% for quadra in territorio.quadras %}
+        <div class="linha">
+            <span class="quadra-num">{{ quadra.numero }}</span>
+            <span>
+                <strong>Quadra {{ quadra.numero }}</strong>
+                {% if quadra.descricao %}<small>{{ quadra.descricao }}</small>{% endif %}
+            </span>
+            {% if quadra.link_rota %}
+            <a class="btn btn-soft" href="{{ quadra.link_rota }}" target="_blank" rel="noopener">🧭 Rota</a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <section class="card" id="registrar">
+        <h2>Quanto já foi trabalhado?</h2>
+
+        {% if designacao.data_devolucao %}
+            <div class="aviso">Este território já foi devolvido. Obrigado! 🙏</div>
+        {% elif designacao.cobertura >= 100 %}
+            <div class="aviso">✅ Território concluído! Avise o responsável para registrar a devolução.</div>
+        {% else %}
+            <p style="margin: 0 0 12px; font-size: 14px; color: var(--muted);">
+                Registre aqui depois de cada saída, para o responsável acompanhar.
+            </p>
+            <form method="POST" action="{{ url_for('ficha.ficha_trabalho', codigo=designacao.codigo) }}">
+                <div class="field">
+                    <label for="percentual">Até agora já foi feito</label>
+                    <select id="percentual" name="percentual" required>
+                        {% for p in percentuais %}
+                        {% if p > designacao.cobertura %}
+                        <option value="{{ p }}">{{ 'Tudo (100%)' if p == 100 else p ~ '%' }}</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field" style="margin-top: 10px;">
+                    <label for="data">Data</label>
+                    <input type="date" id="data" name="data" value="{{ hoje.isoformat() }}"
+                           min="{{ designacao.data_saida.isoformat() }}" max="{{ hoje.isoformat() }}" required>
+                </div>
+                <div class="acoes">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Registrar</button>
+                </div>
+            </form>
+        {% endif %}
+    </section>
+
+</main>
+
+{% if area %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+    var area = {{ area|tojson }};
+    var quadras = {{ quadras_mapa|tojson }};
+
+    var mapa = L.map("mapa").setView([area[0][0][0], area[0][0][1]], 15);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap"
+    }).addTo(mapa);
+
+    var limites = L.latLngBounds([]);
+
+    area.forEach(function (poligono) {
+        var camada = L.polygon(poligono, {
+            color: "#0875c9", weight: 3, fillColor: "#0875c9", fillOpacity: .15
+        }).addTo(mapa);
+        limites.extend(camada.getBounds());
+    });
+
+    function rotulo(texto) {
+        var span = document.createElement("span");
+        span.className = "mapa-label";
+        span.textContent = texto;
+        return L.divIcon({ className: "sem-fundo", html: span.outerHTML, iconSize: [0, 0] });
+    }
+
+    quadras.forEach(function (q) {
+        L.marker([q.lat, q.lng], { icon: rotulo(q.numero), interactive: false }).addTo(mapa);
+    });
+
+    mapa.fitBounds(limites, { padding: [20, 20] });
+
+    // Minha localização
+    var Controle = L.Control.extend({
+        options: { position: "topright" },
+        onAdd: function () {
+            var botao = L.DomUtil.create("a", "leaflet-bar");
+            botao.href = "#";
+            botao.title = "Minha localização";
+            botao.innerHTML = "📍";
+            botao.style.cssText = "display:grid;place-items:center;width:34px;height:34px;background:#fff;font-size:17px;text-decoration:none;";
+            var marcador = null;
+
+            L.DomEvent.on(botao, "click", function (e) {
+                L.DomEvent.preventDefault(e);
+                L.DomEvent.stopPropagation(e);
+                if (!navigator.geolocation) return;
+
+                navigator.geolocation.getCurrentPosition(function (pos) {
+                    var ponto = [pos.coords.latitude, pos.coords.longitude];
+                    if (marcador) mapa.removeLayer(marcador);
+                    marcador = L.circleMarker(ponto, {
+                        radius: 8, color: "#fff", weight: 3, fillColor: "#1a73e8", fillOpacity: 1
+                    }).addTo(mapa);
+                    mapa.setView(ponto, Math.max(mapa.getZoom(), 16));
+                }, function () {
+                    alert("Não foi possível pegar sua localização.");
+                }, { enableHighAccuracy: true, timeout: 10000 });
+            });
+
+            return botao;
+        }
+    });
+
+    mapa.addControl(new Controle());
+</script>
+{% endif %}
+
+</body>
+</html>

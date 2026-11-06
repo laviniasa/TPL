@@ -1,44 +1,11 @@
 {% extends "territorios_base.html" %}
-{% set aba = "painel" %}
 
 {% block title %}Territórios{% endblock %}
-{% block heading %}Territórios{% endblock %}
+{% block heading %}Controle de Territórios{% endblock %}
 {% block subheading %}Designações, mapa e cobertura do território{% endblock %}
 
 {% block territorios_css %}
 <style>
-
-    .resumo {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        margin-bottom: 16px;
-    }
-
-    .resumo button {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
-        padding: 14px;
-        border-radius: 18px;
-        border: 2px solid transparent;
-        background: #fff;
-        box-shadow: var(--shadow);
-        text-align: left;
-        cursor: pointer;
-        color: var(--text);
-    }
-
-    .resumo button[aria-pressed="true"] { border-color: currentColor; }
-
-    .resumo strong { font-size: 26px; line-height: 1; }
-    .resumo span { font-size: 12px; font-weight: 700; }
-
-    .resumo .disponivel { color: var(--st-disponivel); }
-    .resumo .em_campo { color: var(--st-em_campo); }
-    .resumo .vencido { color: var(--st-vencido); }
-
     .legenda {
         display: flex;
         flex-wrap: wrap;
@@ -52,49 +19,27 @@
         display: inline-block;
         width: 10px;
         height: 10px;
-        border-radius: 3px;
+        border-radius: 50%;
         margin-right: 5px;
         vertical-align: -1px;
     }
 
-    .busca {
-        width: 100%;
-        height: 44px;
-        padding: 0 14px;
-        margin-bottom: 6px;
-        border: 1px solid #d5dde6;
-        border-radius: 12px;
-        font-size: 15px;
+    .terr-linha {
+        display: block;
+        padding: 12px 4px;
+        border-bottom: 1px solid var(--border);
+        color: inherit;
+        text-decoration: none;
     }
 
-    .barras {
-        display: flex;
-        align-items: flex-end;
-        gap: 8px;
-        height: 120px;
-        margin-top: 8px;
-    }
+    .terr-linha:last-child { border-bottom: 0; }
 
-    .barra {
-        flex: 1;
+    .terr-topo {
         display: flex;
-        flex-direction: column;
         align-items: center;
-        justify-content: flex-end;
-        gap: 4px;
-        height: 100%;
-        font-size: 11px;
-        color: var(--muted);
+        gap: 12px;
+        margin-bottom: 10px;
     }
-
-    .barra div {
-        width: 100%;
-        min-height: 3px;
-        border-radius: 6px 6px 3px 3px;
-        background: var(--blue);
-    }
-
-    .barra b { color: var(--text); font-size: 12px; }
 
     .vazio-acoes {
         display: flex;
@@ -103,13 +48,6 @@
         gap: 10px;
         margin-top: 14px;
     }
-
-    @media (max-width: 420px) {
-        .resumo button { padding: 12px 10px; }
-        .resumo strong { font-size: 22px; }
-        .resumo span { font-size: 11px; }
-    }
-
 </style>
 {% endblock %}
 
@@ -132,113 +70,125 @@
 
 {% else %}
 
-<!-- RESUMO -->
-<div class="resumo" role="group" aria-label="Filtrar por situação">
-    <button type="button" class="disponivel" data-filtro="disponivel" aria-pressed="false">
-        <strong>{{ contagem.disponivel }}</strong>
-        <span>Disponíveis</span>
-    </button>
-    <button type="button" class="em_campo" data-filtro="em_campo" aria-pressed="false">
+<!-- NÚMEROS -->
+<div class="numeros">
+    <a class="numero-card em_campo" href="{{ url_for('territorios.historico', situacao='em_campo') }}">
+        <small>Em campo</small>
         <strong>{{ contagem.em_campo }}</strong>
-        <span>Em campo</span>
-    </button>
-    <button type="button" class="vencido" data-filtro="vencido" aria-pressed="false">
+        <span>{{ envios_pendentes }} envio{{ 's' if envios_pendentes != 1 }} pendente{{ 's' if envios_pendentes != 1 }}</span>
+    </a>
+    <a class="numero-card disponivel" href="{{ url_for('territorios.lista') }}">
+        <small>Disponíveis</small>
+        <strong>{{ contagem.disponivel }}</strong>
+        <span>prontos para designar</span>
+    </a>
+    <a class="numero-card vencido" href="{{ url_for('territorios.historico', situacao='vencido') }}">
+        <small>Prazo vencido</small>
         <strong>{{ contagem.vencido }}</strong>
-        <span>Prazo vencido</span>
-    </button>
+        <span>{{ 'tudo em dia' if contagem.vencido == 0 else 'precisam ser cobrados' }}</span>
+    </a>
+    <a class="numero-card" href="{{ url_for('territorios.cobertura') }}">
+        <small>Trabalhados na semana</small>
+        <strong>{{ trabalhados_semana }} <em>/ {{ territorios|length }}</em></strong>
+        <span>{{ semana_atual.strftime('%d/%m') }} a {{ semana_fim.strftime('%d/%m') }}</span>
+    </a>
+    <a class="numero-card largo" href="{{ url_for('territorios.cobertura') }}">
+        <small>Cobertura completa</small>
+        <strong>{{ cobertura_completa }} <em>/ {{ territorios|length }}</em></strong>
+        <span>nos últimos {{ meses_completa }} meses</span>
+    </a>
 </div>
 
 
 <!-- MAPA GERAL -->
 {% if mapa %}
 <section class="card">
-    <h2>Mapa dos territórios</h2>
-    <p class="hint">Toque numa área para abrir o território.</p>
-    <div id="mapaGeral" class="mapa"></div>
+    <h2>Mapa geral</h2>
+    <div id="mapaGeral" class="mapa" style="margin-top: 10px;"></div>
     <div class="legenda">
         <span><i style="background: var(--st-disponivel)"></i>Disponível</span>
         <span><i style="background: var(--st-em_campo)"></i>Em campo</span>
         <span><i style="background: var(--st-vencido)"></i>Prazo vencido</span>
     </div>
+    <p class="hint" style="margin: 8px 0 0;">Toque em um número para abrir o território.</p>
 </section>
 {% endif %}
 
 
 <!-- PRECISA DE ATENÇÃO -->
-{% if atencao %}
+{% if vencidos or sugestoes %}
 <section class="card">
-    <h2>⚠️ Precisa de atenção</h2>
-    <p class="hint">Prazos vencidos e territórios parados há muito tempo.</p>
+    <h2>Precisa de atenção</h2>
 
-    {% for territorio, motivo, _, _ in atencao %}
-    <a class="linha" href="{{ url_for('territorios.detalhe', territorio_id=territorio.id) }}">
-        <span class="num">{{ territorio.numero }}</span>
+    {% if vencidos %}
+    <p class="secao-titulo">Prazo vencido</p>
+    {% for t in vencidos %}
+    {% set atual = t.designacao_atual %}
+    <a class="linha" href="{{ url_for('territorios.detalhe', territorio_id=t.id) }}">
+        <span class="num">{{ '%02d' % t.numero }}</span>
         <span class="linha-texto">
-            <strong>{{ territorio.nome }}</strong>
-            <small>{{ motivo }}</small>
+            <strong>Território {{ '%02d' % t.numero }} · {{ t.nome }}</strong>
+            <small>{{ atual.dirigente }} · venceu em {{ atual.prazo.strftime('%d/%m/%Y') }}</small>
         </span>
-        <span class="status {{ territorio.status(hoje) }}">{{ status_nomes[territorio.status(hoje)] }}</span>
+        <span class="status vencido">Vencido</span>
     </a>
     {% endfor %}
+    {% endif %}
+
+    {% if sugestoes %}
+    <p class="secao-titulo">Sugestão para designar</p>
+    {% for t in sugestoes %}
+    <a class="linha" href="{{ url_for('territorios.detalhe', territorio_id=t.id) }}#designacao">
+        <span class="num">{{ '%02d' % t.numero }}</span>
+        <span class="linha-texto">
+            <strong>Território {{ '%02d' % t.numero }} · {{ t.nome }}</strong>
+            <small>
+                {% if completas.get(t.id) %}
+                    Última cobertura completa em {{ completas[t.id].strftime('%d/%m/%Y') }}
+                {% else %}
+                    Sem cobertura completa registrada
+                {% endif %}
+            </small>
+        </span>
+        <span class="status disponivel">Disponível</span>
+    </a>
+    {% endfor %}
+    {% endif %}
 </section>
 {% endif %}
 
 
-<!-- LISTA -->
+<!-- OS TERRITÓRIOS -->
 <section class="card">
-    <h2>Todos os territórios</h2>
-    <p class="hint" id="filtroTexto">{{ territorios|length }} território{{ 's' if territorios|length != 1 }}</p>
+    <h2>Os {{ territorios|length }} territórios</h2>
+    <p class="hint">Faixa inferior: cobertura das últimas 8 semanas.</p>
 
-    <input class="busca" type="search" id="busca" placeholder="Buscar por número ou nome..." autocomplete="off">
-
-    <div id="lista">
-        {% for territorio in territorios %}
-        {% set st = territorio.status(hoje) %}
-        {% set atual = territorio.designacao_atual %}
-        <a class="linha"
-           href="{{ url_for('territorios.detalhe', territorio_id=territorio.id) }}"
-           data-status="{{ st }}"
-           data-busca="{{ territorio.numero }} {{ territorio.nome|lower }} {{ (atual.dirigente if atual else '')|lower }}">
-            <span class="num">{{ territorio.numero }}</span>
+    {% for t in territorios %}
+    {% set st = t.status(hoje) %}
+    <a class="terr-linha" href="{{ url_for('territorios.detalhe', territorio_id=t.id) }}">
+        <div class="terr-topo">
+            <span class="num">{{ '%02d' % t.numero }}</span>
             <span class="linha-texto">
-                <strong>{{ territorio.nome }}</strong>
-                <small>
-                    {% if territorio.etiqueta %}<span class="etiqueta">{{ territorio.etiqueta }}</span> {% endif %}
-                    {% if atual %}
-                        {{ atual.dirigente }} · prazo {{ atual.prazo.strftime('%d/%m/%Y') if atual.prazo else '—' }}
-                    {% elif territorio.ultima_devolucao %}
-                        Trabalhado em {{ territorio.ultima_devolucao.strftime('%d/%m/%Y') }}
-                    {% else %}
-                        Nunca trabalhado
-                    {% endif %}
-                </small>
+                <strong>{{ t.nome }}</strong>
+                <small>{{ resumos[t.id] }}</small>
             </span>
             <span class="status {{ st }}">{{ status_nomes[st] }}</span>
-        </a>
-        {% endfor %}
-    </div>
-
-    <div class="empty" id="semResultado" hidden>Nenhum território encontrado.</div>
-</section>
-
-
-<!-- COBERTURA -->
-<section class="card">
-    <h2>📈 Cobertura</h2>
-    <p class="hint">
-        <strong>{{ trabalhados_ano }} de {{ territorios|length }}</strong>
-        territórios trabalhados nos últimos 12 meses.
-        Abaixo, territórios devolvidos por semana.
-    </p>
-
-    <div class="barras" role="img" aria-label="Territórios devolvidos nas últimas 8 semanas">
-        {% for semana in semanas %}
-        <div class="barra">
-            <b>{{ semana.total }}</b>
-            <div style="height: {{ (semana.total / maior_semana * 85)|round(0, 'floor') }}%"></div>
-            <span>{{ semana.rotulo }}</span>
         </div>
-        {% endfor %}
+        <div class="faixa" aria-hidden="true">
+            {% for c in grade.get(t.id, []) %}
+            <span class="cel {{ c.classe }}" title="{{ (c.percentual ~ '%') if c.percentual else '' }}"></span>
+            {% endfor %}
+        </div>
+        <div class="faixa-rotulos"><span>8 sem.</span><span>esta sem.</span></div>
+    </a>
+    {% endfor %}
+
+    <div class="legenda-cob" style="margin-top: 12px;">
+        <span><i class="cel"></i>Sem registro</span>
+        <span><i class="cel parcial"></i>Até 49%</span>
+        <span><i class="cel metade"></i>50 a 99%</span>
+        <span><i class="cel completo"></i>Concluído</span>
+        <span><i class="cel campo"></i>Em campo, sem registro</span>
     </div>
 </section>
 
@@ -248,82 +198,33 @@
 
 
 {% block territorios_scripts %}
-{% if territorios %}
+{% if mapa %}
 <script>
+    var dadosMapa = {{ mapa|tojson }};
+    var mapa = tplCriarMapa("mapaGeral");
+    tplBotaoLocalizacao(mapa);
+    var limites = L.latLngBounds([]);
 
-    // ---------- Filtro e busca ----------
+    dadosMapa.forEach(function (t) {
+        var cor = TPL_CORES[t.status];
 
-    var filtroAtual = {{ filtro|tojson }};
-    var botoes = document.querySelectorAll(".resumo button");
-    var linhas = document.querySelectorAll("#lista .linha");
-    var busca = document.getElementById("busca");
-    var nomes = { disponivel: "disponíveis", em_campo: "em campo", vencido: "com prazo vencido" };
+        t.area.forEach(function (poligono, i) {
+            var camada = L.polygon(poligono, {
+                color: cor, weight: 2, fillColor: cor, fillOpacity: .22
+            }).addTo(mapa);
 
-    function aplicarFiltro() {
-        var termo = busca.value.trim().toLowerCase();
-        var visiveis = 0;
+            camada.on("click", function () { window.location.href = t.url; });
+            limites.extend(camada.getBounds());
 
-        linhas.forEach(function (linha) {
-            var ok = (!filtroAtual || linha.dataset.status === filtroAtual) &&
-                     (!termo || linha.dataset.busca.indexOf(termo) !== -1);
-            linha.style.display = ok ? "" : "none";
-            if (ok) visiveis++;
-        });
-
-        botoes.forEach(function (b) {
-            b.setAttribute("aria-pressed", b.dataset.filtro === filtroAtual ? "true" : "false");
-        });
-
-        document.getElementById("semResultado").hidden = visiveis > 0;
-        document.getElementById("filtroTexto").textContent =
-            visiveis + " território" + (visiveis !== 1 ? "s" : "") +
-            (filtroAtual ? " " + nomes[filtroAtual] : "");
-    }
-
-    botoes.forEach(function (botao) {
-        botao.addEventListener("click", function () {
-            filtroAtual = filtroAtual === botao.dataset.filtro ? "" : botao.dataset.filtro;
-            aplicarFiltro();
-            if (filtroAtual) document.getElementById("lista").scrollIntoView({ behavior: "smooth", block: "start" });
+            if (i === 0) {
+                L.marker(tplCentro(poligono), {
+                    icon: tplRotulo(String(t.numero).padStart(2, "0"), "territorio")
+                }).addTo(mapa).on("click", function () { window.location.href = t.url; });
+            }
         });
     });
 
-    busca.addEventListener("input", aplicarFiltro);
-    aplicarFiltro();
-
-
-    // ---------- Mapa geral ----------
-
-    var dadosMapa = {{ mapa|tojson }};
-
-    if (dadosMapa.length && document.getElementById("mapaGeral")) {
-        var mapa = tplCriarMapa("mapaGeral");
-        tplBotaoLocalizacao(mapa);
-        var limites = L.latLngBounds([]);
-
-        dadosMapa.forEach(function (t) {
-            var cor = TPL_CORES[t.status];
-
-            t.area.forEach(function (poligono, i) {
-                var camada = L.polygon(poligono, {
-                    color: cor, weight: 2, fillColor: cor, fillOpacity: .22
-                }).addTo(mapa);
-
-                camada.on("click", function () { window.location.href = t.url; });
-                limites.extend(camada.getBounds());
-
-                if (i === 0) {
-                    L.marker(tplCentro(poligono), {
-                        icon: tplRotulo(t.numero, "territorio"),
-                        interactive: true
-                    }).addTo(mapa).on("click", function () { window.location.href = t.url; });
-                }
-            });
-        });
-
-        if (limites.isValid()) mapa.fitBounds(limites, { padding: [16, 16] });
-    }
-
+    if (limites.isValid()) mapa.fitBounds(limites, { padding: [16, 16] });
 </script>
 {% endif %}
 {% endblock %}

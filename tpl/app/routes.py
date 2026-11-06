@@ -1,4 +1,5 @@
 import os
+import re
 import uuid
 from datetime import date, datetime, timedelta
 from functools import wraps
@@ -978,6 +979,14 @@ def dados_notificacao(notificacao):
         "detalhes": None,
         "rodape": f"Enviado em {criado}" if criado else ""
     }
+
+    # Território designado: a mensagem termina com o link da ficha
+    link_territorio = re.search(r"\s(/t/[A-Za-z0-9_-]+)$", notificacao.mensagem or "")
+
+    if link_territorio:
+        dados["tipo"] = "territorio"
+        dados["link"] = link_territorio.group(1)
+        dados["mensagem"] = notificacao.mensagem[:link_territorio.start()].strip()
 
     # Lembrete de 1 hora antes
     if notificacao.titulo and notificacao.titulo.startswith(PREFIXO_LEMBRETE) and notificacao.reserva:

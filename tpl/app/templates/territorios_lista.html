@@ -1,0 +1,193 @@
+{% extends "territorios_base.html" %}
+
+{% block title %}Territórios e mapas{% endblock %}
+{% block heading %}Territórios e mapas{% endblock %}
+{% block subheading %}Mapa, ruas e situação de cada território{% endblock %}
+
+{% block territorios_css %}
+<style>
+    .topo-acoes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .busca {
+        width: 100%;
+        height: 44px;
+        padding: 0 14px;
+        margin-bottom: 12px;
+        border: 1px solid #d5dde6;
+        border-radius: 12px;
+        font-size: 15px;
+    }
+
+    .terr-card .cab {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .terr-card .cab h2 {
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+        font-size: 16px;
+    }
+
+    .ruas {
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+        font-size: 14px;
+        line-height: 1.7;
+        color: #344054;
+    }
+
+    .ruas li::before {
+        content: "•";
+        margin-right: 8px;
+        color: var(--muted);
+    }
+
+    .sem-ruas {
+        margin: 10px 0 0;
+        font-size: 13px;
+        color: var(--muted);
+    }
+
+    .ultimo {
+        margin-top: 10px;
+        font-size: 13px;
+        color: var(--muted);
+    }
+
+    .terr-card.inativo { opacity: .6; }
+</style>
+{% endblock %}
+
+
+{% block territorios_content %}
+
+<div class="topo-acoes">
+    <a class="btn btn-primary" href="{{ url_for('territorios.novo') }}">＋ Novo território</a>
+    <a class="btn btn-soft" href="{{ url_for('territorios.importar') }}">📥 Importar do My Maps</a>
+</div>
+
+{% if mapa %}
+<section class="card">
+    <h2>Mapa dos territórios</h2>
+    <div id="mapaLista" class="mapa" style="margin-top: 10px;"></div>
+    <p class="hint" style="margin: 8px 0 0;">Toque em um número para abrir o território.</p>
+</section>
+{% endif %}
+
+{% if territorios %}
+
+<input class="busca" type="search" id="busca" placeholder="Buscar por número, nome ou rua..." autocomplete="off">
+
+<div id="lista">
+    {% for t in territorios %}
+    {% set st = t.status(hoje) %}
+    <section class="card terr-card {{ 'inativo' if not t.ativo }}"
+             data-busca="{{ t.numero }} {{ '%02d' % t.numero }} {{ t.nome|lower }} {{ (t.ruas or '')|lower }}">
+        <div class="cab">
+            <span class="num">{{ '%02d' % t.numero }}</span>
+            <h2>Território {{ '%02d' % t.numero }} · {{ t.nome }}</h2>
+            {% if t.ativo %}
+            <span class="status {{ st }}">{{ status_nomes[st] }}</span>
+            {% else %}
+            <span class="etiqueta">Inativo</span>
+            {% endif %}
+        </div>
+
+        {% if t.etiqueta %}
+        <p style="margin: 8px 0 0;"><span class="etiqueta">{{ t.etiqueta }}</span></p>
+        {% endif %}
+
+        {% if t.lista_ruas %}
+        <ul class="ruas">
+            {% for rua in t.lista_ruas %}<li>{{ rua }}</li>{% endfor %}
+        </ul>
+        {% else %}
+        <p class="sem-ruas">Ruas não cadastradas.</p>
+        {% endif %}
+
+        <p class="ultimo">{{ resumos[t.id] }}</p>
+
+        <div class="acoes">
+            {% if t.ativo and st == 'disponivel' %}
+            <a class="btn btn-primary" href="{{ url_for('territorios.detalhe', territorio_id=t.id) }}#designacao">Designar</a>
+            {% endif %}
+            <a class="btn btn-neutral" href="{{ url_for('territorios.detalhe', territorio_id=t.id) }}">Detalhes</a>
+        </div>
+    </section>
+    {% endfor %}
+</div>
+
+<div class="card empty" id="semResultado" hidden>Nenhum território encontrado.</div>
+
+{% else %}
+
+<section class="card">
+    <div class="empty">
+        Nenhum território cadastrado ainda.
+    </div>
+</section>
+
+{% endif %}
+
+{% endblock %}
+
+
+{% block territorios_scripts %}
+<script>
+    var busca = document.getElementById("busca");
+
+    if (busca) {
+        var cartoes = document.querySelectorAll("#lista .terr-card");
+
+        busca.addEventListener("input", function () {
+            var termo = busca.value.trim().toLowerCase();
+            var total = 0;
+
+            cartoes.forEach(function (c) {
+                var ok = !termo || c.dataset.busca.indexOf(termo) !== -1;
+                c.style.display = ok ? "" : "none";
+                if (ok) total++;
+            });
+
+            document.getElementById("semResultado").hidden = total > 0;
+        });
+    }
+
+    {% if mapa %}
+    var dadosMapa = {{ mapa|tojson }};
+    var mapa = tplCriarMapa("mapaLista");
+    tplBotaoLocalizacao(mapa);
+    var limites = L.latLngBounds([]);
+
+    dadosMapa.forEach(function (t) {
+        var cor = TPL_CORES[t.status];
+
+        t.area.forEach(function (poligono, i) {
+            var camada = L.polygon(poligono, {
+                color: cor, weight: 2, fillColor: cor, fillOpacity: .2
+            }).addTo(mapa);
+
+            camada.on("click", function () { window.location.href = t.url; });
+            limites.extend(camada.getBounds());
+
+            if (i === 0) {
+                L.marker(tplCentro(poligono), {
+                    icon: tplRotulo(String(t.numero).padStart(2, "0"), "territorio")
+                }).addTo(mapa).on("click", function () { window.location.href = t.url; });
+            }
+        });
+    });
+
+    if (limites.isValid()) mapa.fitBounds(limites, { padding: [16, 16] });
+    {% endif %}
+</script>
+{% endblock %}

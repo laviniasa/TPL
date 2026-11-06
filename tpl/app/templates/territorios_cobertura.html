@@ -1,0 +1,303 @@
+{% extends "territorios_base.html" %}
+
+{% block title %}Cobertura semanal{% endblock %}
+{% block heading %}Cobertura semanal{% endblock %}
+{% block subheading %}Semanas de segunda a domingo{% endblock %}
+
+{% block territorios_css %}
+<style>
+    .navegar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .navegar strong {
+        font-size: 13px;
+        text-align: center;
+    }
+
+    .barras {
+        display: flex;
+        align-items: flex-end;
+        gap: 4px;
+        height: 130px;
+        margin-top: 8px;
+    }
+
+    .barra {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 3px;
+        height: 100%;
+        min-width: 0;
+        font-size: 9px;
+        color: var(--muted);
+        text-decoration: none;
+    }
+
+    .barra div {
+        width: 100%;
+        min-height: 3px;
+        border-radius: 5px 5px 2px 2px;
+        background: #b9dcf7;
+    }
+
+    .barra.escolhida div { background: var(--blue); }
+    .barra b { color: var(--text); font-size: 11px; }
+
+    .tabela-rolagem {
+        overflow-x: auto;
+        margin: 0 -18px;
+        padding: 0 18px;
+    }
+
+    .grade {
+        border-collapse: separate;
+        border-spacing: 3px;
+        min-width: 100%;
+        font-size: 11px;
+    }
+
+    .grade th {
+        padding: 2px 0 6px;
+        font-weight: 700;
+        color: var(--muted);
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .grade th a { color: inherit; text-decoration: none; }
+    .grade th.escolhida a { color: var(--blue); }
+
+    .grade td.terr {
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        padding-right: 6px;
+        background: #fff;
+        white-space: nowrap;
+        font-weight: 800;
+        font-size: 13px;
+    }
+
+    .grade td.terr a { color: inherit; text-decoration: none; }
+
+    .grade td.terr i {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin-left: 4px;
+        border-radius: 50%;
+        vertical-align: 1px;
+    }
+
+    .grade td.celula { padding: 0; }
+
+    .grade td.celula span {
+        display: grid;
+        place-items: center;
+        min-width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        background: #edf1f5;
+        font-size: 9px;
+        font-weight: 800;
+        color: #fff;
+    }
+
+    .grade td.celula span.parcial { background: #b9dcf7; color: #075da0; }
+    .grade td.celula span.metade { background: #5aa9e6; }
+    .grade td.celula span.completo { background: #0875c9; }
+    .grade td.celula span.campo {
+        background: repeating-linear-gradient(45deg, #edf1f5 0 4px, #cfe3f5 4px 8px);
+    }
+
+    .grade td.ultima {
+        padding-left: 6px;
+        white-space: nowrap;
+        color: var(--muted);
+    }
+
+    .resumo-texto {
+        white-space: pre-line;
+        padding: 12px;
+        border-radius: 12px;
+        background: #f7f9fc;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+</style>
+{% endblock %}
+
+
+{% block territorios_content %}
+
+<section class="card">
+    <div class="navegar">
+        <a class="btn btn-neutral" href="{{ url_for('territorios.cobertura', ate=anterior.isoformat()) }}">‹ Anterior</a>
+        <strong>{{ semanas[0].strftime('%d/%m/%Y') }}<br>a {{ periodo_fim.strftime('%d/%m/%Y') }}</strong>
+        {% if pode_avancar %}
+        <a class="btn btn-neutral" href="{{ url_for('territorios.cobertura', ate=seguinte.isoformat()) }}">Seguinte ›</a>
+        {% else %}
+        <span class="btn btn-neutral" style="opacity: .4;">Seguinte ›</span>
+        {% endif %}
+    </div>
+
+    {% if pode_avancar %}
+    <p style="text-align: center; margin: 0 0 8px;">
+        <a href="{{ url_for('territorios.cobertura') }}" style="color: var(--blue); font-weight: 700; font-size: 13px;">Ir para a semana atual</a>
+    </p>
+    {% endif %}
+
+    <h2>Territórios trabalhados por semana</h2>
+    <p class="hint">Toque numa barra para ver o resumo daquela semana.</p>
+
+    <div class="barras">
+        {% for semana in semanas %}
+        <a class="barra {{ 'escolhida' if semana == escolhida }}"
+           href="{{ url_for('territorios.cobertura', ate=semanas[-1].isoformat(), semana=semana.isoformat()) }}#resumo">
+            <b>{{ por_semana[loop.index0] }}</b>
+            <div style="height: {{ (por_semana[loop.index0] / maior_semana * 80)|round(0, 'floor') }}%"></div>
+            <span>{{ semana.strftime('%d/%m') }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+
+
+<section class="card">
+    <h2>Por território</h2>
+    <p class="hint">Cada quadrinho mostra quanto do território foi coberto até aquela semana.</p>
+
+    {% if territorios %}
+    <div class="tabela-rolagem">
+        <table class="grade">
+            <thead>
+                <tr>
+                    <th></th>
+                    {% for semana in semanas %}
+                    <th class="{{ 'escolhida' if semana == escolhida }}">
+                        <a href="{{ url_for('territorios.cobertura', ate=semanas[-1].isoformat(), semana=semana.isoformat()) }}#resumo">{{ semana.strftime('%d/%m') }}</a>
+                    </th>
+                    {% endfor %}
+                    <th>Última completa</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in territorios %}
+                {% set st = t.status(hoje) %}
+                <tr>
+                    <td class="terr">
+                        <a href="{{ url_for('territorios.detalhe', territorio_id=t.id) }}">{{ '%02d' % t.numero }}</a>
+                        <i style="background: var(--st-{{ st }})" title="{{ status_nomes[st] }}"></i>
+                    </td>
+                    {% for c in grade.get(t.id, []) %}
+                    <td class="celula">
+                        <span class="{{ c.classe }}" title="{{ (c.percentual ~ '%') if c.percentual else ('Em campo, sem registro' if c.classe == 'campo' else 'Sem registro') }}">
+                            {{ '✓' if c.percentual and c.percentual >= 100 else (c.percentual if c.percentual else '') }}
+                        </span>
+                    </td>
+                    {% endfor %}
+                    <td class="ultima">{{ completas[t.id].strftime('%d/%m/%y') if completas.get(t.id) else '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="legenda-cob" style="margin-top: 12px;">
+        <span><i class="cel"></i>Sem registro</span>
+        <span><i class="cel parcial"></i>Até 49%</span>
+        <span><i class="cel metade"></i>50 a 99%</span>
+        <span><i class="cel completo"></i>Concluído</span>
+        <span><i class="cel campo"></i>Em campo, sem registro</span>
+    </div>
+    {% else %}
+    <div class="empty">Nenhum território cadastrado.</div>
+    {% endif %}
+</section>
+
+
+<section class="card" id="resumo">
+    <h2>Semana {{ escolhida.strftime('%d/%m') }} a {{ escolhida_fim.strftime('%d/%m') }}</h2>
+
+    {% if linhas_resumo %}
+        {% for r in linhas_resumo %}
+        {% set t = territorio_por_id[r.territorio_id] %}
+        <a class="linha" href="{{ url_for('territorios.detalhe', territorio_id=t.id) }}">
+            <span class="num">{{ '%02d' % t.numero }}</span>
+            <span class="linha-texto">
+                <strong>{{ t.nome }}</strong>
+                <small>{{ r.designacao.dirigente }} · {{ r.data.strftime('%d/%m') }}</small>
+            </span>
+            <span class="status {{ 'disponivel' if r.percentual >= 100 else 'em_campo' }}">
+                {{ 'Concluído' if r.percentual >= 100 else r.percentual ~ '%' }}
+            </span>
+        </a>
+        {% endfor %}
+    {% else %}
+        <div class="empty">Nenhum trabalho registrado nesta semana.</div>
+    {% endif %}
+
+    <p class="secao-titulo" style="margin-top: 16px;">Resumo para enviar</p>
+    <div class="resumo-texto" id="textoResumo">{{ texto_resumo }}</div>
+
+    <div class="acoes">
+        <button type="button" class="btn btn-soft" id="copiar">📋 Copiar resumo</button>
+        <a class="btn btn-primary" href="{{ whatsapp_resumo }}" target="_blank" rel="noopener">📲 WhatsApp</a>
+    </div>
+</section>
+
+
+<section class="card">
+    <h2>Sem cobertura completa há mais tempo</h2>
+
+    {% for t in mais_tempo %}
+    {% set st = t.status(hoje) %}
+    <a class="linha" href="{{ url_for('territorios.detalhe', territorio_id=t.id) }}">
+        <span class="num">{{ '%02d' % t.numero }}</span>
+        <span class="linha-texto">
+            <strong>{{ t.nome }}</strong>
+            <small>
+                {% if completas.get(t.id) %}
+                    Última completa em {{ completas[t.id].strftime('%d/%m/%Y') }}
+                {% else %}
+                    Nunca concluído no sistema
+                {% endif %}
+            </small>
+        </span>
+        <span class="status {{ st }}">{{ status_nomes[st] }}</span>
+    </a>
+    {% else %}
+    <div class="empty">Nenhum território cadastrado.</div>
+    {% endfor %}
+</section>
+
+{% endblock %}
+
+
+{% block territorios_scripts %}
+<script>
+    document.getElementById("copiar").addEventListener("click", function () {
+        var botao = this;
+        var texto = document.getElementById("textoResumo").innerText;
+
+        function pronto() {
+            botao.textContent = "✓ Copiado!";
+            setTimeout(function () { botao.textContent = "📋 Copiar resumo"; }, 2000);
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(texto).then(pronto, function () { prompt("Copie o resumo:", texto); });
+        } else {
+            prompt("Copie o resumo:", texto);
+        }
+    });
+</script>
+{% endblock %}

@@ -762,6 +762,9 @@ class Territorio(db.Model):
     # Instruções que aparecem para quem for trabalhar
     observacoes = db.Column(db.Text, nullable=True)
 
+    # Ruas do território, uma por linha
+    ruas = db.Column(db.Text, nullable=True)
+
     ativo = db.Column(db.Boolean, default=True, nullable=False)
 
     criado_em = db.Column(db.DateTime, default=datetime.utcnow)
@@ -794,6 +797,10 @@ class Territorio(db.Model):
             if d.data_devolucao is not None
         ]
         return max(datas) if datas else None
+
+    @property
+    def lista_ruas(self):
+        return [r.strip() for r in (self.ruas or "").splitlines() if r.strip()]
 
     def status(self, hoje):
         """disponivel, em_campo ou vencido."""
@@ -885,6 +892,24 @@ class DesignacaoTerritorio(db.Model):
         nullable=True
     )
 
+    # Código secreto do link que o dirigente recebe (/t/<codigo>)
+    codigo = db.Column(db.String(40), nullable=True, unique=True)
+
+    # Quando o mapa foi mandado pelo WhatsApp
+    mapa_enviado_em = db.Column(db.DateTime, nullable=True)
+
+    trabalhos = db.relationship(
+        "TrabalhoTerritorio",
+        backref="designacao",
+        cascade="all, delete-orphan",
+        order_by="TrabalhoTerritorio.data"
+    )
+
+    @property
+    def cobertura(self):
+        """Maior % registrado nesta designação (0 se nada)."""
+        return max([t.percentual for t in self.trabalhos] + [0])
+
     @property
     def dirigente(self):
         if self.pessoa:
@@ -893,7 +918,7 @@ class DesignacaoTerritorio(db.Model):
 
 
 class DirigenteTerritorio(db.Model):
-    """Pessoas que podem receber territórios (escolhidas em Ajustes)."""
+    """Pessoas que podem receber territórios (aba Dirigentes)."""
 
     __tablename__ = "dirigente_territorio"
 
@@ -904,3 +929,58 @@ class DirigenteTerritorio(db.Model):
     )
 
     pessoa = db.relationship("Pessoa")
+
+    # Só números, com DDD. Ex.: 19999998888
+    whatsapp = db.Column(db.String(20), nullable=True)
+
+    @property
+    def whatsapp_formatado(self):
+        n = self.whatsapp or ""
+        if len(n) == 11:
+            return f"({n[:2]}) {n[2:7]}-{n[7:]}"
+        if len(n) == 10:
+            return f"({n[:2]}) {n[2:6]}-{n[6:]}"
+        return n
+
+
+class TrabalhoTerritorio(db.Model):
+    """
+    Registro de quanto do território já foi trabalhado.
+    O percentual é acumulado: 50 quer dizer que metade
+    do território já está feita até aquela data.
+    """
+
+    __tablename__ = "trabalho_territorio"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    designacao_id = db.Column(
+        db.Integer,
+        db.ForeignKey("designacao_territorio.id"),
+        nullable=False
+    )
+
+    territorio_id = db.Column(
+        db.Integer,
+        db.ForeignKey("territorio.id"),
+        nullable=False
+    )
+
+    data = db.Column(db.Date, nullable=False)
+
+    percentual = db.Column(db.Integer, nullable=False)
+
+    observacao = db.Column(db.String(300), nullable=True)
+
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class ConfigTerritorio(db.Model):
+    """Ajustes gerais dos territórios (chave → valor)."""
+
+    __tablename__ = "config_territorio"
+
+    chave = db.Column(db.String(50), primary_key=True)
+
+    valor = db.Column(db.Text, nullable=True)
+

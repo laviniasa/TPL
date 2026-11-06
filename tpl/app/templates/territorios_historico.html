@@ -1,46 +1,51 @@
 {% extends "territorios_base.html" %}
-{% set aba = "historico" %}
 
-{% block title %}Histórico de territórios{% endblock %}
-{% block heading %}Histórico{% endblock %}
-{% block subheading %}Quem está com cada território e o que já foi trabalhado{% endblock %}
+{% block title %}Histórico de designações{% endblock %}
+{% block heading %}Histórico de designações{% endblock %}
+{% block subheading %}Todas as saídas e devoluções registradas{% endblock %}
 
 {% block territorios_css %}
 <style>
-    .dirigente {
-        padding: 12px 0;
+    .filtros {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .tabela-rolagem {
+        overflow-x: auto;
+        margin: 0 -18px;
+        padding: 0 18px;
+    }
+
+    .hist {
+        width: 100%;
+        min-width: 720px;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .hist th, .hist td {
+        padding: 10px 6px;
         border-bottom: 1px solid var(--border);
+        text-align: left;
+        white-space: nowrap;
     }
 
-    .dirigente:last-child { border-bottom: 0; }
-
-    .dirigente h3 {
-        margin: 0 0 8px;
-        font-size: 15px;
-    }
-
-    .pilulas {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-
-    .pilula {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 10px;
-        border-radius: 10px;
-        background: var(--st-em_campo-bg);
-        color: var(--st-em_campo);
-        font-size: 12px;
+    .hist th {
+        font-size: 11px;
         font-weight: 800;
-        text-decoration: none;
+        letter-spacing: .4px;
+        text-transform: uppercase;
+        color: var(--muted);
     }
 
-    .pilula.vencido {
-        background: var(--st-vencido-bg);
-        color: var(--st-vencido);
+    .hist td a { color: var(--blue); font-weight: 800; text-decoration: none; }
+
+    .hist .status.devolvido { color: #475467; background: #f2f4f7; }
+
+    @media (max-width: 420px) {
+        .filtros { grid-template-columns: 1fr; }
     }
 </style>
 {% endblock %}
@@ -49,58 +54,89 @@
 {% block territorios_content %}
 
 <section class="card">
-    <h2>👤 Com os dirigentes agora</h2>
-
-    {% if por_dirigente %}
-        {% for nome, lista in por_dirigente %}
-        <div class="dirigente">
-            <h3>{{ nome }}</h3>
-            <div class="pilulas">
-                {% for d in lista %}
-                {% set vencido = d.prazo and d.prazo < hoje %}
-                <a class="pilula {{ 'vencido' if vencido }}"
-                   href="{{ url_for('territorios.detalhe', territorio_id=d.territorio.id) }}">
-                    {{ d.territorio.numero }} · {{ d.territorio.nome }}
-                    — {{ 'venceu' if vencido else 'até' }} {{ d.prazo.strftime('%d/%m') if d.prazo else '—' }}
-                </a>
-                {% endfor %}
+    <form method="GET" id="filtros">
+        <div class="filtros">
+            <div class="field">
+                <label for="territorio">Território</label>
+                <select id="territorio" name="territorio" onchange="this.form.submit()">
+                    <option value="">Todos os territórios</option>
+                    {% for t in todos %}
+                    <option value="{{ t.id }}" {% if t.id == territorio_id %}selected{% endif %}>
+                        Território {{ '%02d' % t.numero }} · {{ t.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="situacao">Situação</label>
+                <select id="situacao" name="situacao" onchange="this.form.submit()">
+                    <option value="" {% if not situacao %}selected{% endif %}>Todas as situações</option>
+                    <option value="em_campo" {% if situacao == 'em_campo' %}selected{% endif %}>Em campo</option>
+                    <option value="vencido" {% if situacao == 'vencido' %}selected{% endif %}>Prazo vencido</option>
+                    <option value="devolvido" {% if situacao == 'devolvido' %}selected{% endif %}>Devolvidos</option>
+                </select>
             </div>
         </div>
-        {% endfor %}
-    {% else %}
-        <div class="empty">Nenhum território em campo no momento.</div>
-    {% endif %}
+        <noscript><button type="submit" class="btn btn-soft" style="margin-top: 10px;">Filtrar</button></noscript>
+    </form>
+
+    <div class="acoes">
+        <a class="btn btn-soft"
+           href="{{ url_for('territorios.historico_csv', territorio=territorio_id or '', situacao=situacao) }}">
+            📊 Exportar planilha (CSV)
+        </a>
+    </div>
 </section>
 
 
 <section class="card">
-    <h2>🕘 Todas as designações</h2>
-    <p class="hint">As mais recentes primeiro.</p>
-
     {% if designacoes %}
-        {% for d in designacoes %}
-        <a class="linha" href="{{ url_for('territorios.detalhe', territorio_id=d.territorio.id) }}">
-            <span class="num">{{ d.territorio.numero }}</span>
-            <span class="linha-texto">
-                <strong>{{ d.territorio.nome }}</strong>
-                <small>
-                    {{ d.dirigente }} · saiu {{ d.data_saida.strftime('%d/%m/%Y') }}
-                    {% if d.data_devolucao %}· devolvido {{ d.data_devolucao.strftime('%d/%m/%Y') }}{% endif %}
-                </small>
-            </span>
-            {% if not d.data_devolucao %}
-                {% if d.prazo and d.prazo < hoje %}
-                <span class="status vencido">Vencido</span>
-                {% else %}
-                <span class="status em_campo">Em campo</span>
-                {% endif %}
-            {% else %}
-                <span class="status disponivel">Devolvido</span>
-            {% endif %}
-        </a>
-        {% endfor %}
+    <p class="hint">{{ designacoes|length }} registro{{ 's' if designacoes|length != 1 }}</p>
+
+    <div class="tabela-rolagem">
+        <table class="hist">
+            <thead>
+                <tr>
+                    <th>Terr.</th>
+                    <th>Dirigente</th>
+                    <th>Entregue</th>
+                    <th>Prazo</th>
+                    <th>Envio do mapa</th>
+                    <th>Devolvido</th>
+                    <th>Cobertura</th>
+                    <th>Situação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in designacoes %}
+                {% set sit = situacoes[d.id] %}
+                <tr>
+                    <td><a href="{{ url_for('territorios.detalhe', territorio_id=d.territorio_id) }}">{{ '%02d' % d.territorio.numero }}</a></td>
+                    <td>{{ d.dirigente }}</td>
+                    <td>{{ d.data_saida.strftime('%d/%m/%y') }}</td>
+                    <td>{{ d.prazo.strftime('%d/%m/%y') if d.prazo else '—' }}</td>
+                    <td>{{ d.mapa_enviado_em.strftime('%d/%m/%y') if d.mapa_enviado_em else '—' }}</td>
+                    <td>{{ d.data_devolucao.strftime('%d/%m/%y') if d.data_devolucao else '—' }}</td>
+                    <td>{{ (d.cobertura ~ '%') if d.cobertura else '—' }}</td>
+                    <td>
+                        <span class="status {{ sit }}">
+                            {{ {'devolvido': 'Devolvido', 'em_campo': 'Em campo', 'vencido': 'Vencido'}[sit] }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% else %}
-        <div class="empty">Nenhuma designação registrada ainda.</div>
+    <div class="empty">
+        {% if territorio_id or situacao %}
+            Nenhuma designação com esses filtros.
+        {% else %}
+            Nenhuma designação registrada ainda.
+            Abra um território disponível e toque em "Designar" para começar.
+        {% endif %}
+    </div>
     {% endif %}
 </section>
 

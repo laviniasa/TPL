@@ -1,13 +1,11 @@
 {% extends "territorios_base.html" %}
-{% set aba = "" %}
 
-{% block title %}{{ territorio.numero }} — {{ territorio.nome }}{% endblock %}
-{% block heading %}{{ territorio.numero }} — {{ territorio.nome }}{% endblock %}
+{% block title %}Território {{ '%02d' % territorio.numero }}{% endblock %}
+{% block heading %}Território {{ '%02d' % territorio.numero }} · {{ territorio.nome }}{% endblock %}
 {% block subheading %}{{ territorio.etiqueta or "Território" }}{% if not territorio.ativo %} · inativo{% endif %}{% endblock %}
 
 {% block territorios_css %}
 <style>
-
     .topo-status {
         display: flex;
         align-items: center;
@@ -16,9 +14,11 @@
         margin-bottom: 12px;
     }
 
+    .topo-status h2 { margin: 0; }
+
     .dados {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 10px;
         margin: 4px 0 6px;
     }
@@ -37,8 +37,49 @@
     }
 
     .dados strong { font-size: 14px; }
-
     .dados .vencido strong { color: var(--st-vencido); }
+    .dados .ok strong { color: var(--st-disponivel); }
+
+    .progresso {
+        height: 10px;
+        margin: 10px 0 4px;
+        border-radius: 999px;
+        background: #edf1f5;
+        overflow: hidden;
+    }
+
+    .progresso div {
+        height: 100%;
+        border-radius: 999px;
+        background: var(--blue);
+    }
+
+    .envio {
+        margin: 14px 0 4px;
+        padding: 14px;
+        border-radius: 14px;
+        background: #effaf3;
+        border: 1px solid #c9ecd5;
+    }
+
+    .envio.feito { background: #f7f9fc; border-color: var(--border); }
+
+    .envio p { margin: 0 0 10px; font-size: 13px; }
+
+    .btn-whats {
+        background: #25d366;
+        color: #fff;
+    }
+
+    .btn-whats:hover { background: #1ebe5a; }
+
+    .bloco {
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border);
+    }
+
+    .bloco h3 { margin: 0 0 8px; font-size: 14px; }
 
     .observacoes {
         white-space: pre-line;
@@ -48,6 +89,16 @@
     }
 
     .observacoes a { color: var(--blue); }
+
+    .ruas {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: 14px;
+        line-height: 1.8;
+    }
+
+    .ruas li::before { content: "•"; margin-right: 8px; color: var(--muted); }
 
     .quadra-num {
         flex: 0 0 auto;
@@ -61,8 +112,10 @@
         font-weight: 900;
     }
 
+    .hist { width: 100%; border-collapse: collapse; }
+
     .hist td, .hist th {
-        padding: 9px 6px;
+        padding: 9px 4px;
         border-bottom: 1px solid var(--border);
         font-size: 13px;
         text-align: left;
@@ -70,19 +123,13 @@
 
     .hist th { color: var(--muted); font-size: 11px; }
 
-    .hist { width: 100%; border-collapse: collapse; }
-
-    .mini-form {
-        display: inline;
-    }
-
     .link-x {
         border: 0;
         background: none;
         color: var(--muted);
-        font-size: 16px;
+        font-size: 18px;
         cursor: pointer;
-        padding: 4px;
+        padding: 2px 6px;
     }
 
     details summary {
@@ -93,10 +140,17 @@
         margin-top: 12px;
     }
 
-    @media (max-width: 560px) {
-        .dados { grid-template-columns: 1fr 1fr; }
+    .trab {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 0;
+        font-size: 13px;
+        border-bottom: 1px dashed var(--border);
     }
 
+    .trab:last-child { border-bottom: 0; }
+    .trab span { flex: 1; }
 </style>
 {% endblock %}
 
@@ -125,11 +179,9 @@
 
 
 <!-- DESIGNAÇÃO -->
-<section class="card">
-    {% set atual = territorio.designacao_atual %}
-
+<section class="card" id="designacao">
     <div class="topo-status">
-        <h2>Designação</h2>
+        <h2>{{ 'Em campo' if atual else 'Disponível para designar' }}</h2>
         <span class="status {{ status }}">{{ status_nomes[status] }}</span>
     </div>
 
@@ -141,77 +193,163 @@
                 <strong>{{ atual.dirigente }}</strong>
             </div>
             <div>
-                <small>Saiu em</small>
+                <small>Entregue em</small>
                 <strong>{{ atual.data_saida.strftime('%d/%m/%Y') }}</strong>
             </div>
             <div class="{{ 'vencido' if status == 'vencido' }}">
                 <small>Prazo</small>
                 <strong>{{ atual.prazo.strftime('%d/%m/%Y') if atual.prazo else '—' }}</strong>
             </div>
+            <div class="{{ 'ok' if atual.cobertura >= 100 }}">
+                <small>Trabalhado</small>
+                <strong>{{ atual.cobertura }}%</strong>
+            </div>
         </div>
 
+        <div class="progresso" aria-hidden="true"><div style="width: {{ atual.cobertura }}%"></div></div>
+
         {% if atual.observacao %}
-        <p class="hint">📝 {{ atual.observacao }}</p>
+        <p class="hint" style="margin-top: 8px;">📝 {{ atual.observacao }}</p>
         {% endif %}
 
-        <form method="POST" action="{{ url_for('territorios.devolver', territorio_id=territorio.id) }}">
-            <div class="grid-2" style="margin-top: 12px; align-items: end;">
-                <div class="field">
-                    <label for="data_devolucao">Data da devolução</label>
-                    <input type="date" id="data_devolucao" name="data_devolucao"
-                           value="{{ hoje.isoformat() }}" min="{{ atual.data_saida.isoformat() }}" required>
-                </div>
-                <button type="submit" class="btn btn-primary" style="height: 44px;">✅ Registrar devolução</button>
+        <!-- ENVIO DO MAPA -->
+        <div class="envio {{ 'feito' if atual.mapa_enviado_em }}">
+            {% if atual.mapa_enviado_em %}
+            <p>✅ Mapa enviado em {{ atual.mapa_enviado_em.strftime('%d/%m/%Y') }}.</p>
+            {% else %}
+            <p><strong>Envie o mapa para {{ atual.dirigente }}.</strong>
+               {% if not whatsapp_atual %}
+               <br>Sem WhatsApp cadastrado: o WhatsApp vai abrir para você escolher o contato.
+               {% endif %}
+            </p>
+            {% endif %}
+            <div class="acoes" style="margin-top: 0;">
+                <a class="btn btn-whats" id="btnWhats" href="{{ url_for('territorios.enviar_whatsapp', designacao_id=atual.id) }}" target="_blank" rel="noopener">
+                    📲 {{ 'Enviar de novo' if atual.mapa_enviado_em else 'Enviar pelo WhatsApp' }}
+                </a>
+                <button type="button" class="btn btn-neutral" id="copiarLink" data-link="{{ link_da_ficha }}">🔗 Copiar link do mapa</button>
             </div>
-        </form>
+        </div>
 
-        <details>
-            <summary>Prorrogar prazo</summary>
-            <form method="POST" action="{{ url_for('territorios.alterar_prazo', territorio_id=territorio.id) }}">
-                <div class="grid-2" style="margin-top: 10px; align-items: end;">
+        <!-- REGISTRAR TRABALHO -->
+        <div class="bloco">
+            <h3>Registrar trabalho</h3>
+            {% if atual.cobertura >= 100 %}
+            <p class="hint" style="margin: 0;">✅ Território concluído. Falta só registrar a devolução.</p>
+            {% else %}
+            <form method="POST" action="{{ url_for('territorios.trabalho', territorio_id=territorio.id) }}">
+                <div class="grid-2">
                     <div class="field">
-                        <label for="novo_prazo">Novo prazo</label>
-                        <input type="date" id="novo_prazo" name="prazo"
-                               value="{{ atual.prazo.isoformat() if atual.prazo else '' }}"
+                        <label for="percentual">Quanto já foi feito</label>
+                        <select id="percentual" name="percentual" required>
+                            {% for p in percentuais %}
+                            {% if p > atual.cobertura %}
+                            <option value="{{ p }}">{{ 'Concluído (100%)' if p == 100 else p ~ '%' }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="data_trab">Data</label>
+                        <input type="date" id="data_trab" name="data" value="{{ hoje.isoformat() }}"
                                min="{{ atual.data_saida.isoformat() }}" required>
                     </div>
-                    <button type="submit" class="btn btn-soft" style="height: 44px;">Salvar prazo</button>
+                </div>
+                <div class="acoes">
+                    <button type="submit" class="btn btn-soft">➕ Registrar</button>
                 </div>
             </form>
-        </details>
+            {% endif %}
+
+            {% if atual.trabalhos %}
+            <div style="margin-top: 10px;">
+                {% for t in atual.trabalhos %}
+                <div class="trab">
+                    <span>{{ t.data.strftime('%d/%m/%Y') }} — <strong>{{ t.percentual }}%</strong>{% if t.observacao %} · {{ t.observacao }}{% endif %}</span>
+                    <form method="POST" action="{{ url_for('territorios.excluir_trabalho', trabalho_id=t.id) }}"
+                          onsubmit="return confirm('Apagar este registro?');">
+                        <button type="submit" class="link-x" aria-label="Apagar registro">×</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- DEVOLVER -->
+        <div class="bloco">
+            <h3>Devolução</h3>
+            <form method="POST" action="{{ url_for('territorios.devolver', territorio_id=territorio.id) }}">
+                <div class="grid-2">
+                    <div class="field">
+                        <label for="data_devolucao">Data da devolução</label>
+                        <input type="date" id="data_devolucao" name="data_devolucao"
+                               value="{{ hoje.isoformat() }}" min="{{ atual.data_saida.isoformat() }}" required>
+                    </div>
+                    <div class="field">
+                        <label for="perc_final">Quanto foi trabalhado</label>
+                        <select id="perc_final" name="percentual">
+                            {% for p in percentuais|reverse %}
+                            {% if p >= atual.cobertura %}
+                            <option value="{{ p }}">{{ 'Tudo (100%)' if p == 100 else p ~ '%' }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="acoes">
+                    <button type="submit" class="btn btn-primary">✅ Registrar devolução</button>
+                </div>
+            </form>
+
+            <details>
+                <summary>Prorrogar prazo</summary>
+                <form method="POST" action="{{ url_for('territorios.alterar_prazo', territorio_id=territorio.id) }}">
+                    <div class="grid-2" style="margin-top: 10px; align-items: end;">
+                        <div class="field">
+                            <label for="novo_prazo">Novo prazo</label>
+                            <input type="date" id="novo_prazo" name="prazo"
+                                   value="{{ atual.prazo.isoformat() if atual.prazo else '' }}"
+                                   min="{{ atual.data_saida.isoformat() }}" required>
+                        </div>
+                        <button type="submit" class="btn btn-soft" style="height: 44px;">Salvar prazo</button>
+                    </div>
+                </form>
+            </details>
+        </div>
 
     {% else %}
 
         <p class="hint">
             {% if territorio.ultima_devolucao %}
-                Última vez trabalhado em {{ territorio.ultima_devolucao.strftime('%d/%m/%Y') }}.
+                Última devolução em {{ territorio.ultima_devolucao.strftime('%d/%m/%Y') }}.
             {% else %}
-                Este território ainda não foi trabalhado.
+                Ainda não há designação registrada.
             {% endif %}
         </p>
 
-        <form method="POST" action="{{ url_for('territorios.designar', territorio_id=territorio.id) }}">
-            {% if not dirigentes_configurados %}
-            <p class="hint">
-                Aparecem todas as pessoas.
-                <a href="{{ url_for('territorios.ajustes') }}">Escolha os dirigentes em Ajustes</a>
-                para mostrar só quem participa.
-            </p>
-            {% endif %}
+        {% if not dirigentes_configurados %}
+        <p class="hint">
+            Aparecem todas as pessoas.
+            <a href="{{ url_for('territorios.dirigentes') }}">Cadastre os dirigentes</a>
+            para mostrar só quem participa.
+        </p>
+        {% endif %}
 
+        <form method="POST" action="{{ url_for('territorios.designar', territorio_id=territorio.id) }}">
             <div class="field" style="margin-bottom: 12px;">
                 <label for="pessoa_id">Dirigente</label>
                 <select id="pessoa_id" name="pessoa_id" required>
                     <option value="">Escolha...</option>
                     {% for pessoa in pessoas %}
-                    <option value="{{ pessoa.id }}">{{ pessoa.nome }}</option>
+                    <option value="{{ pessoa.id }}">{{ pessoa.nome }}{{ ' 📱' if whatsapps.get(pessoa.id) }}</option>
                     {% endfor %}
                 </select>
             </div>
 
             <div class="grid-2">
                 <div class="field">
-                    <label for="data_saida">Data de saída</label>
+                    <label for="data_saida">Data de entrega</label>
                     <input type="date" id="data_saida" name="data_saida" value="{{ hoje.isoformat() }}" required>
                 </div>
                 <div class="field">
@@ -226,6 +364,11 @@
                        placeholder="Ex.: trabalhar só as quadras 1 a 5">
             </div>
 
+            <label style="display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 14px;">
+                <input type="checkbox" name="avisar_sininho" value="1" checked style="width: 18px; height: 18px;">
+                Avisar no sininho do app (se a pessoa tiver login)
+            </label>
+
             <div class="acoes">
                 <button type="submit" class="btn btn-primary">📤 Designar território</button>
             </div>
@@ -233,6 +376,17 @@
 
     {% endif %}
 </section>
+
+
+<!-- RUAS -->
+{% if territorio.lista_ruas %}
+<section class="card">
+    <h2>Ruas</h2>
+    <ul class="ruas" style="margin-top: 8px;">
+        {% for rua in territorio.lista_ruas %}<li>{{ rua }}</li>{% endfor %}
+    </ul>
+</section>
+{% endif %}
 
 
 <!-- INSTRUÇÕES -->
@@ -266,22 +420,36 @@
 {% endif %}
 
 
-<!-- HISTÓRICO -->
+<!-- COBERTURA SEMANAL -->
 <section class="card">
+    <h2>Cobertura semanal</h2>
+    <div class="faixa" style="margin-top: 10px;">
+        {% for c in celulas %}
+        <span class="cel {{ c.classe }}" title="{{ semanas[loop.index0].strftime('%d/%m') }}{{ (': ' ~ c.percentual ~ '%') if c.percentual else '' }}"></span>
+        {% endfor %}
+    </div>
+    <div class="faixa-rotulos"><span>12 semanas atrás</span><span>esta semana</span></div>
+</section>
+
+
+<!-- HISTÓRICO -->
+<section class="card" id="historico">
     <h2>Histórico</h2>
 
-    {% if territorio.designacoes %}
+    {% set anteriores = territorio.designacoes %}
+    {% if anteriores %}
     <table class="hist">
         <thead>
             <tr>
                 <th>Dirigente</th>
-                <th>Saída</th>
-                <th>Devolução</th>
+                <th>Entregue</th>
+                <th>Devolvido</th>
+                <th>Feito</th>
                 <th></th>
             </tr>
         </thead>
         <tbody>
-            {% for d in territorio.designacoes %}
+            {% for d in anteriores %}
             <tr>
                 <td>{{ d.dirigente }}</td>
                 <td>{{ d.data_saida.strftime('%d/%m/%y') }}</td>
@@ -292,9 +460,9 @@
                         <span class="status {{ status }}">{{ 'Vencido' if status == 'vencido' else 'Em campo' }}</span>
                     {% endif %}
                 </td>
+                <td>{{ (d.cobertura ~ '%') if d.cobertura else '—' }}</td>
                 <td style="text-align: right;">
-                    <form class="mini-form" method="POST"
-                          action="{{ url_for('territorios.excluir_designacao', designacao_id=d.id) }}"
+                    <form method="POST" action="{{ url_for('territorios.excluir_designacao', designacao_id=d.id) }}"
                           onsubmit="return confirm('Apagar este registro do histórico?');">
                         <button type="submit" class="link-x" aria-label="Apagar registro">×</button>
                     </form>
@@ -304,7 +472,7 @@
         </tbody>
     </table>
     {% else %}
-    <div class="empty">Nenhuma designação registrada.</div>
+    <div class="empty">Nenhuma designação anterior.</div>
     {% endif %}
 </section>
 
@@ -320,8 +488,36 @@
 
 
 {% block territorios_scripts %}
-{% if area %}
 <script>
+    // Depois de abrir o WhatsApp, atualiza a página para mostrar "enviado"
+    var botaoWhats = document.getElementById("btnWhats");
+
+    if (botaoWhats) {
+        botaoWhats.addEventListener("click", function () {
+            setTimeout(function () { window.location.reload(); }, 2500);
+        });
+    }
+
+    var botaoCopiar = document.getElementById("copiarLink");
+
+    if (botaoCopiar) {
+        botaoCopiar.addEventListener("click", function () {
+            var link = botaoCopiar.dataset.link;
+
+            function pronto() {
+                botaoCopiar.textContent = "✓ Link copiado!";
+                setTimeout(function () { botaoCopiar.textContent = "🔗 Copiar link do mapa"; }, 2000);
+            }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(link).then(pronto, function () { prompt("Copie o link:", link); });
+            } else {
+                prompt("Copie o link:", link);
+            }
+        });
+    }
+
+    {% if area %}
     var area = {{ area|tojson }};
     var quadras = {{ quadras_mapa|tojson }};
     var cor = TPL_CORES[{{ status|tojson }}];
@@ -342,6 +538,6 @@
     });
 
     if (limites.isValid()) mapa.fitBounds(limites, { padding: [20, 20] });
+    {% endif %}
 </script>
-{% endif %}
 {% endblock %}

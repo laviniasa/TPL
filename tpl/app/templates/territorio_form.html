@@ -1,5 +1,4 @@
 {% extends "territorios_base.html" %}
-{% set aba = "novo" if not territorio else "" %}
 
 {% block title %}{{ "Editar território" if territorio else "Novo território" }}{% endblock %}
 {% block heading %}{{ "Editar território " ~ territorio.numero if territorio else "Novo território" }}{% endblock %}
@@ -130,6 +129,12 @@
                 <option value="{{ e }}" {% if territorio and territorio.etiqueta == e %}selected{% endif %}>{{ e }}</option>
                 {% endfor %}
             </select>
+        </div>
+
+        <div class="field" style="margin-top: 12px;">
+            <label for="ruas">Ruas (uma por linha)</label>
+            <textarea id="ruas" name="ruas"
+                      placeholder="Rua Joaquim Pinto de Andrade&#10;Rua Ruy Barbosa&#10;Rua José Dias">{{ territorio.ruas if territorio and territorio.ruas else '' }}</textarea>
         </div>
 
         <div class="field" style="margin-top: 12px;">

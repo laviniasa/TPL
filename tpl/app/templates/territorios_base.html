@@ -189,6 +189,107 @@
         margin-top: 14px;
     }
 
+    /* ---------- Faixa de cobertura por semana ---------- */
+
+    .faixa {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+        gap: 3px;
+    }
+
+    .cel {
+        height: 14px;
+        border-radius: 4px;
+        background: #edf1f5;
+    }
+
+    .cel.parcial { background: #b9dcf7; }
+    .cel.metade { background: #5aa9e6; }
+    .cel.completo { background: #0875c9; }
+    .cel.campo {
+        background: repeating-linear-gradient(45deg, #edf1f5 0 4px, #cfe3f5 4px 8px);
+    }
+
+    .faixa-rotulos {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 3px;
+        font-size: 10px;
+        color: var(--muted);
+    }
+
+    .legenda-cob {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 12px;
+        font-size: 12px;
+        color: var(--muted);
+    }
+
+    .legenda-cob span { display: inline-flex; align-items: center; gap: 5px; }
+    .legenda-cob .cel { width: 14px; height: 14px; }
+
+    /* ---------- Cartões de número ---------- */
+
+    .numeros {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .numero-card {
+        display: block;
+        padding: 14px;
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        background: #fff;
+        box-shadow: var(--shadow);
+        color: var(--text);
+        text-decoration: none;
+    }
+
+    .numero-card.largo { grid-column: 1 / -1; }
+
+    .numero-card small {
+        display: block;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .6px;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+
+    .numero-card strong {
+        display: block;
+        margin: 6px 0 2px;
+        font-size: 30px;
+        line-height: 1;
+    }
+
+    .numero-card strong em {
+        font-style: normal;
+        font-size: 18px;
+        color: var(--muted);
+        font-weight: 700;
+    }
+
+    .numero-card span { font-size: 13px; color: var(--muted); }
+
+    .numero-card.vencido strong { color: var(--st-vencido); }
+    .numero-card.em_campo strong { color: var(--st-em_campo); }
+    .numero-card.disponivel strong { color: var(--st-disponivel); }
+
+    .secao-titulo {
+        margin: 14px 0 4px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .6px;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+
     @media (max-width: 560px) {
         .grid-2 { grid-template-columns: 1fr; }
         .mapa { height: 300px; }
@@ -202,12 +303,13 @@
 
 {% block content %}
 
-<nav class="tabs" aria-label="Territórios">
-    <a class="tab {% if aba == 'painel' %}ativa{% endif %}" href="{{ url_for('territorios.painel') }}">🗺️ Painel</a>
-    <a class="tab {% if aba == 'historico' %}ativa{% endif %}" href="{{ url_for('territorios.historico') }}">🕘 Histórico</a>
-    <a class="tab {% if aba == 'importar' %}ativa{% endif %}" href="{{ url_for('territorios.importar') }}">📥 Importar</a>
-    <a class="tab {% if aba == 'ajustes' %}ativa{% endif %}" href="{{ url_for('territorios.ajustes') }}">⚙️ Ajustes</a>
-    <a class="tab nova {% if aba == 'novo' %}ativa{% endif %}" href="{{ url_for('territorios.novo') }}">＋ Novo</a>
+<nav class="tabs" aria-label="Seções de territórios">
+    <a class="tab {% if aba == 'painel' %}ativa{% endif %}" href="{{ url_for('territorios.painel') }}">Painel</a>
+    <a class="tab {% if aba == 'lista' %}ativa{% endif %}" href="{{ url_for('territorios.lista') }}">Territórios</a>
+    <a class="tab {% if aba == 'cobertura' %}ativa{% endif %}" href="{{ url_for('territorios.cobertura') }}">Cobertura semanal</a>
+    <a class="tab {% if aba == 'dirigentes' %}ativa{% endif %}" href="{{ url_for('territorios.dirigentes') }}">Dirigentes</a>
+    <a class="tab {% if aba == 'historico' %}ativa{% endif %}" href="{{ url_for('territorios.historico') }}">Histórico</a>
+    <a class="tab nova {% if aba == 'ajustes' %}ativa{% endif %}" href="{{ url_for('territorios.ajustes') }}">⚙️ Ajustes</a>
 </nav>
 
 {% block territorios_content %}{% endblock %}

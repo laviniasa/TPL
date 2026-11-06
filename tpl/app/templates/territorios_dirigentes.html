@@ -1,0 +1,227 @@
+{% extends "territorios_base.html" %}
+
+{% block title %}Dirigentes de campo{% endblock %}
+{% block heading %}Dirigentes de campo{% endblock %}
+{% block subheading %}Quem recebe os territórios{% endblock %}
+
+{% block territorios_css %}
+<style>
+    .dirigente {
+        padding: 14px 4px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .dirigente:last-child { border-bottom: 0; }
+
+    .dirigente h3 {
+        margin: 0;
+        font-size: 16px;
+    }
+
+    .dirigente .info {
+        margin: 4px 0 0;
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.6;
+    }
+
+    .dirigente .info a { color: var(--blue); font-weight: 700; text-decoration: none; }
+
+    .pilulas {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+    }
+
+    .pilula {
+        padding: 4px 9px;
+        border-radius: 9px;
+        background: var(--st-em_campo-bg);
+        color: var(--st-em_campo);
+        font-size: 12px;
+        font-weight: 800;
+        text-decoration: none;
+    }
+
+    .pilula.vencido {
+        background: var(--st-vencido-bg);
+        color: var(--st-vencido);
+    }
+
+    .editar {
+        margin-top: 10px;
+        padding: 12px;
+        border-radius: 12px;
+        background: #f7f9fc;
+    }
+
+    .editar[hidden] { display: none; }
+
+    .lista-pessoas {
+        max-height: 320px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 4px 10px;
+    }
+
+    .lista-pessoas label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .lista-pessoas label:last-child { border-bottom: 0; }
+
+    .lista-pessoas input { width: 20px; height: 20px; accent-color: var(--blue); }
+
+    details summary {
+        cursor: pointer;
+        color: var(--blue);
+        font-size: 13px;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
+
+{% block territorios_content %}
+
+<p class="hint" style="margin: 0 0 14px;">
+    Só as pessoas desta lista aparecem na hora de designar um território.
+    Cadastre o WhatsApp para enviar os mapas com um toque.
+</p>
+
+
+<!-- NOVO DIRIGENTE -->
+<section class="card">
+    <h2>＋ Novo dirigente</h2>
+
+    {% if outras_pessoas %}
+    <form method="POST" action="{{ url_for('territorios.adicionar_dirigentes') }}">
+        <div class="field">
+            <label for="novoPessoa">Pessoa</label>
+            <select id="novoPessoa" name="pessoa_id" required>
+                <option value="">Escolha...</option>
+                {% for p in outras_pessoas %}
+                <option value="{{ p.id }}">{{ p.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="field" style="margin-top: 10px;">
+            <label for="novoWhats">WhatsApp (opcional)</label>
+            <input type="tel" id="novoWhats" name="whatsapp" inputmode="tel" placeholder="(19) 99999-8888">
+        </div>
+        <div class="acoes">
+            <button type="submit" class="btn btn-primary">Adicionar</button>
+        </div>
+    </form>
+
+    <details style="margin-top: 14px;">
+        <summary>Adicionar várias pessoas de uma vez</summary>
+        <form method="POST" action="{{ url_for('territorios.adicionar_dirigentes') }}" style="margin-top: 10px;">
+            <div class="lista-pessoas">
+                {% for p in outras_pessoas %}
+                <label><input type="checkbox" name="pessoa_id" value="{{ p.id }}">{{ p.nome }}</label>
+                {% endfor %}
+            </div>
+            <div class="acoes">
+                <button type="submit" class="btn btn-primary">Adicionar marcadas</button>
+            </div>
+        </form>
+    </details>
+    {% else %}
+    <p class="hint" style="margin: 0;">
+        Todas as pessoas ativas já são dirigentes.
+        Para cadastrar alguém novo, use <a href="{{ url_for('routes.admin') }}">Administração → Pessoas</a>.
+    </p>
+    {% endif %}
+</section>
+
+
+<!-- LISTA -->
+<section class="card">
+    <h2>{{ dirigentes|length }} dirigente{{ 's' if dirigentes|length != 1 }}</h2>
+
+    {% if not dirigentes %}
+    <div class="empty">
+        Nenhum dirigente cadastrado ainda.<br>
+        Enquanto a lista estiver vazia, todas as pessoas aparecem ao designar.
+    </div>
+    {% endif %}
+
+    {% for d in dirigentes %}
+    {% set maos = em_maos.get(d.pessoa_id, []) %}
+    <div class="dirigente">
+        <h3>{{ d.pessoa.nome }}{% if not d.pessoa.ativo %} <span class="etiqueta">inativo</span>{% endif %}</h3>
+
+        <p class="info">
+            {% if d.whatsapp %}
+                📱 <a href="https://wa.me/55{{ d.whatsapp }}" target="_blank" rel="noopener">{{ d.whatsapp_formatado }}</a>
+            {% else %}
+                Sem WhatsApp cadastrado
+            {% endif %}
+            <br>
+            {{ total_historico.get(d.pessoa_id, 0) }} designaç{{ 'ão' if total_historico.get(d.pessoa_id, 0) == 1 else 'ões' }} no histórico
+        </p>
+
+        {% if maos %}
+        <div class="pilulas">
+            {% for des in maos %}
+            {% set venc = des.prazo and des.prazo < hoje %}
+            <a class="pilula {{ 'vencido' if venc }}" href="{{ url_for('territorios.detalhe', territorio_id=des.territorio_id) }}">
+                Terr. {{ '%02d' % des.territorio.numero }} · {{ 'venceu' if venc else 'até' }} {{ des.prazo.strftime('%d/%m') if des.prazo else '—' }}
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="info" style="margin-top: 2px;">Nenhum território em mãos</p>
+        {% endif %}
+
+        <div class="acoes" style="margin-top: 10px;">
+            {% if d.whatsapp %}
+            <a class="btn btn-soft" href="https://wa.me/55{{ d.whatsapp }}" target="_blank" rel="noopener">💬 Conversar</a>
+            {% endif %}
+            <button type="button" class="btn btn-neutral" data-editar="{{ d.pessoa_id }}">Editar</button>
+        </div>
+
+        <div class="editar" id="editar-{{ d.pessoa_id }}" hidden>
+            <form method="POST" action="{{ url_for('territorios.editar_dirigente', pessoa_id=d.pessoa_id) }}">
+                <div class="field">
+                    <label for="whats-{{ d.pessoa_id }}">WhatsApp</label>
+                    <input type="tel" id="whats-{{ d.pessoa_id }}" name="whatsapp" inputmode="tel"
+                           value="{{ d.whatsapp_formatado }}" placeholder="(19) 99999-8888">
+                </div>
+                <div class="acoes">
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+            <form method="POST" action="{{ url_for('territorios.remover_dirigente', pessoa_id=d.pessoa_id) }}"
+                  onsubmit="return confirm('Tirar esta pessoa da lista de dirigentes? O histórico continua.');"
+                  style="margin-top: 8px;">
+                <button type="submit" class="btn btn-danger">Tirar da lista de dirigentes</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</section>
+
+{% endblock %}
+
+
+{% block territorios_scripts %}
+<script>
+    document.querySelectorAll("[data-editar]").forEach(function (botao) {
+        botao.addEventListener("click", function () {
+            var caixa = document.getElementById("editar-" + botao.dataset.editar);
+            caixa.hidden = !caixa.hidden;
+            if (!caixa.hidden) caixa.querySelector("input[name=whatsapp]").focus();
+        });
+    });
+</script>
+{% endblock %}
