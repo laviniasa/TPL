@@ -1,10 +1,10 @@
-const CACHE_NAME = "tpl-static-v1";
+const CACHE_NAME = "tpl-static-v2";
 
 const STATIC_ASSETS = [
     "/static/css/style.css",
     "/static/manifest.json",
-    "/static/icons/icon-192.png",
-    "/static/icons/icon-512.png",
+    "/static/icons/android-192.png",
+    "/static/icons/android-512.png",
     "/static/imagens/carrinho_tpl.png"
 ];
 
