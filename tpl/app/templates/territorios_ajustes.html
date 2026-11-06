@@ -1,0 +1,188 @@
+{% extends "territorios_base.html" %}
+{% set aba = "ajustes" %}
+
+{% block title %}Ajustes de territórios{% endblock %}
+{% block heading %}Ajustes{% endblock %}
+{% block subheading %}Escolha quem pode ser dirigente de território{% endblock %}
+
+{% block territorios_css %}
+<style>
+
+    .topo-lista {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .topo-lista .contador {
+        margin-right: auto;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--muted);
+    }
+
+    .busca {
+        width: 100%;
+        height: 44px;
+        padding: 0 14px;
+        margin-bottom: 8px;
+        border: 1px solid #d5dde6;
+        border-radius: 12px;
+        font-size: 15px;
+    }
+
+    .pessoa {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 4px;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+    }
+
+    .pessoa:last-child { border-bottom: 0; }
+
+    .pessoa input {
+        flex: 0 0 auto;
+        width: 22px;
+        height: 22px;
+        accent-color: var(--blue);
+    }
+
+    .pessoa .nome {
+        flex: 1;
+        min-width: 0;
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    .pessoa small {
+        color: var(--st-em_campo);
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .salvar-fixo {
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+        padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px));
+        background: linear-gradient(180deg, rgba(243, 247, 251, 0), #f3f7fb 30%);
+    }
+
+    .salvar-fixo .btn { width: 100%; height: 48px; font-size: 15px; }
+
+</style>
+{% endblock %}
+
+
+{% block territorios_content %}
+
+<form method="POST">
+
+    <section class="card">
+        <h2>👤 Dirigentes</h2>
+        <p class="hint">
+            Marque quem pode receber territórios. Na hora de designar,
+            só as pessoas marcadas aparecem na lista.
+            {% if not escolhidos %}
+            <br><strong>Hoje ninguém está marcado, então aparecem todas as pessoas.</strong>
+            {% endif %}
+        </p>
+
+        {% if pessoas %}
+
+        <input class="busca" type="search" id="busca" placeholder="Buscar nome..." autocomplete="off">
+
+        <div class="topo-lista">
+            <span class="contador" id="contador"></span>
+            <button type="button" class="btn btn-neutral" id="marcarTodos">Marcar todos</button>
+            <button type="button" class="btn btn-neutral" id="desmarcarTodos">Desmarcar todos</button>
+        </div>
+
+        <div id="lista">
+            {% for pessoa in pessoas %}
+            <label class="pessoa" data-nome="{{ pessoa.nome|lower }}">
+                <input type="checkbox" name="dirigentes" value="{{ pessoa.id }}"
+                       {% if pessoa.id in escolhidos %}checked{% endif %}>
+                <span class="nome">{{ pessoa.nome }}</span>
+                {% if em_maos.get(pessoa.id) %}
+                <small>{{ em_maos[pessoa.id] }} em campo</small>
+                {% endif %}
+            </label>
+            {% endfor %}
+        </div>
+
+        <div class="empty" id="semResultado" hidden>Ninguém encontrado.</div>
+
+        {% else %}
+        <div class="empty">
+            Nenhuma pessoa cadastrada.
+            Cadastre em <a href="{{ url_for('routes.admin') }}">Administração → Pessoas</a>.
+        </div>
+        {% endif %}
+    </section>
+
+    {% if pessoas %}
+    <div class="salvar-fixo">
+        <button type="submit" class="btn btn-primary">💾 Salvar dirigentes</button>
+    </div>
+    {% endif %}
+
+</form>
+
+<p class="hint" style="text-align: center;">
+    Desmarcar alguém não mexe nos territórios que já estão com essa pessoa
+    nem no histórico.
+</p>
+
+{% endblock %}
+
+
+{% block territorios_scripts %}
+{% if pessoas %}
+<script>
+    var caixas = document.querySelectorAll("#lista input[type=checkbox]");
+    var linhas = document.querySelectorAll("#lista .pessoa");
+    var busca = document.getElementById("busca");
+
+    function contar() {
+        var marcados = 0;
+        caixas.forEach(function (c) { if (c.checked) marcados++; });
+        document.getElementById("contador").textContent =
+            marcados + " de " + caixas.length + " marcado" + (marcados !== 1 ? "s" : "");
+    }
+
+    function visiveis() {
+        return Array.prototype.filter.call(linhas, function (l) { return l.style.display !== "none"; });
+    }
+
+    function marcar(valor) {
+        // Só mexe nos que aparecem na busca
+        visiveis().forEach(function (l) { l.querySelector("input").checked = valor; });
+        contar();
+    }
+
+    document.getElementById("marcarTodos").addEventListener("click", function () { marcar(true); });
+    document.getElementById("desmarcarTodos").addEventListener("click", function () { marcar(false); });
+
+    caixas.forEach(function (c) { c.addEventListener("change", contar); });
+
+    busca.addEventListener("input", function () {
+        var termo = busca.value.trim().toLowerCase();
+        var total = 0;
+        linhas.forEach(function (l) {
+            var ok = !termo || l.dataset.nome.indexOf(termo) !== -1;
+            l.style.display = ok ? "" : "none";
+            if (ok) total++;
+        });
+        document.getElementById("semResultado").hidden = total > 0;
+    });
+
+    contar();
+</script>
+{% endif %}
+{% endblock %}

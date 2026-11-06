@@ -191,6 +191,14 @@
         </p>
 
         <form method="POST" action="{{ url_for('territorios.designar', territorio_id=territorio.id) }}">
+            {% if not dirigentes_configurados %}
+            <p class="hint">
+                Aparecem todas as pessoas.
+                <a href="{{ url_for('territorios.ajustes') }}">Escolha os dirigentes em Ajustes</a>
+                para mostrar só quem participa.
+            </p>
+            {% endif %}
+
             <div class="field" style="margin-bottom: 12px;">
                 <label for="pessoa_id">Dirigente</label>
                 <select id="pessoa_id" name="pessoa_id" required>

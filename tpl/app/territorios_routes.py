@@ -21,7 +21,8 @@ from app.models import (
     Pessoa,
     Territorio,
     QuadraTerritorio,
-    DesignacaoTerritorio
+    DesignacaoTerritorio,
+    DirigenteTerritorio
 )
 
 from app.routes import admin_required, hoje_sao_paulo
@@ -131,6 +132,22 @@ def dentro_do_poligono(lat, lng, poligono):
         j = i
 
     return dentro
+
+
+def dirigentes_disponiveis():
+    """
+    Pessoas que aparecem na hora de designar.
+    Se ninguém foi escolhido em Ajustes ainda, mostra todas.
+    Devolve (lista, configurado).
+    """
+    escolhidos = [d.pessoa_id for d in DirigenteTerritorio.query.all()]
+
+    consulta = Pessoa.query.filter_by(ativo=True)
+
+    if escolhidos:
+        consulta = consulta.filter(Pessoa.id.in_(escolhidos))
+
+    return consulta.order_by(Pessoa.nome).all(), bool(escolhidos)
 
 
 def dados_mapa(lista, hoje):
@@ -303,15 +320,11 @@ def detalhe(territorio_id):
 
     centro = centro_area(territorio.area)
 
-    pessoas = (
-        Pessoa.query
-        .filter_by(ativo=True)
-        .order_by(Pessoa.nome)
-        .all()
-    )
+    pessoas, dirigentes_configurados = dirigentes_disponiveis()
 
     return render_template(
         "territorio_detalhe.html",
+        dirigentes_configurados=dirigentes_configurados,
         territorio=territorio,
         status=territorio.status(hoje),
         status_nomes=STATUS_NOMES,
@@ -554,6 +567,64 @@ def excluir_designacao(designacao_id):
 
     flash("Registro removido do histórico.", "success")
     return redirect(url_for("territorios.detalhe", territorio_id=territorio_id))
+
+
+# =========================================================
+# AJUSTES (quem pode ser dirigente)
+# =========================================================
+
+@territorios.route("/ajustes", methods=["GET", "POST"])
+@admin_required
+def ajustes():
+    if request.method == "POST":
+        selecionados = set()
+
+        for valor in request.form.getlist("dirigentes"):
+            try:
+                selecionados.add(int(valor))
+            except ValueError:
+                pass
+
+        validos = {
+            p.id for p in Pessoa.query.filter(Pessoa.id.in_(selecionados)).all()
+        } if selecionados else set()
+
+        DirigenteTerritorio.query.delete()
+
+        for pessoa_id in validos:
+            db.session.add(DirigenteTerritorio(pessoa_id=pessoa_id))
+
+        db.session.commit()
+
+        if validos:
+            flash(
+                f"{len(validos)} dirigente{'s' if len(validos) != 1 else ''} "
+                f"selecionado{'s' if len(validos) != 1 else ''}.",
+                "success"
+            )
+        else:
+            flash("Nenhum dirigente marcado: todas as pessoas vão aparecer ao designar.", "warning")
+
+        return redirect(url_for("territorios.ajustes"))
+
+    pessoas = Pessoa.query.filter_by(ativo=True).order_by(Pessoa.nome).all()
+    escolhidos = {d.pessoa_id for d in DirigenteTerritorio.query.all()}
+
+    # Quantos territórios cada um tem em mãos agora
+    em_maos = {}
+
+    for designacao in DesignacaoTerritorio.query.filter(
+        DesignacaoTerritorio.data_devolucao.is_(None)
+    ).all():
+        if designacao.pessoa_id:
+            em_maos[designacao.pessoa_id] = em_maos.get(designacao.pessoa_id, 0) + 1
+
+    return render_template(
+        "territorios_ajustes.html",
+        pessoas=pessoas,
+        escolhidos=escolhidos,
+        em_maos=em_maos
+    )
 
 
 # =========================================================

@@ -49,7 +49,8 @@ from app.models import (
     Campanha,
     CampanhaHorario,
     FotoPessoa,
-    DesignacaoTerritorio
+    DesignacaoTerritorio,
+    DirigenteTerritorio
 )
 
 
@@ -1911,6 +1912,10 @@ def excluir_pessoa(pessoa_id):
     # então só desfaz a ligação com a pessoa.
     DesignacaoTerritorio.query.filter_by(pessoa_id=pessoa.id).update(
         {"pessoa_id": None}, synchronize_session=False
+    )
+
+    DirigenteTerritorio.query.filter_by(pessoa_id=pessoa.id).delete(
+        synchronize_session=False
     )
 
     if usuario:

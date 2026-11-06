@@ -890,3 +890,17 @@ class DesignacaoTerritorio(db.Model):
         if self.pessoa:
             return self.pessoa.nome
         return self.dirigente_nome or "—"
+
+
+class DirigenteTerritorio(db.Model):
+    """Pessoas que podem receber territórios (escolhidas em Ajustes)."""
+
+    __tablename__ = "dirigente_territorio"
+
+    pessoa_id = db.Column(
+        db.Integer,
+        db.ForeignKey("pessoa.id"),
+        primary_key=True
+    )
+
+    pessoa = db.relationship("Pessoa")
