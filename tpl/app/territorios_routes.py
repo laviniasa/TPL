@@ -1177,6 +1177,29 @@ def remover_dirigente(pessoa_id):
 
 
 # =========================================================
+# GESTÃO (página da Administração que junta Cobertura,
+# Histórico e Ajustes)
+# =========================================================
+
+@territorios.route("/gestao")
+@admin_required
+def gestao():
+    hoje = hoje_sao_paulo()
+
+    return render_template(
+        "territorios_gestao.html",
+        aba="gestao",
+        total_territorios=Territorio.query.filter_by(ativo=True).count(),
+        total_designacoes=DesignacaoTerritorio.query.count(),
+        em_campo=DesignacaoTerritorio.query.filter(
+            DesignacaoTerritorio.data_devolucao.is_(None)
+        ).count(),
+        prazo_padrao_dias=prazo_padrao_dias(),
+        hoje=hoje
+    )
+
+
+# =========================================================
 # HISTÓRICO
 # =========================================================
 

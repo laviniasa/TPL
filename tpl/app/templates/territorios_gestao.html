@@ -1,0 +1,102 @@
+{% extends "territorios_base.html" %}
+
+{% block title %}Territórios{% endblock %}
+{% block heading %}Territórios{% endblock %}
+{% block subheading %}Acompanhamento e ajustes{% endblock %}
+
+{% block territorios_css %}
+<style>
+    .opcao {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 18px;
+        margin-bottom: 12px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        background: #fff;
+        box-shadow: var(--shadow);
+        color: var(--text);
+        text-decoration: none;
+        transition: transform .15s ease;
+    }
+
+    .opcao:active { transform: scale(.98); }
+
+    .opcao .icone {
+        flex: 0 0 auto;
+        display: grid;
+        place-items: center;
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        background: var(--blue-light);
+        font-size: 26px;
+    }
+
+    .opcao .texto { flex: 1; min-width: 0; }
+
+    .opcao h2 { margin: 0; font-size: 17px; }
+
+    .opcao p {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+    }
+
+    .opcao .seta {
+        color: var(--muted);
+        font-size: 22px;
+    }
+
+    .rodape {
+        margin-top: 18px;
+        text-align: center;
+        font-size: 13px;
+    }
+
+    .rodape a { color: var(--blue); font-weight: 700; text-decoration: none; }
+</style>
+{% endblock %}
+
+
+{% block territorios_content %}
+
+<a class="opcao" href="{{ url_for('territorios.cobertura') }}">
+    <span class="icone">📈</span>
+    <span class="texto">
+        <h2>Cobertura semanal</h2>
+        <p>Quanto de cada território foi trabalhado por semana, com resumo para mandar no WhatsApp.</p>
+    </span>
+    <span class="seta">›</span>
+</a>
+
+<a class="opcao" href="{{ url_for('territorios.historico') }}">
+    <span class="icone">🕘</span>
+    <span class="texto">
+        <h2>Histórico</h2>
+        <p>
+            {{ total_designacoes }} designaç{{ 'ão' if total_designacoes == 1 else 'ões' }} registrada{{ 's' if total_designacoes != 1 }}
+            · {{ em_campo }} em campo agora. Com filtros e planilha.
+        </p>
+    </span>
+    <span class="seta">›</span>
+</a>
+
+<a class="opcao" href="{{ url_for('territorios.ajustes') }}">
+    <span class="icone">⚙️</span>
+    <span class="texto">
+        <h2>Ajustes</h2>
+        <p>Prazo padrão ({{ prazo_padrao_dias }} dias), assinatura das mensagens e backup.</p>
+    </span>
+    <span class="seta">›</span>
+</a>
+
+<p class="rodape">
+    Para designar e ver o mapa, use
+    <a href="{{ url_for('territorios.painel') }}">🗺️ Territórios</a>
+    no menu lateral.
+</p>
+
+{% endblock %}

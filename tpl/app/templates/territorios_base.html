@@ -1,8 +1,10 @@
 {% extends "admin_base.html" %}
 
 {% block back %}
-{% if aba in ['cobertura', 'historico', 'ajustes'] %}
+{% if aba == 'gestao' %}
 <a class="back-link" href="{{ url_for('routes.admin') }}">← Administração</a>
+{% elif aba in ['cobertura', 'historico', 'ajustes'] %}
+<a class="back-link" href="{{ url_for('territorios.gestao') }}">← Voltar</a>
 {% else %}
 <a class="back-link" href="{{ url_for('routes.agenda') }}">← Agenda</a>
 {% endif %}
@@ -307,7 +309,7 @@
 
 {% block content %}
 
-{% if aba not in ['cobertura', 'historico', 'ajustes'] %}
+{% if aba not in ['cobertura', 'historico', 'ajustes', 'gestao'] %}
 <nav class="tabs" aria-label="Seções de territórios">
     <a class="tab {% if aba == 'painel' %}ativa{% endif %}" href="{{ url_for('territorios.painel') }}">Painel</a>
     <a class="tab {% if aba == 'lista' %}ativa{% endif %}" href="{{ url_for('territorios.lista') }}">Territórios</a>
