@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import url_for
 from flask_sqlalchemy import SQLAlchemy
 
@@ -729,3 +731,162 @@ class FotoPessoa(db.Model):
         db.String(50),
         nullable=False
     )
+
+
+
+# =========================================================
+# TERRITÓRIOS
+#
+# Cada território tem uma área desenhada no mapa, quadras
+# numeradas (com link de rota) e um histórico de designações
+# (quem pegou, quando saiu, prazo e quando devolveu).
+# =========================================================
+
+class Territorio(db.Model):
+
+    __tablename__ = "territorio"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    numero = db.Column(db.Integer, nullable=False, unique=True)
+
+    nome = db.Column(db.String(150), nullable=False)
+
+    # Residencial, Comercial ou Rural (opcional)
+    etiqueta = db.Column(db.String(30), nullable=True)
+
+    # Área no mapa em JSON: lista de polígonos, cada um uma
+    # lista de pontos [lat, lng]. Ex.: [[[-22.7, -46.9], ...]]
+    area = db.Column(db.Text, nullable=True)
+
+    # Instruções que aparecem para quem for trabalhar
+    observacoes = db.Column(db.Text, nullable=True)
+
+    ativo = db.Column(db.Boolean, default=True, nullable=False)
+
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+
+    quadras = db.relationship(
+        "QuadraTerritorio",
+        backref="territorio",
+        cascade="all, delete-orphan",
+        order_by="QuadraTerritorio.ordem"
+    )
+
+    designacoes = db.relationship(
+        "DesignacaoTerritorio",
+        backref="territorio",
+        cascade="all, delete-orphan",
+        order_by="DesignacaoTerritorio.data_saida.desc()"
+    )
+
+    @property
+    def designacao_atual(self):
+        for designacao in self.designacoes:
+            if designacao.data_devolucao is None:
+                return designacao
+        return None
+
+    @property
+    def ultima_devolucao(self):
+        datas = [
+            d.data_devolucao for d in self.designacoes
+            if d.data_devolucao is not None
+        ]
+        return max(datas) if datas else None
+
+    def status(self, hoje):
+        """disponivel, em_campo ou vencido."""
+        atual = self.designacao_atual
+
+        if atual is None:
+            return "disponivel"
+
+        if atual.prazo and atual.prazo < hoje:
+            return "vencido"
+
+        return "em_campo"
+
+
+class QuadraTerritorio(db.Model):
+
+    __tablename__ = "quadra_territorio"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    territorio_id = db.Column(
+        db.Integer,
+        db.ForeignKey("territorio.id"),
+        nullable=False
+    )
+
+    ordem = db.Column(db.Integer, default=0, nullable=False)
+
+    numero = db.Column(db.String(20), nullable=False)
+
+    # Ex.: "Salão do Reino", "quadra pequena em frente à praça"
+    descricao = db.Column(db.String(200), nullable=True)
+
+    # Link do Google Maps para a quadra (opcional)
+    link = db.Column(db.String(500), nullable=True)
+
+    # Onde o número da quadra aparece no mapa (opcional)
+    lat = db.Column(db.Float, nullable=True)
+    lng = db.Column(db.Float, nullable=True)
+
+    @property
+    def link_rota(self):
+        if self.link:
+            return self.link
+        if self.lat is not None and self.lng is not None:
+            return (
+                "https://www.google.com/maps/dir/?api=1&destination="
+                f"{self.lat},{self.lng}"
+            )
+        return None
+
+
+class DesignacaoTerritorio(db.Model):
+
+    __tablename__ = "designacao_territorio"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    territorio_id = db.Column(
+        db.Integer,
+        db.ForeignKey("territorio.id"),
+        nullable=False
+    )
+
+    # Dirigente escolhido da lista de pessoas
+    pessoa_id = db.Column(
+        db.Integer,
+        db.ForeignKey("pessoa.id"),
+        nullable=True
+    )
+
+    pessoa = db.relationship("Pessoa")
+
+    # Nome guardado na hora da designação, para o histórico
+    # continuar certo mesmo se a pessoa for excluída depois.
+    dirigente_nome = db.Column(db.String(100), nullable=True)
+
+    data_saida = db.Column(db.Date, nullable=False)
+
+    prazo = db.Column(db.Date, nullable=True)
+
+    data_devolucao = db.Column(db.Date, nullable=True)
+
+    observacao = db.Column(db.String(300), nullable=True)
+
+    criado_por_id = db.Column(
+        db.Integer,
+        db.ForeignKey("usuario.id"),
+        nullable=True
+    )
+
+    @property
+    def dirigente(self):
+        if self.pessoa:
+            return self.pessoa.nome
+        return self.dirigente_nome or "—"

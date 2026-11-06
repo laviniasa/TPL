@@ -66,6 +66,9 @@ def create_app():
     from app.routes import routes
     app.register_blueprint(routes)
 
+    from app.territorios_routes import territorios
+    app.register_blueprint(territorios)
+
     # =========================
     # CRIAÇÃO DOS DADOS INICIAIS
     # =========================

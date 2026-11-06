@@ -1,0 +1,93 @@
+{% extends "territorios_base.html" %}
+{% set aba = "importar" %}
+
+{% block title %}Importar territórios{% endblock %}
+{% block heading %}Importar territórios{% endblock %}
+{% block subheading %}Traga os territórios que já estão prontos no Google My Maps{% endblock %}
+
+{% block territorios_css %}
+<style>
+    .passos {
+        margin: 0;
+        padding-left: 20px;
+        font-size: 14px;
+        line-height: 1.7;
+    }
+
+    .passos li { margin-bottom: 6px; }
+
+    .arquivo {
+        display: block;
+        width: 100%;
+        padding: 22px 14px;
+        border: 2px dashed #c9d6e3;
+        border-radius: 16px;
+        background: #fbfcfe;
+        text-align: center;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .arquivo input { margin-top: 10px; max-width: 100%; }
+
+    .check {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin-top: 14px;
+        font-size: 14px;
+    }
+
+    .check input { width: 18px; height: 18px; margin-top: 1px; }
+</style>
+{% endblock %}
+
+
+{% block territorios_content %}
+
+<section class="card">
+    <h2>Como exportar do Google My Maps</h2>
+    <ol class="passos">
+        <li>Abra o mapa em <strong>google.com/mymaps</strong> (pelo computador).</li>
+        <li>Clique nos <strong>3 pontinhos ⋮</strong> ao lado do nome do mapa → <strong>Exportar para KML/KMZ</strong>.</li>
+        <li>Escolha <strong>Mapa inteiro</strong> e clique em <strong>Download</strong>.</li>
+        <li>Envie o arquivo aqui embaixo.</li>
+    </ol>
+
+    <p class="hint" style="margin-top: 12px;">
+        <strong>Dica:</strong> dê a cada área um nome começando pelo número,
+        por exemplo <em>"12 — Jardim Berlim"</em>, que o número do território vem certinho.
+        Marcadores (alfinetes) dentro de uma área viram as <strong>quadras</strong> dela,
+        usando o nome do alfinete como número da quadra.
+        A descrição da área vira as instruções do território.
+    </p>
+</section>
+
+
+<section class="card">
+    <h2>Enviar arquivo</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+        <label class="arquivo">
+            📄 Arquivo <strong>.kml</strong>, <strong>.kmz</strong> ou <strong>.geojson</strong> (até 5 MB)<br>
+            <input type="file" name="arquivo" accept=".kml,.kmz,.geojson,.json" required>
+        </label>
+
+        <label class="check">
+            <input type="checkbox" name="atualizar" value="1">
+            <span>
+                <strong>Atualizar territórios que já existem</strong><br>
+                <small style="color: var(--muted);">
+                    Se o número já estiver cadastrado, troca a área, o nome e as quadras pelo que vier no arquivo.
+                    O histórico de designações é mantido. Se não marcar, esses são ignorados.
+                </small>
+            </span>
+        </label>
+
+        <div class="acoes">
+            <button type="submit" class="btn btn-primary">📥 Importar</button>
+        </div>
+    </form>
+</section>
+
+{% endblock %}

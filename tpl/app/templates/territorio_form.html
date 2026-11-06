@@ -1,0 +1,506 @@
+{% extends "territorios_base.html" %}
+{% set aba = "novo" if not territorio else "" %}
+
+{% block title %}{{ "Editar território" if territorio else "Novo território" }}{% endblock %}
+{% block heading %}{{ "Editar território " ~ territorio.numero if territorio else "Novo território" }}{% endblock %}
+{% block subheading %}Desenhe a área no mapa e cadastre as quadras{% endblock %}
+
+{% block territorios_css %}
+<style>
+
+    .ferramentas {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .ferramentas .btn[aria-pressed="true"] {
+        background: var(--blue);
+        color: #fff;
+    }
+
+    .aviso-modo {
+        min-height: 20px;
+        margin: 8px 0 0;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--blue);
+    }
+
+    .busca-endereco {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .busca-endereco input { flex: 1; }
+
+    .mapa.desenhando { cursor: crosshair; }
+
+    .vertice {
+        width: 14px !important;
+        height: 14px !important;
+        margin-left: -7px !important;
+        margin-top: -7px !important;
+        border-radius: 50%;
+        background: #fff;
+        border: 3px solid var(--blue);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
+    }
+
+    .vertice.primeiro { border-color: #16a34a; }
+
+    .quadra-linha {
+        display: grid;
+        grid-template-columns: 70px 1fr;
+        gap: 8px;
+        padding: 12px;
+        margin-bottom: 10px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: #fbfcfe;
+    }
+
+    .quadra-linha .cheia { grid-column: 1 / -1; }
+
+    .quadra-linha .botoes {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .quadra-linha .marcada { color: var(--green); font-size: 12px; font-weight: 700; align-self: center; }
+
+    .salvar-fixo {
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+        display: flex;
+        gap: 10px;
+        padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px));
+        background: linear-gradient(180deg, rgba(243, 247, 251, 0), #f3f7fb 30%);
+    }
+
+    .salvar-fixo .btn { flex: 1; height: 48px; font-size: 15px; }
+
+    .check {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        margin-top: 12px;
+    }
+
+    .check input { width: 18px; height: 18px; }
+
+</style>
+{% endblock %}
+
+
+{% block territorios_content %}
+
+<form method="POST" id="formTerritorio"
+      action="{{ url_for('territorios.editar', territorio_id=territorio.id) if territorio else url_for('territorios.novo') }}">
+
+    <!-- DADOS -->
+    <section class="card">
+        <h2>Dados</h2>
+
+        <div class="grid-2" style="grid-template-columns: 110px 1fr;">
+            <div class="field">
+                <label for="numero">Número</label>
+                <input type="number" id="numero" name="numero" min="1" required value="{{ numero }}">
+            </div>
+            <div class="field">
+                <label for="nome">Nome</label>
+                <input type="text" id="nome" name="nome" maxlength="150" required
+                       placeholder="Ex.: Jardim Botânico - Parte 1"
+                       value="{{ territorio.nome if territorio else '' }}">
+            </div>
+        </div>
+
+        <div class="field" style="margin-top: 12px;">
+            <label for="etiqueta">Tipo</label>
+            <select id="etiqueta" name="etiqueta">
+                <option value="">Sem etiqueta</option>
+                {% for e in etiquetas %}
+                <option value="{{ e }}" {% if territorio and territorio.etiqueta == e %}selected{% endif %}>{{ e }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="field" style="margin-top: 12px;">
+            <label for="observacoes">Instruções (opcional)</label>
+            <textarea id="observacoes" name="observacoes"
+                      placeholder="Ex.: Comece pela quadra 1, em frente ao Salão do Reino.">{{ territorio.observacoes if territorio and territorio.observacoes else '' }}</textarea>
+        </div>
+
+        <input type="hidden" name="ativo" value="0">
+        <label class="check">
+            <input type="checkbox" name="ativo" value="1" {% if not territorio or territorio.ativo %}checked{% endif %}>
+            Território ativo (aparece no painel)
+        </label>
+    </section>
+
+
+    <!-- MAPA -->
+    <section class="card">
+        <h2>Área no mapa</h2>
+        <p class="hint">
+            Toque em <strong>✏️ Desenhar</strong> e vá tocando no mapa para marcar os cantos da área.
+            Arraste as bolinhas para ajustar. Os outros territórios aparecem em cinza.
+        </p>
+
+        <div class="busca-endereco">
+            <input class="input" type="search" id="endereco" placeholder="Buscar rua ou bairro...">
+            <button type="button" class="btn btn-neutral" id="btnBuscar">🔎</button>
+        </div>
+
+        <div class="ferramentas">
+            <button type="button" class="btn btn-soft" id="btnDesenhar" aria-pressed="false">✏️ Desenhar</button>
+            <button type="button" class="btn btn-neutral" id="btnDesfazer">↶ Desfazer ponto</button>
+            <button type="button" class="btn btn-neutral" id="btnNovaParte" title="Para territórios com mais de uma área separada">＋ Outra área</button>
+            <button type="button" class="btn btn-danger" id="btnLimpar">Limpar</button>
+        </div>
+
+        <div id="mapa" class="mapa" style="height: 420px;"></div>
+        <p class="aviso-modo" id="avisoModo" aria-live="polite"></p>
+
+        <input type="hidden" name="area" id="area" value="{{ territorio.area if territorio and territorio.area else '' }}">
+    </section>
+
+
+    <!-- QUADRAS -->
+    <section class="card">
+        <h2>Quadras</h2>
+        <p class="hint">
+            Opcional. Coloque o número, uma referência e o link do Google Maps.
+            Use <strong>📍 Marcar no mapa</strong> para o número aparecer no mapa
+            (se não tiver link, a rota usa esse ponto).
+        </p>
+
+        <div id="quadras"></div>
+
+        <button type="button" class="btn btn-soft" id="btnAddQuadra">＋ Adicionar quadra</button>
+    </section>
+
+
+    <div class="salvar-fixo">
+        <a class="btn btn-neutral"
+           href="{{ url_for('territorios.detalhe', territorio_id=territorio.id) if territorio else url_for('territorios.painel') }}">Cancelar</a>
+        <button type="submit" class="btn btn-primary">💾 Salvar</button>
+    </div>
+
+</form>
+
+<template id="modeloQuadra">
+    <div class="quadra-linha">
+        <div class="field">
+            <label>Nº</label>
+            <input type="text" name="quadra_numero" maxlength="20" required>
+        </div>
+        <div class="field">
+            <label>Referência</label>
+            <input type="text" name="quadra_descricao" maxlength="200" placeholder="Ex.: Salão do Reino">
+        </div>
+        <div class="field cheia">
+            <label>Link do Google Maps (opcional)</label>
+            <input type="url" name="quadra_link" maxlength="500" placeholder="https://maps.app.goo.gl/...">
+        </div>
+        <input type="hidden" name="quadra_lat">
+        <input type="hidden" name="quadra_lng">
+        <div class="botoes">
+            <button type="button" class="btn btn-soft" data-acao="marcar">📍 Marcar no mapa</button>
+            <span class="marcada" hidden>✓ marcada</span>
+            <button type="button" class="btn btn-danger" data-acao="remover" style="margin-left: auto;">Remover</button>
+        </div>
+    </div>
+</template>
+
+{% endblock %}
+
+
+{% block territorios_scripts %}
+<script>
+(function () {
+
+    var outros = {{ outros|tojson }};
+
+    // ------------------------------------------------------
+    // MAPA
+    // ------------------------------------------------------
+
+    var mapa = tplCriarMapa("mapa");
+    tplBotaoLocalizacao(mapa);
+    var elMapa = document.getElementById("mapa");
+    var aviso = document.getElementById("avisoModo");
+    var limitesOutros = L.latLngBounds([]);
+
+    // Outros territórios em cinza, só como referência
+    outros.forEach(function (t) {
+        t.area.forEach(function (poligono, i) {
+            var camada = L.polygon(poligono, {
+                color: TPL_CORES.outro, weight: 1, dashArray: "4 4",
+                fillColor: TPL_CORES.outro, fillOpacity: .12, interactive: false
+            }).addTo(mapa);
+            limitesOutros.extend(camada.getBounds());
+            if (i === 0) {
+                L.marker(tplCentro(poligono), {
+                    icon: tplRotulo(t.numero, "territorio"), interactive: false, opacity: .7
+                }).addTo(mapa);
+            }
+        });
+    });
+
+    // ------------------------------------------------------
+    // ÁREA (um ou mais polígonos)
+    // ------------------------------------------------------
+
+    var campoArea = document.getElementById("area");
+    var poligonos = [];
+    try { poligonos = JSON.parse(campoArea.value || "[]") || []; } catch (e) { poligonos = []; }
+    if (!poligonos.length) poligonos = [[]];
+
+    var ativo = poligonos.length - 1;
+    var camadaArea = L.layerGroup().addTo(mapa);
+    var modo = null; // "desenhar" | {quadra: elemento}
+
+    function desenharArea() {
+        camadaArea.clearLayers();
+
+        poligonos.forEach(function (pontos, indice) {
+            if (pontos.length >= 2) {
+                L.polygon(pontos, {
+                    color: "#0875c9", weight: 3, fillColor: "#0875c9",
+                    fillOpacity: indice === ativo ? .22 : .12, interactive: false
+                }).addTo(camadaArea);
+            }
+
+            pontos.forEach(function (ponto, i) {
+                var vertice = L.marker(ponto, {
+                    draggable: true,
+                    icon: L.divIcon({ className: "vertice" + (i === 0 ? " primeiro" : "") }),
+                    zIndexOffset: 1000
+                }).addTo(camadaArea);
+
+                vertice.on("drag", function (e) {
+                    var p = e.target.getLatLng();
+                    pontos[i] = [p.lat, p.lng];
+                });
+
+                vertice.on("dragend", function () {
+                    ativo = indice;
+                    salvarArea();
+                    desenharArea();
+                });
+            });
+        });
+
+        salvarArea();
+    }
+
+    function salvarArea() {
+        var validos = poligonos
+            .filter(function (p) { return p.length >= 3; })
+            .map(function (p) {
+                return p.map(function (x) { return [+x[0].toFixed(7), +x[1].toFixed(7)]; });
+            });
+        campoArea.value = validos.length ? JSON.stringify(validos) : "";
+    }
+
+    function definirModo(novo) {
+        modo = novo;
+        document.getElementById("btnDesenhar").setAttribute("aria-pressed", modo === "desenhar" ? "true" : "false");
+        elMapa.classList.toggle("desenhando", !!modo);
+
+        if (modo === "desenhar") {
+            aviso.textContent = "Toque no mapa para adicionar pontos da área.";
+        } else if (modo && modo.quadra) {
+            var n = modo.quadra.querySelector("[name=quadra_numero]").value || "?";
+            aviso.textContent = "Toque no mapa onde fica a quadra " + n + ".";
+        } else {
+            aviso.textContent = "";
+        }
+    }
+
+    mapa.on("click", function (e) {
+        if (modo === "desenhar") {
+            poligonos[ativo].push([e.latlng.lat, e.latlng.lng]);
+            desenharArea();
+        } else if (modo && modo.quadra) {
+            marcarQuadra(modo.quadra, e.latlng.lat, e.latlng.lng);
+            definirModo(null);
+        }
+    });
+
+    document.getElementById("btnDesenhar").addEventListener("click", function () {
+        definirModo(modo === "desenhar" ? null : "desenhar");
+    });
+
+    document.getElementById("btnDesfazer").addEventListener("click", function () {
+        if (poligonos[ativo].length) {
+            poligonos[ativo].pop();
+        } else if (poligonos.length > 1) {
+            poligonos.splice(ativo, 1);
+            ativo = poligonos.length - 1;
+        }
+        desenharArea();
+    });
+
+    document.getElementById("btnNovaParte").addEventListener("click", function () {
+        if (poligonos[ativo].length < 3) {
+            alert("Termine a área atual (pelo menos 3 pontos) antes de começar outra.");
+            return;
+        }
+        poligonos.push([]);
+        ativo = poligonos.length - 1;
+        definirModo("desenhar");
+        desenharArea();
+    });
+
+    document.getElementById("btnLimpar").addEventListener("click", function () {
+        if (!confirm("Apagar toda a área desenhada?")) return;
+        poligonos = [[]];
+        ativo = 0;
+        desenharArea();
+        definirModo("desenhar");
+    });
+
+    // ------------------------------------------------------
+    // BUSCA DE ENDEREÇO (OpenStreetMap)
+    // ------------------------------------------------------
+
+    function buscarEndereco() {
+        var termo = document.getElementById("endereco").value.trim();
+        if (!termo) return;
+
+        var centro = mapa.getCenter();
+        var url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=" +
+                  encodeURIComponent(termo) +
+                  "&viewbox=" + (centro.lng - .3) + "," + (centro.lat + .3) + "," + (centro.lng + .3) + "," + (centro.lat - .3);
+
+        fetch(url, { headers: { "Accept-Language": "pt-BR" } })
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                if (!res.length) { alert("Endereço não encontrado."); return; }
+                mapa.setView([+res[0].lat, +res[0].lon], 17);
+            })
+            .catch(function () { alert("Não foi possível buscar agora."); });
+    }
+
+    document.getElementById("btnBuscar").addEventListener("click", buscarEndereco);
+    document.getElementById("endereco").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { e.preventDefault(); buscarEndereco(); }
+    });
+
+    // ------------------------------------------------------
+    // QUADRAS
+    // ------------------------------------------------------
+
+    var listaQuadras = document.getElementById("quadras");
+    var modelo = document.getElementById("modeloQuadra");
+
+    function marcarQuadra(linha, lat, lng) {
+        linha.querySelector("[name=quadra_lat]").value = lat.toFixed(7);
+        linha.querySelector("[name=quadra_lng]").value = lng.toFixed(7);
+        atualizarRotuloQuadra(linha);
+    }
+
+    function atualizarRotuloQuadra(linha) {
+        var lat = parseFloat(linha.querySelector("[name=quadra_lat]").value);
+        var lng = parseFloat(linha.querySelector("[name=quadra_lng]").value);
+        var numero = linha.querySelector("[name=quadra_numero]").value || "?";
+
+        if (linha._rotulo) { mapa.removeLayer(linha._rotulo); linha._rotulo = null; }
+
+        var marcada = !isNaN(lat) && !isNaN(lng);
+        linha.querySelector(".marcada").hidden = !marcada;
+
+        if (marcada) {
+            linha._rotulo = L.marker([lat, lng], {
+                icon: tplRotulo(numero), draggable: true
+            }).addTo(mapa);
+
+            linha._rotulo.on("dragend", function (e) {
+                var p = e.target.getLatLng();
+                linha.querySelector("[name=quadra_lat]").value = p.lat.toFixed(7);
+                linha.querySelector("[name=quadra_lng]").value = p.lng.toFixed(7);
+            });
+        }
+    }
+
+    function adicionarQuadra(dados) {
+        var linha = modelo.content.firstElementChild.cloneNode(true);
+        dados = dados || {};
+
+        linha.querySelector("[name=quadra_numero]").value = dados.numero || "";
+        linha.querySelector("[name=quadra_descricao]").value = dados.descricao || "";
+        linha.querySelector("[name=quadra_link]").value = dados.link || "";
+        linha.querySelector("[name=quadra_lat]").value = dados.lat != null ? dados.lat : "";
+        linha.querySelector("[name=quadra_lng]").value = dados.lng != null ? dados.lng : "";
+
+        linha.querySelector("[data-acao=marcar]").addEventListener("click", function () {
+            definirModo({ quadra: linha });
+            elMapa.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+
+        linha.querySelector("[data-acao=remover]").addEventListener("click", function () {
+            if (linha._rotulo) mapa.removeLayer(linha._rotulo);
+            linha.remove();
+        });
+
+        linha.querySelector("[name=quadra_numero]").addEventListener("change", function () {
+            atualizarRotuloQuadra(linha);
+        });
+
+        listaQuadras.appendChild(linha);
+        atualizarRotuloQuadra(linha);
+        return linha;
+    }
+
+    document.getElementById("btnAddQuadra").addEventListener("click", function () {
+        var anteriores = listaQuadras.querySelectorAll("[name=quadra_numero]");
+        var ultimo = anteriores.length ? parseInt(anteriores[anteriores.length - 1].value, 10) : 0;
+        var linha = adicionarQuadra({ numero: isNaN(ultimo) ? "" : String(ultimo + 1) });
+        linha.querySelector("[name=quadra_descricao]").focus();
+    });
+
+    {% if territorio %}
+    {% for q in territorio.quadras %}
+    adicionarQuadra({{ {"numero": q.numero, "descricao": q.descricao or "", "link": q.link or "", "lat": q.lat, "lng": q.lng}|tojson }});
+    {% endfor %}
+    {% endif %}
+
+    // ------------------------------------------------------
+    // INÍCIO
+    // ------------------------------------------------------
+
+    desenharArea();
+
+    var limites = L.latLngBounds([]);
+    poligonos.forEach(function (p) { p.forEach(function (x) { limites.extend(x); }); });
+
+    if (limites.isValid()) {
+        mapa.fitBounds(limites, { padding: [30, 30] });
+    } else if (limitesOutros.isValid()) {
+        mapa.fitBounds(limitesOutros, { padding: [20, 20] });
+        definirModo("desenhar");
+    } else {
+        definirModo("desenhar");
+    }
+
+    document.getElementById("formTerritorio").addEventListener("submit", function (e) {
+        salvarArea();
+        if (poligonos[ativo].length > 0 && poligonos[ativo].length < 3) {
+            if (!confirm("A área tem menos de 3 pontos e não será salva. Continuar mesmo assim?")) {
+                e.preventDefault();
+            }
+        }
+    });
+
+})();
+</script>
+{% endblock %}

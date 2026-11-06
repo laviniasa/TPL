@@ -48,7 +48,8 @@ from app.models import (
     HorarioAvulso,
     Campanha,
     CampanhaHorario,
-    FotoPessoa
+    FotoPessoa,
+    DesignacaoTerritorio
 )
 
 
@@ -1905,6 +1906,17 @@ def excluir_pessoa(pessoa_id):
     if usuario:
         pessoa.usuario_id = None
         db.session.flush()
+
+    # O histórico de territórios guarda o nome do dirigente,
+    # então só desfaz a ligação com a pessoa.
+    DesignacaoTerritorio.query.filter_by(pessoa_id=pessoa.id).update(
+        {"pessoa_id": None}, synchronize_session=False
+    )
+
+    if usuario:
+        DesignacaoTerritorio.query.filter_by(criado_por_id=usuario.id).update(
+            {"criado_por_id": None}, synchronize_session=False
+        )
 
     db.session.delete(pessoa)
     db.session.flush()

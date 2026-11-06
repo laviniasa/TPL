@@ -1,0 +1,339 @@
+{% extends "territorios_base.html" %}
+{% set aba = "" %}
+
+{% block title %}{{ territorio.numero }} — {{ territorio.nome }}{% endblock %}
+{% block heading %}{{ territorio.numero }} — {{ territorio.nome }}{% endblock %}
+{% block subheading %}{{ territorio.etiqueta or "Território" }}{% if not territorio.ativo %} · inativo{% endif %}{% endblock %}
+
+{% block territorios_css %}
+<style>
+
+    .topo-status {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .dados {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin: 4px 0 6px;
+    }
+
+    .dados div {
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #f7f9fc;
+    }
+
+    .dados small {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .dados strong { font-size: 14px; }
+
+    .dados .vencido strong { color: var(--st-vencido); }
+
+    .observacoes {
+        white-space: pre-line;
+        font-size: 14px;
+        line-height: 1.6;
+        word-break: break-word;
+    }
+
+    .observacoes a { color: var(--blue); }
+
+    .quadra-num {
+        flex: 0 0 auto;
+        display: grid;
+        place-items: center;
+        min-width: 38px;
+        height: 38px;
+        padding: 0 8px;
+        border-radius: 11px;
+        background: #f2f4f7;
+        font-weight: 900;
+    }
+
+    .hist td, .hist th {
+        padding: 9px 6px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+        text-align: left;
+    }
+
+    .hist th { color: var(--muted); font-size: 11px; }
+
+    .hist { width: 100%; border-collapse: collapse; }
+
+    .mini-form {
+        display: inline;
+    }
+
+    .link-x {
+        border: 0;
+        background: none;
+        color: var(--muted);
+        font-size: 16px;
+        cursor: pointer;
+        padding: 4px;
+    }
+
+    details summary {
+        cursor: pointer;
+        color: var(--blue);
+        font-size: 13px;
+        font-weight: 700;
+        margin-top: 12px;
+    }
+
+    @media (max-width: 560px) {
+        .dados { grid-template-columns: 1fr 1fr; }
+    }
+
+</style>
+{% endblock %}
+
+
+{% block territorios_content %}
+
+<!-- MAPA -->
+<section class="card">
+    {% if area %}
+        <div id="mapa" class="mapa"></div>
+        <div class="acoes">
+            {% if rota %}
+            <a class="btn btn-primary" href="{{ rota }}" target="_blank" rel="noopener">🧭 Como chegar</a>
+            {% endif %}
+            <a class="btn btn-neutral" href="{{ url_for('territorios.editar', territorio_id=territorio.id) }}">✏️ Editar</a>
+        </div>
+    {% else %}
+        <div class="empty">
+            Este território ainda não tem área no mapa.
+            <div class="acoes" style="justify-content: center;">
+                <a class="btn btn-primary" href="{{ url_for('territorios.editar', territorio_id=territorio.id) }}">✏️ Desenhar no mapa</a>
+            </div>
+        </div>
+    {% endif %}
+</section>
+
+
+<!-- DESIGNAÇÃO -->
+<section class="card">
+    {% set atual = territorio.designacao_atual %}
+
+    <div class="topo-status">
+        <h2>Designação</h2>
+        <span class="status {{ status }}">{{ status_nomes[status] }}</span>
+    </div>
+
+    {% if atual %}
+
+        <div class="dados">
+            <div>
+                <small>Dirigente</small>
+                <strong>{{ atual.dirigente }}</strong>
+            </div>
+            <div>
+                <small>Saiu em</small>
+                <strong>{{ atual.data_saida.strftime('%d/%m/%Y') }}</strong>
+            </div>
+            <div class="{{ 'vencido' if status == 'vencido' }}">
+                <small>Prazo</small>
+                <strong>{{ atual.prazo.strftime('%d/%m/%Y') if atual.prazo else '—' }}</strong>
+            </div>
+        </div>
+
+        {% if atual.observacao %}
+        <p class="hint">📝 {{ atual.observacao }}</p>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('territorios.devolver', territorio_id=territorio.id) }}">
+            <div class="grid-2" style="margin-top: 12px; align-items: end;">
+                <div class="field">
+                    <label for="data_devolucao">Data da devolução</label>
+                    <input type="date" id="data_devolucao" name="data_devolucao"
+                           value="{{ hoje.isoformat() }}" min="{{ atual.data_saida.isoformat() }}" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="height: 44px;">✅ Registrar devolução</button>
+            </div>
+        </form>
+
+        <details>
+            <summary>Prorrogar prazo</summary>
+            <form method="POST" action="{{ url_for('territorios.alterar_prazo', territorio_id=territorio.id) }}">
+                <div class="grid-2" style="margin-top: 10px; align-items: end;">
+                    <div class="field">
+                        <label for="novo_prazo">Novo prazo</label>
+                        <input type="date" id="novo_prazo" name="prazo"
+                               value="{{ atual.prazo.isoformat() if atual.prazo else '' }}"
+                               min="{{ atual.data_saida.isoformat() }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-soft" style="height: 44px;">Salvar prazo</button>
+                </div>
+            </form>
+        </details>
+
+    {% else %}
+
+        <p class="hint">
+            {% if territorio.ultima_devolucao %}
+                Última vez trabalhado em {{ territorio.ultima_devolucao.strftime('%d/%m/%Y') }}.
+            {% else %}
+                Este território ainda não foi trabalhado.
+            {% endif %}
+        </p>
+
+        <form method="POST" action="{{ url_for('territorios.designar', territorio_id=territorio.id) }}">
+            <div class="field" style="margin-bottom: 12px;">
+                <label for="pessoa_id">Dirigente</label>
+                <select id="pessoa_id" name="pessoa_id" required>
+                    <option value="">Escolha...</option>
+                    {% for pessoa in pessoas %}
+                    <option value="{{ pessoa.id }}">{{ pessoa.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="grid-2">
+                <div class="field">
+                    <label for="data_saida">Data de saída</label>
+                    <input type="date" id="data_saida" name="data_saida" value="{{ hoje.isoformat() }}" required>
+                </div>
+                <div class="field">
+                    <label for="prazo">Prazo para devolver</label>
+                    <input type="date" id="prazo" name="prazo" value="{{ prazo_padrao.isoformat() }}" required>
+                </div>
+            </div>
+
+            <div class="field" style="margin-top: 12px;">
+                <label for="observacao">Observação (opcional)</label>
+                <input type="text" id="observacao" name="observacao" maxlength="300"
+                       placeholder="Ex.: trabalhar só as quadras 1 a 5">
+            </div>
+
+            <div class="acoes">
+                <button type="submit" class="btn btn-primary">📤 Designar território</button>
+            </div>
+        </form>
+
+    {% endif %}
+</section>
+
+
+<!-- INSTRUÇÕES -->
+{% if territorio.observacoes %}
+<section class="card">
+    <h2>Instruções</h2>
+    <div class="observacoes">{{ territorio.observacoes|urlize(45, true) }}</div>
+</section>
+{% endif %}
+
+
+<!-- QUADRAS -->
+{% if territorio.quadras %}
+<section class="card">
+    <h2>Quadras</h2>
+    <p class="hint">Toque em "Rota" para abrir o caminho até a quadra no Google Maps.</p>
+
+    {% for quadra in territorio.quadras %}
+    <div class="linha">
+        <span class="quadra-num">{{ quadra.numero }}</span>
+        <span class="linha-texto">
+            <strong>Quadra {{ quadra.numero }}</strong>
+            {% if quadra.descricao %}<small>{{ quadra.descricao }}</small>{% endif %}
+        </span>
+        {% if quadra.link_rota %}
+        <a class="btn btn-soft" href="{{ quadra.link_rota }}" target="_blank" rel="noopener">🧭 Rota</a>
+        {% endif %}
+    </div>
+    {% endfor %}
+</section>
+{% endif %}
+
+
+<!-- HISTÓRICO -->
+<section class="card">
+    <h2>Histórico</h2>
+
+    {% if territorio.designacoes %}
+    <table class="hist">
+        <thead>
+            <tr>
+                <th>Dirigente</th>
+                <th>Saída</th>
+                <th>Devolução</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in territorio.designacoes %}
+            <tr>
+                <td>{{ d.dirigente }}</td>
+                <td>{{ d.data_saida.strftime('%d/%m/%y') }}</td>
+                <td>
+                    {% if d.data_devolucao %}
+                        {{ d.data_devolucao.strftime('%d/%m/%y') }}
+                    {% else %}
+                        <span class="status {{ status }}">{{ 'Vencido' if status == 'vencido' else 'Em campo' }}</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: right;">
+                    <form class="mini-form" method="POST"
+                          action="{{ url_for('territorios.excluir_designacao', designacao_id=d.id) }}"
+                          onsubmit="return confirm('Apagar este registro do histórico?');">
+                        <button type="submit" class="link-x" aria-label="Apagar registro">×</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty">Nenhuma designação registrada.</div>
+    {% endif %}
+</section>
+
+
+<!-- EXCLUIR -->
+<form method="POST" action="{{ url_for('territorios.excluir', territorio_id=territorio.id) }}"
+      onsubmit="return confirm('Excluir o território {{ territorio.numero }} e todo o histórico dele? Isso não pode ser desfeito.');"
+      style="text-align: center; margin-top: 8px;">
+    <button type="submit" class="btn btn-danger">🗑️ Excluir território</button>
+</form>
+
+{% endblock %}
+
+
+{% block territorios_scripts %}
+{% if area %}
+<script>
+    var area = {{ area|tojson }};
+    var quadras = {{ quadras_mapa|tojson }};
+    var cor = TPL_CORES[{{ status|tojson }}];
+
+    var mapa = tplCriarMapa("mapa");
+    tplBotaoLocalizacao(mapa);
+    var limites = L.latLngBounds([]);
+
+    area.forEach(function (poligono) {
+        var camada = L.polygon(poligono, {
+            color: cor, weight: 3, fillColor: cor, fillOpacity: .18
+        }).addTo(mapa);
+        limites.extend(camada.getBounds());
+    });
+
+    quadras.forEach(function (q) {
+        L.marker([q.lat, q.lng], { icon: tplRotulo(q.numero), interactive: false }).addTo(mapa);
+    });
+
+    if (limites.isValid()) mapa.fitBounds(limites, { padding: [20, 20] });
+</script>
+{% endif %}
+{% endblock %}

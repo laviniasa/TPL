@@ -1,0 +1,107 @@
+{% extends "territorios_base.html" %}
+{% set aba = "historico" %}
+
+{% block title %}Histórico de territórios{% endblock %}
+{% block heading %}Histórico{% endblock %}
+{% block subheading %}Quem está com cada território e o que já foi trabalhado{% endblock %}
+
+{% block territorios_css %}
+<style>
+    .dirigente {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .dirigente:last-child { border-bottom: 0; }
+
+    .dirigente h3 {
+        margin: 0 0 8px;
+        font-size: 15px;
+    }
+
+    .pilulas {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .pilula {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 10px;
+        background: var(--st-em_campo-bg);
+        color: var(--st-em_campo);
+        font-size: 12px;
+        font-weight: 800;
+        text-decoration: none;
+    }
+
+    .pilula.vencido {
+        background: var(--st-vencido-bg);
+        color: var(--st-vencido);
+    }
+</style>
+{% endblock %}
+
+
+{% block territorios_content %}
+
+<section class="card">
+    <h2>👤 Com os dirigentes agora</h2>
+
+    {% if por_dirigente %}
+        {% for nome, lista in por_dirigente %}
+        <div class="dirigente">
+            <h3>{{ nome }}</h3>
+            <div class="pilulas">
+                {% for d in lista %}
+                {% set vencido = d.prazo and d.prazo < hoje %}
+                <a class="pilula {{ 'vencido' if vencido }}"
+                   href="{{ url_for('territorios.detalhe', territorio_id=d.territorio.id) }}">
+                    {{ d.territorio.numero }} · {{ d.territorio.nome }}
+                    — {{ 'venceu' if vencido else 'até' }} {{ d.prazo.strftime('%d/%m') if d.prazo else '—' }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty">Nenhum território em campo no momento.</div>
+    {% endif %}
+</section>
+
+
+<section class="card">
+    <h2>🕘 Todas as designações</h2>
+    <p class="hint">As mais recentes primeiro.</p>
+
+    {% if designacoes %}
+        {% for d in designacoes %}
+        <a class="linha" href="{{ url_for('territorios.detalhe', territorio_id=d.territorio.id) }}">
+            <span class="num">{{ d.territorio.numero }}</span>
+            <span class="linha-texto">
+                <strong>{{ d.territorio.nome }}</strong>
+                <small>
+                    {{ d.dirigente }} · saiu {{ d.data_saida.strftime('%d/%m/%Y') }}
+                    {% if d.data_devolucao %}· devolvido {{ d.data_devolucao.strftime('%d/%m/%Y') }}{% endif %}
+                </small>
+            </span>
+            {% if not d.data_devolucao %}
+                {% if d.prazo and d.prazo < hoje %}
+                <span class="status vencido">Vencido</span>
+                {% else %}
+                <span class="status em_campo">Em campo</span>
+                {% endif %}
+            {% else %}
+                <span class="status disponivel">Devolvido</span>
+            {% endif %}
+        </a>
+        {% endfor %}
+    {% else %}
+        <div class="empty">Nenhuma designação registrada ainda.</div>
+    {% endif %}
+</section>
+
+{% endblock %}
